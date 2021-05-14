@@ -9,28 +9,40 @@ def main()
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   f = Font.new()
   print f.pango_string,"\n"
-  char_to_pat('εχΗ',temp_dir,f)
+  char_to_pat('ε',temp_dir,f)
 end
 
 def char_to_pat(c,dir,font)
   out_file = dir+"/"+"temp2.png"
-  image = string_to_image(c,dir,font,out_file,0)
-  image2 = string_to_image(c+"H",dir,font,out_file,0)
-  if image.height!=image2.height then die("unequal heights for images") end
+  red = red_one_side(c,dir,font,out_file,1)
+  red.save("red.png")
+end
+
+def red_one_side(c,dir,font,out_file,side)
+  image = string_to_image(c,dir,font,out_file,side)
   bbox = bounding_box(image)
   print "bounding box=#{bbox}\n"
-  red = image_minus(image2,image)
-  red.save("foo.png")
+  red = image_empty_copy(image)
+  "iAWTS1!HIμ.,;:'{{-_=|\`~?/".chars.each { |c2|
+    if side==0 then s=c+c2 else s=c2+c end
+    image2 = string_to_image(s,dir,font,out_file,side)
+    red = image_or(red,image_minus(image2,image))
+  }
+  return red
 end
 
 def image_minus(image,image2)
   return image_bitwise(image,image2,lambda { |x,y| x and !y})
 end
 
+def image_or(image,image2)
+  return image_bitwise(image,image2,lambda { |x,y| x or y})
+end
+
 def image_bitwise(image,image2,op)
   w,h = image.width,image.height
   if image.height!=image2.height or image.width!=image2.width then die("unequal heights or widths for images") end
-  result = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
+  result = image_empty_copy(image)
   0.upto(w-1) { |i|
     0.upto(h-1) { |j|
       p = image[i,j]
@@ -41,6 +53,11 @@ def image_bitwise(image,image2,op)
     }
   }
   return result
+end
+
+def image_empty_copy(image)
+  w,h = image.width,image.height
+  return ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
 end
 
 def bounding_box(image)
@@ -81,7 +98,7 @@ def string_to_image(s,dir,font,out_file,side)
   }
   if side==0 then align="left" else align="right" end
   # pango-view --align=right --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
-  cmd = "pango-view -q --align=#{side} --margin 0 --font=\"#{pango_font}\" --width=200 -o #{out_file} #{in_file}"
+  cmd = "pango-view -q --align=#{align} --margin 0 --font=\"#{pango_font}\" --width=200 -o #{out_file} #{in_file}"
   system(cmd)
   image = ChunkyPNG::Image.from_file(out_file)
   return image
