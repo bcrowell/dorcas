@@ -14,21 +14,33 @@ end
 
 def char_to_pat(c,dir,font)
   out_file = dir+"/"+"temp2.png"
-  red = red_one_side(c,dir,font,out_file,1)
-  red.save("red.png")
+  0.upto(1) { |side|
+    image = string_to_image(c,dir,font,out_file,side)
+    bbox = bounding_box(image)
+    print "bounding box=#{bbox}\n"
+    red = red_one_side(c,dir,font,out_file,side,image)
+    red.save("red#{side}.png")
+  }
 end
 
-def red_one_side(c,dir,font,out_file,side)
-  image = string_to_image(c,dir,font,out_file,side)
-  bbox = bounding_box(image)
-  print "bounding box=#{bbox}\n"
+def red_one_side(c,dir,font,out_file,side,image)
   red = image_empty_copy(image)
   "iAWTS1!HIμ.,;:'{{-_=|\`~?/".chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
     image2 = string_to_image(s,dir,font,out_file,side)
     red = image_or(red,image_minus(image2,image))
   }
+  bbox = bounding_box(image)
+  erase_inside_box(red,bbox) # when side=1, text is not aligned in precisely the same spot every time, varies by ~1 pixel
   return red
+end
+
+def erase_inside_box(image,bbox)
+  bbox[0].upto(bbox[1]) { |i|
+    bbox[2].upto(bbox[3]) { |j|
+      image[i,j] = ChunkyPNG::Color::WHITE
+    }
+  }
 end
 
 def image_minus(image,image2)
