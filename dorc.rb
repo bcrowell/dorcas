@@ -9,26 +9,49 @@ def main()
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   f = Font.new()
   print f.pango_string,"\n"
-  char_to_pat('ε',temp_dir,f)
+  dpi = 72
+  bw,red = char_to_pat('ε',temp_dir,f,dpi)
+  bw.save('bw.png')
+  red.save('red.png')
 end
 
-def char_to_pat(c,dir,font)
+def char_to_pat(c,dir,font,dpi)
   out_file = dir+"/"+"temp2.png"
+  image = []
+  bbox = []
+  red = []
   0.upto(1) { |side|
-    image = string_to_image(c,dir,font,out_file,side)
-    bbox = bounding_box(image)
-    print "bounding box=#{bbox}\n"
-    red = red_one_side(c,dir,font,out_file,side,image)
-    red.save("red#{side}.png")
+    image.push(string_to_image(c,dir,font,out_file,side,dpi))
+    bbox.push(bounding_box(image[side]))
+    red.push(red_one_side(c,dir,font,out_file,side,image[side],dpi))
   }
+  print "bounding boxes=#{bbox}\n"
+  box_w = bbox[0][1]-bbox[0][0]
+  w = dpi*font.size/20
+  h = image[0].height
+  image_final = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
+  red_final = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
+  slide_to = (w-box_w)/2 # put them so the left side of the bounding box is here
+  0.upto(1) { |side|
+    dx = slide_to-bbox[side][0]
+    0.upto(w-1) { |i|
+      i0 = i-dx
+      if i0<0 || i0>image[0].width-1 then next end
+      0.upto(h-1) {  |j|
+        if side==0 then image_final[i,j] = image[side][i0,j] end
+        red_final[i,j] = red[side][i0,j]
+      }
+    }
+  }
+  return [image_final,red_final]
 end
 
-def red_one_side(c,dir,font,out_file,side,image)
+def red_one_side(c,dir,font,out_file,side,image,dpi)
   red = image_empty_copy(image)
   if side==0 then other = "iAWTS1!HIμ.,;:'{{-_=|\`~?/" else other="!]':?>HIT1iXo" end
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
-    image2 = string_to_image(s,dir,font,out_file,side)
+    image2 = string_to_image(s,dir,font,out_file,side,dpi)
     red = image_or(red,image_minus(image2,image))
   }
   bbox = bounding_box(image)
@@ -110,7 +133,7 @@ def has_ink(color)
   return (rgb != 0xffffff)
 end
 
-def string_to_image(s,dir,font,out_file,side)
+def string_to_image(s,dir,font,out_file,side,dpi)
   # side=0 for left, 1 for right
   # empirically, pango-view seems to return a result whose height doesn't depend on the input
   pango_font = font.pango_string()
@@ -119,7 +142,7 @@ def string_to_image(s,dir,font,out_file,side)
     f.print s
   }
   if side==0 then align="left" else align="right" end
-  # pango-view --align=right --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
+  # pango-view --align=right --dpi=#{dpi} --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
   cmd = "pango-view -q --align=#{align} --margin 0 --font=\"#{pango_font}\" --width=200 -o #{out_file} #{in_file}"
   system(cmd)
   image = ChunkyPNG::Image.from_file(out_file)
