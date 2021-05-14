@@ -11,13 +11,17 @@ end
 
 def char_to_pat(c,dir,font)
   # pango-view --align=right --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
-  in_file = dir+"/"+"temp1.txt"
   out_file = dir+"/"+"temp2.png"
-  s = font.pango_string()
+  string_to_image(c,dir,font,out_file)
+end
+
+def string_to_image(s,dir,font,out_file)
+  pango_font = font.pango_string()
+  in_file = dir+"/"+"temp1.txt"
   File.open(in_file,'w') { |f|
-    f.print c
+    f.print s
   }
-  cmd = "pango-view -q --align=left --font=\"#{s}\" --width=500 -o #{out_file} #{in_file}"
+  cmd = "pango-view -q --align=left --font=\"#{pango_font}\" --width=500 -o #{out_file} #{in_file}"
   system(cmd)
 end
 
