@@ -1,28 +1,62 @@
 #!/bin/ruby
 # coding: utf-8
 
+require 'oily_png'
+  # ubuntu package ruby-oily-png
+
 def main()
   temp_dir = 'temp'
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   f = Font.new()
   print f.pango_string,"\n"
-  char_to_pat('β',temp_dir,f)
+  char_to_pat('εχΗ',temp_dir,f)
 end
 
 def char_to_pat(c,dir,font)
-  # pango-view --align=right --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
   out_file = dir+"/"+"temp2.png"
-  string_to_image(c,dir,font,out_file)
+  image = string_to_image(c,dir,font,out_file,0)
+  image2 = string_to_image(c+"H",dir,font,out_file,0)
+  if image.height!=image2.height then die("unequal heights for images") end
+  w,h = image.width,image.height
+  # find bounding box on ink
+  bbox = [w,-1,h,-1] # left, right, top, bottom
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      p = image[i,j]
+      #print "#{i},#{j}    #{p>>8} #{has_ink(p)}\n"
+      if has_ink(p) then
+        #print "i,j=#{[i,j]}, #{p}\n"
+        if i<bbox[0] then bbox[0]=i end
+        if i>bbox[1] then bbox[1]=i end
+        if j<bbox[2] then bbox[2]=j end
+        if j>bbox[3] then bbox[3]=j end
+      end
+    }
+  }
+  print "bounding box=#{bbox}\n"
 end
 
-def string_to_image(s,dir,font,out_file)
+def has_ink(color)
+  # https://rdoc.info/gems/chunky_png/ChunkyPNG/Color
+  # alpha = color & 0xff ... is always 255
+  rgb = (color >> 8)
+  return (rgb != 0xffffff)
+end
+
+def string_to_image(s,dir,font,out_file,side)
+  # side=0 for left, 1 for right
+  # empirically, pango-view seems to return a result whose height doesn't depend on the input
   pango_font = font.pango_string()
   in_file = dir+"/"+"temp1.txt"
   File.open(in_file,'w') { |f|
     f.print s
   }
-  cmd = "pango-view -q --align=left --font=\"#{pango_font}\" --width=500 -o #{out_file} #{in_file}"
+  if side==0 then align="left" else align="right" end
+  # pango-view --align=right --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
+  cmd = "pango-view -q --align=#{side} --margin 0 --font=\"#{pango_font}\" --width=50 -o #{out_file} #{in_file}"
   system(cmd)
+  image = ChunkyPNG::Image.from_file(out_file)
+  return image
 end
 
 class Font
@@ -42,5 +76,9 @@ class Font
   attr_reader :serif,:italic,:bold,:size
 end
 
+def die(message)
+  $stderr.print message,"\n"
+  exit(-1)
+end
 
 main()
