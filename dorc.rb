@@ -4,7 +4,48 @@
 require 'oily_png'
   # ubuntu package ruby-oily-png
 
+require_relative "lib/fft"
+
 def main()
+
+  text = ChunkyPNG::Image.from_file('sample.png')
+  proj = []
+  0.upto(text.height-1) { |j|
+    x = 0.0
+    0.upto(text.width-1) { |i|
+      x = x+ink(text[i,j])
+    }
+    proj.push(x)
+  }
+  n = proj.length
+  pow2 = (Math::log(n)/Math::log(2.0)).to_i
+  if 2**pow2<n then pow2=pow2+1 end
+  nn = 2**pow2
+  avg = 0.0
+  0.upto(n-1) { |i| avg=avg+proj[i] }
+  avg = avg/n
+  while proj.length<nn do proj.push(avg) end
+  fourier = fft(proj)
+  # The following is just so we have some idea what frequency range to look at.
+  guess_dpi = 150
+  guess_font_size = 12
+  guess_period = 0.04*guess_dpi*guess_font_size
+  guess_freq = (nn*0.5/guess_period).to_i # Is the 0.5 right, Nyquist frequency?
+  print "guess_period=#{guess_period} guessing frequency=#{guess_freq}, out of nn=#{nn}\n"
+  min_freq = guess_freq/4
+  if min_freq<2 then min_freq=2 end
+  max_freq = guess_freq*3
+  if max_freq>nn-1 then max_freq=nn-1 end
+  max = 0.0
+  best = -1
+  min_freq.upto(max_freq) { |ff|
+    a = fourier[ff].abs
+    if a>max then max=a; best=ff end
+  }
+  period = nn/best
+  print "best freq=#{best}, period=#{period}\n"
+  exit(0)
+
   temp_dir = 'temp'
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   f = Font.new()
@@ -13,6 +54,12 @@ def main()
   bw,red = char_to_pat('ε',temp_dir,f,dpi)
   bw.save('bw.png')
   red.save('red.png')
+
+end
+
+def ink(color) # returns a measure of darkness
+  r,g,b = ChunkyPNG::Color.r(color),ChunkyPNG::Color.g(color),ChunkyPNG::Color.b(color)
+  return 1.0-(r+g+b)/(3.0*255.0)
 end
 
 def char_to_pat(c,dir,font,dpi)
