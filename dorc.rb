@@ -17,6 +17,33 @@ def char_to_pat(c,dir,font)
   image = string_to_image(c,dir,font,out_file,0)
   image2 = string_to_image(c+"H",dir,font,out_file,0)
   if image.height!=image2.height then die("unequal heights for images") end
+  bbox = bounding_box(image)
+  print "bounding box=#{bbox}\n"
+  red = image_minus(image2,image)
+  red.save("foo.png")
+end
+
+def image_minus(image,image2)
+  return image_bitwise(image,image2,lambda { |x,y| x and !y})
+end
+
+def image_bitwise(image,image2,op)
+  w,h = image.width,image.height
+  if image.height!=image2.height or image.width!=image2.width then die("unequal heights or widths for images") end
+  result = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      p = image[i,j]
+      p2 = image2[i,j]
+      x = has_ink(p)
+      y = has_ink(p2)
+      if op.call(x,y) then result[i,j] = ChunkyPNG::Color::BLACK end
+    }
+  }
+  return result
+end
+
+def bounding_box(image)
   w,h = image.width,image.height
   # find bounding box on ink
   bbox = [w,-1,h,-1] # left, right, top, bottom
@@ -33,12 +60,13 @@ def char_to_pat(c,dir,font)
       end
     }
   }
-  print "bounding box=#{bbox}\n"
+  return bbox
 end
 
 def has_ink(color)
   # https://rdoc.info/gems/chunky_png/ChunkyPNG/Color
   # alpha = color & 0xff ... is always 255
+  # Or should I be comparing with ChunkyPNG::Color::WHITE or something?
   rgb = (color >> 8)
   return (rgb != 0xffffff)
 end
@@ -53,7 +81,7 @@ def string_to_image(s,dir,font,out_file,side)
   }
   if side==0 then align="left" else align="right" end
   # pango-view --align=right --markup --font="Times italic 32" --width=500 --text="γράψετε" -o a.png
-  cmd = "pango-view -q --align=#{side} --margin 0 --font=\"#{pango_font}\" --width=50 -o #{out_file} #{in_file}"
+  cmd = "pango-view -q --align=#{side} --margin 0 --font=\"#{pango_font}\" --width=200 -o #{out_file} #{in_file}"
   system(cmd)
   image = ChunkyPNG::Image.from_file(out_file)
   return image
