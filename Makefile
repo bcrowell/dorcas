@@ -1,0 +1,2 @@
+default:
+	./dorc.rb
