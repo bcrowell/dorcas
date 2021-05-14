@@ -25,13 +25,23 @@ end
 
 def red_one_side(c,dir,font,out_file,side,image)
   red = image_empty_copy(image)
-  "iAWTS1!HIμ.,;:'{{-_=|\`~?/".chars.each { |c2|
+  if side==0 then other = "iAWTS1!HIμ.,;:'{{-_=|\`~?/" else other="!]':?>HIT1iXo" end
+  other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
     image2 = string_to_image(s,dir,font,out_file,side)
     red = image_or(red,image_minus(image2,image))
   }
   bbox = bounding_box(image)
   erase_inside_box(red,bbox) # when side=1, text is not aligned in precisely the same spot every time, varies by ~1 pixel
+  w,h = image.width,image.height
+  0.upto(h-1) { |j|
+    started = false
+    0.upto(w-1) { |ii|
+      if side==1 then i=w-1-ii else i=ii end
+      if has_ink(red[i,j]) then started=true end
+      if started then red[i,j]=ChunkyPNG::Color::BLACK end
+    }
+  }
   return red
 end
 
