@@ -29,6 +29,7 @@ def main()
   hires = 1
   dpi = 300 # initial guess
   dpi = (hires*dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi).to_f).round
+  background = 0.0 # background ink level of text; should actually estimate this, e.g., take median and then take median of everything below that
 
   bw,red,pat_line_spacing,bbox = char_to_pat('ε',temp_dir,f,dpi)
   print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"
@@ -47,7 +48,7 @@ def main()
   bw_ink = image_to_ink_array(bw)
   red_ink = image_to_ink_array(red)
 
-  threshold = 0.01 # lowest inner product that we consider to be of interest
+  threshold = 0.03 # lowest inner product that we consider to be of interest
   # i and j are horizontal and vertical offsets of pattern relative to text; non-black part of pat can stick out beyond edges
   j_lo = bbox[2]-pat_line_spacing
   j_hi = ht-1+bbox[3]
@@ -66,7 +67,7 @@ def main()
     print (j*100.0/j_hi).round," "
     if j%30==0 then print "\n" end
     i_lo.upto(i_hi) { |i|
-      c = correl(text_ink,bw_ink,red_ink,bbox,i,j)
+      c = correl(text_ink,bw_ink,red_ink,bbox,i,j,background)
       results[i][j] = c
       if c>threshold then
         ci = (i+wp/2).round
