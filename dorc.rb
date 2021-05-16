@@ -53,7 +53,7 @@ def main()
   j_lo = bbox[2]-pat_line_spacing
   j_hi = ht-1+bbox[3]
   i_lo = -lbox
-  i_hi = wt-1-rbox - 100 # the -100 is a kludge, fixme
+  i_hi = wt-1-rbox
   results = []
   i_lo.upto(i_hi) { |i|
     col = []
