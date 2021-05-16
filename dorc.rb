@@ -9,12 +9,16 @@ require_relative "lib/estimate_scale.rb"
 require_relative "lib/image_util.rb"
 require_relative "lib/font_to_pat.rb"
 require_relative "lib/correl.rb"
+require_relative "lib/svg.rb"
 
 def main()
   temp_dir = 'temp'
+  text_file = 'easy.png'
+
+
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
 
-  text = ChunkyPNG::Image.from_file('sample.png')
+  text = ChunkyPNG::Image.from_file(text_file)
   text_line_spacing = estimate_line_spacing(text)
   print "text_line spacing=#{text_line_spacing}\n"
 
@@ -27,7 +31,7 @@ def main()
   dpi = (hires*dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi).to_f).round
 
   bw,red,pat_line_spacing,bbox = char_to_pat('ε',temp_dir,f,dpi)
-  print "pat_line_spacing=#{pat_line_spacing}\n"
+  print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"
   bw.save('bw.png')
   red.save('red.png')
 
@@ -43,18 +47,65 @@ def main()
   bw_ink = image_to_ink_array(bw)
   red_ink = image_to_ink_array(red)
 
+  threshold = 0.01 # lowest inner product that we consider to be of interest
   # i and j are horizontal and vertical offsets of pattern relative to text; non-black part of pat can stick out beyond edges
-  (bbox[2]-pat_line_spacing).upto(ht-1+bbox[3]) { |j|
-    print "j=#{j}\n"
-    (-lbox).upto(wt-1-rbox) { |i|
-      c = correl(text_ink,bw_ink,red_ink,i,j)
-      if c>0.02 then
+  j_lo = bbox[2]-pat_line_spacing
+  j_hi = ht-1+bbox[3]
+  i_lo = -lbox
+  i_hi = wt-1-rbox - 100 # the -100 is a kludge, fixme
+  results = []
+  i_lo.upto(i_hi) { |i|
+    col = []
+    j_lo.upto(j_hi) { |j|
+      col.push(nil)
+    }
+    results.push(col)
+  }
+  highest_corr = 0.0
+  j_lo.upto(j_hi) { |j|
+    print (j*100.0/j_hi).round," "
+    if j%30==0 then print "\n" end
+    i_lo.upto(i_hi) { |i|
+      c = correl(text_ink,bw_ink,red_ink,bbox,i,j)
+      results[i][j] = c
+      if c>threshold then
         ci = (i+wp/2).round
         cj = (j+hp/2).round
-        print "  center,correl=#{ci},#{cj},#{c}\n"
+        #print "\n  center,correl=#{ci},#{cj},#{c}\n"
+        #if c>highest_corr then highest_corr=c; print "    **\n" end
       end
     }
   }
+
+  hits = []
+  (j_lo+1).upto(j_hi-1) { |j|
+    (i_lo+1).upto(i_hi-1) { |i|
+      if results[i][j]>threshold then
+        c = results[i][j]
+        local_max = true
+        (-1).upto(1) { |di|
+          (-1).upto(1) { |dj|
+            if results[i+di][j+dj]>c then local_max=false end
+          }
+        }
+        if local_max then
+          ci = (i+wp/2).round
+          cj = (j+hp/2).round
+          print " local max: center,correl=#{ci},#{cj},#{c}\n"
+          hits.push([i,j])
+        end
+      end
+    }
+  }
+
+  images = []
+  hits.each { |hit|
+    i,j = hit
+    images.push(["bw.png",i,j,bw.width,bw.height,1.0])
+  }
+  images.push([text_file,0,0,text.width,text.height,0.25])
+  svg = svg_view(images,150.0)
+  File.open('a.svg','w') { |f| f.print svg }
 end
 
 
@@ -64,3 +115,4 @@ def die(message)
 end
 
 main()
+

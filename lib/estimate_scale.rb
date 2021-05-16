@@ -1,4 +1,4 @@
-def estimate_line_spacing(image,guess_dpi:150,guess_font_size:12)
+def estimate_line_spacing(image,guess_dpi:70,guess_font_size:12)
   # This could probably be made less sensitive to rotation by taking power spectra on vertical strips and adding those.
   proj = []
   0.upto(image.height-1) { |j|
