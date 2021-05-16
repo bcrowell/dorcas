@@ -13,13 +13,13 @@ require_relative "lib/svg.rb"
 
 def main()
   temp_dir = 'temp'
-  text_file = 'easy.png'
+  text_file = 'sample_small.png'
 
 
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
 
   text = ChunkyPNG::Image.from_file(text_file)
-  text_line_spacing = estimate_line_spacing(text)
+  text_line_spacing = estimate_line_spacing(text,window:'hann')
   print "text_line spacing=#{text_line_spacing}\n"
 
   f = Font.new()
@@ -79,13 +79,15 @@ def main()
   }
 
   hits = []
-  (j_lo+1).upto(j_hi-1) { |j|
-    (i_lo+1).upto(i_hi-1) { |i|
+  xr = ((bbox[1]-bbox[0])*0.8).round
+  yr = ((bbox[3]-bbox[2])*0.8).round
+  (j_lo+yr).upto(j_hi-yr) { |j|
+    (i_lo+xr).upto(i_hi-xr) { |i|
       if results[i][j]>threshold then
         c = results[i][j]
         local_max = true
-        (-1).upto(1) { |di|
-          (-1).upto(1) { |dj|
+        (-xr).upto(xr) { |di|
+          (-yr).upto(yr) { |dj|
             if results[i+di][j+dj]>c then local_max=false end
           }
         }
