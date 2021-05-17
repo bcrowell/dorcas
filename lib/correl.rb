@@ -36,7 +36,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
   }
 
-  cmd = "ls #{temp_file_base}*.in | parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
+  cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
   print cmd,"\n"
   system(cmd)
 
@@ -52,8 +52,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   }
 
   files_to_remove.each { |filename|
-    # FileUtils.rm(filename)
-    # ... temporary, for debugging
+    FileUtils.rm(filename)
   }
 
   return result
