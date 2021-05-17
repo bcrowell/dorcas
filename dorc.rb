@@ -63,32 +63,19 @@ def main()
     results.push(col)
   }
   highest_corr = 0.0
-  j_lo.upto(j_hi) { |j|
-    print (j*100.0/j_hi).round," "
-    if j%30==0 then print "\n" end
-    i_lo.upto(i_hi) { |i|
-      c = correl(text_ink,bw_ink,red_ink,bbox,i,j,background)
-      results[i][j] = c
-      if c>threshold then
-        ci = (i+wp/2).round
-        cj = (j+hp/2).round
-        #print "\n  center,correl=#{ci},#{cj},#{c}\n"
-        #if c>highest_corr then highest_corr=c; print "    **\n" end
-      end
-    }
-  }
+  results = correl_many(text_ink,bw_ink,red_ink,background,i_lo,i_hi,j_lo,j_hi)
 
   hits = []
   xr = ((bbox[1]-bbox[0])*0.8).round
   yr = ((bbox[3]-bbox[2])*0.8).round
   (j_lo+yr).upto(j_hi-yr) { |j|
     (i_lo+xr).upto(i_hi-xr) { |i|
-      if results[i][j]>threshold then
-        c = results[i][j]
+      c = results[j-j_lo][i-i_lo]
+      if c>threshold then
         local_max = true
         (-xr).upto(xr) { |di|
           (-yr).upto(yr) { |dj|
-            if results[i+di][j+dj]>c then local_max=false end
+            if results[j+dj-j_lo][i+di-i_lo]>c then local_max=false end
           }
         }
         if local_max then

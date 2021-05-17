@@ -1,4 +1,19 @@
-def correl(text,pat,red,bbox,dx,dy,background)
+def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  # returns results in [j][i] index order
+  c = []
+  dy_lo.upto(dy_hi) { |dy|
+    print (dy*100.0/dy_hi).round," "
+    if dy%30==0 then print "\n" end
+    row = []
+    dx_lo.upto(dx_hi) { |dx|
+      row.push(correl(text,pat,red,background,dx,dy))
+    }
+    c.push(row)
+  }
+  return c
+end
+
+def correl(text,pat,red,background,dx,dy)
   # dx,dy are offsets of pat within text
   wp,hp = ink_array_dimensions(pat)
   wt,ht = ink_array_dimensions(text)
@@ -12,8 +27,6 @@ def correl(text,pat,red,bbox,dx,dy,background)
     0.upto(hp-1) { |j|
       jt = j+dy
       if red[i][j]>0.0 then next end
-      in_bbox = (i>=bbox[0] and i<=bbox[1] and j>=bbox[2] and j<=bbox[3])
-      if in_bbox then w=1.0 else w=1.0 end # heuristic: if text has ink in white and outside bbox, penalize that a lot
       p = pat[i][j]
       if it<0 or it>wt-1 or jt<0 or jt>ht-1 then
         t = background
