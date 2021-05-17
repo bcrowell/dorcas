@@ -10,6 +10,7 @@ require_relative "lib/image_util.rb"
 require_relative "lib/font_to_pat.rb"
 require_relative "lib/correl.rb"
 require_relative "lib/svg.rb"
+require_relative "lib/tempfile"
 
 def main()
   temp_dir = 'temp'

@@ -1,10 +1,12 @@
+require 'fileutils'
+
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
 end
 
 def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
-  in_file = 'temp_chapel_in.txt' # fixme -- file names hardcoded
-  out_file = 'temp_chapel_out.txt' # fixme -- file names hardcoded
+  in_file = temp_file_name()
+  out_file = temp_file_name()
   exe = 'chpl/correl'
 
   wp,hp = ink_array_dimensions(pat)
@@ -38,6 +40,10 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
       c.push(row)
     }
   }
+
+  FileUtils.rm(in_file)
+  FileUtils.rm(out_file)
+
   return c
 
 end
