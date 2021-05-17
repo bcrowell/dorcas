@@ -2,7 +2,11 @@ require 'fileutils'
 require 'json'
 
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
-  return correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  start = Time.now
+  result = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  finish = Time.now
+  print "\ntime for correl = #{finish-start} seconds\n"
+  return result
 end
 
 def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
@@ -26,10 +30,13 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     this_dy_lo = dy_lo+offset
     this_dy_hi = this_dy_lo+rows_per_cpu-1
     if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
-    File.open(result_file[cpu],'w') { |f|
-      f.print JSON.generate(correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi))
-    }
+    threads.push(Thread.new {
+      File.open(result_file[cpu],'w') { |f|
+        f.print JSON.generate(correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi))
+      }
+    })
   }
+  threads.each &:join
 
   result = []
   0.upto(n_cpus-1) { |cpu|
