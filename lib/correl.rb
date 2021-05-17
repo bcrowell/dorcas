@@ -19,7 +19,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     this_dy_lo = dy_lo+offset
     this_dy_hi = this_dy_lo+rows_per_cpu-1
     if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
-    this_result = correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+    this_result = correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
     this_result.each { |row|
       result.push(row)
     }
