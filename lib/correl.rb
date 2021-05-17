@@ -33,7 +33,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     dy_lo.upto(dy_hi) { |dy|
       row = []
       dx_lo.upto(dx_hi) { |dx|
-        row.push(f.gets.to_f)
+        row.push(f.gets.to_f/(256.0*256.0))
       }
       c.push(row)
     }
@@ -43,7 +43,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
 end
 
 def ink_to_int(ink)
-  return (ink*256).to_i
+  return (ink*256).to_i # if changing this, also change the conversion factor applied to c when we read it back from the chapel code
 end
 
 def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)

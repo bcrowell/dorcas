@@ -1,7 +1,11 @@
 use IO;
 
-const max_w: int = 4096; // more than enough for 8.5 inches at 300 dpi
-const max_h: int = 8192;
+//const max_w: int = 4096; // more than enough for 8.5 inches at 300 dpi
+//const max_h: int = 8192;
+
+const max_w: int = 1024; // more than enough for 8.5 inches at 300 dpi
+const max_h: int = 512;
+
 const max_pat_w: int = 256;
 const max_pat_h: int = 256;
 
@@ -40,6 +44,8 @@ for j in 0..hp-1 {
 }
 
 for dy in dy_lo..dy_hi {
+  stderr.write((dy:real*100.0/dy_hi:real):int," ");
+  if dy%30==0 then stderr.writeln("");
   for dx in dx_lo..dx_hi {
     norm = 0;
     sum_p = 0;
