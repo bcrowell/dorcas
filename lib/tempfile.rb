@@ -3,5 +3,5 @@
 require 'digest'
 
 def temp_file_name()
-  return "/tmp/dorcas"+Digest::MD5.hexdigest(Random.new.bytes(32))
+  return "/tmp/dorcas-"+Process.pid+"-"+Digest::MD5.hexdigest(Random.new.bytes(32))
 end

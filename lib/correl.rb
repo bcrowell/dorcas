@@ -1,10 +1,33 @@
 require 'fileutils'
 
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
-  correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  return correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
 end
 
 def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  n_rows = dy_hi-dy_lo+1
+  n_cpus = 4
+  if n_rows<32 or n_rows<n_cpus then
+    return correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+    # No point in parallelizing when there are few rows, and I also didn't try to make the code below work for n_rows<n_cpus.
+  end
+  rows_per_cpu = n_rows/n_cpus
+  if rows_per_cpu*n_cpus<n_rows then rows_per_cpu += 1 end
+  result = []
+  0.upto(n_cpus-1) { |cpu|
+    offset = cpu*rows_per_cpu
+    this_dy_lo = dy_lo+offset
+    this_dy_hi = this_dy_lo+rows_per_cpu-1
+    if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
+    this_result = correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+    this_result.each { |row|
+      result.push(row)
+    }
+  }
+  return result
+end
+
+def correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   in_file = temp_file_name()
   out_file = temp_file_name()
   exe = 'chpl/correl'

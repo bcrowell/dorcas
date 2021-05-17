@@ -5,11 +5,11 @@ require 'oily_png'
   # ubuntu package ruby-oily-png
 
 require_relative "lib/fft"
-require_relative "lib/estimate_scale.rb"
-require_relative "lib/image_util.rb"
-require_relative "lib/font_to_pat.rb"
-require_relative "lib/correl.rb"
-require_relative "lib/svg.rb"
+require_relative "lib/estimate_scale"
+require_relative "lib/image_util"
+require_relative "lib/font_to_pat"
+require_relative "lib/correl"
+require_relative "lib/svg"
 require_relative "lib/tempfile"
 
 def main()
