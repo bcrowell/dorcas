@@ -1,10 +1,7 @@
 use IO;
 
-//const max_w: int = 4096; // more than enough for 8.5 inches at 300 dpi
-//const max_h: int = 8192;
-
-const max_w: int = 1024; // more than enough for 8.5 inches at 300 dpi
-const max_h: int = 512;
+const max_w: int = 4096; // more than enough for 8.5 inches at 300 dpi
+const max_h: int = 8192;
 
 const max_pat_w: int = 256;
 const max_pat_h: int = 256;
