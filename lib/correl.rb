@@ -12,7 +12,7 @@ end
 def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
-  n_cpus = 4
+  n_cpus = 4 # making this equal to the number of physical cores (not counting hypertrheading) gives the best performance
   rows_per_cpu = n_rows/n_cpus
   if rows_per_cpu*n_cpus<n_rows then rows_per_cpu += 1 end
 
