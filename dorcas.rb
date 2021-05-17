@@ -11,6 +11,7 @@ require_relative "lib/font_to_pat"
 require_relative "lib/correl"
 require_relative "lib/svg"
 require_relative "lib/tempfile"
+require_relative "lib/file_util"
 
 def main()
   temp_dir = 'temp'

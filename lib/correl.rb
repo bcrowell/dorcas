@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'json'
 
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   return correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
@@ -13,17 +14,33 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   end
   rows_per_cpu = n_rows/n_cpus
   if rows_per_cpu*n_cpus<n_rows then rows_per_cpu += 1 end
-  result = []
+
+  result_file = []
+  0.upto(n_cpus-1) { |cpu|
+    result_file.push(temp_file_name())
+  }
+
+  threads = []  
   0.upto(n_cpus-1) { |cpu|
     offset = cpu*rows_per_cpu
     this_dy_lo = dy_lo+offset
     this_dy_hi = this_dy_lo+rows_per_cpu-1
     if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
-    this_result = correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
+    File.open(result_file[cpu],'w') { |f|
+      f.print JSON.generate(correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi))
+    }
+  }
+
+  result = []
+  0.upto(n_cpus-1) { |cpu|
+    filename = result_file[cpu]
+    this_result = JSON.parse(slurp_file(filename))
+    FileUtils.rm(filename)
     this_result.each { |row|
       result.push(row)
     }
   }
+
   return result
 end
 
