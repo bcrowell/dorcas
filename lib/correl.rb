@@ -10,55 +10,59 @@ def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
 end
 
 def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
   n_cpus = 4
-  if n_rows<32 or n_rows<n_cpus then
-    return correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
-    # No point in parallelizing when there are few rows, and I also didn't try to make the code below work for n_rows<n_cpus.
-  end
   rows_per_cpu = n_rows/n_cpus
   if rows_per_cpu*n_cpus<n_rows then rows_per_cpu += 1 end
 
-  result_file = []
-  0.upto(n_cpus-1) { |cpu|
-    result_file.push(temp_file_name())
-  }
-
-  threads = []  
+  temp_file_base = temp_file_name()
+  files_to_remove = []
+  out_files = []
+  remember_slicing = []
   0.upto(n_cpus-1) { |cpu|
     offset = cpu*rows_per_cpu
     this_dy_lo = dy_lo+offset
     this_dy_hi = this_dy_lo+rows_per_cpu-1
+    if this_dy_lo>dy_hi then break end # can happen if number of rows to do is less than n_cpus
     if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
-    threads.push(Thread.new {
-      File.open(result_file[cpu],'w') { |f|
-        f.print JSON.generate(correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi))
-      }
-    })
+    remember_slicing.push([this_dy_lo,this_dy_hi])
+    file_base = temp_file_base+"-#{cpu}"
+    in_file = file_base+".in"
+    out_file = file_base+".out"
+    files_to_remove.push(in_file)
+    files_to_remove.push(out_file)
+    out_files.push(out_file)
+    prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
   }
-  threads.each &:join
 
+  cmd = "ls #{temp_file_base}*.in | parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
+  print cmd,"\n"
+  system(cmd)
+
+  cpu = 0
   result = []
-  0.upto(n_cpus-1) { |cpu|
-    filename = result_file[cpu]
-    this_result = JSON.parse(slurp_file(filename))
-    FileUtils.rm(filename)
+  out_files.each { |filename|
+    this_dy_lo,this_dy_hi = remember_slicing[cpu]
+    cpu +=1
+    this_result = retrieve_chapel_output(filename,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
     this_result.each { |row|
       result.push(row)
     }
   }
 
+  files_to_remove.each { |filename|
+    # FileUtils.rm(filename)
+    # ... temporary, for debugging
+  }
+
   return result
 end
 
-def correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
-  in_file = temp_file_name()
-  out_file = temp_file_name()
-  exe = 'chpl/correl'
-
+def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   wp,hp = ink_array_dimensions(pat)
   wt,ht = ink_array_dimensions(text)
-  File.open(in_file,'w') { |f| 
+  File.open(filename,'w') { |f| 
     f.print "#{wt}\n#{ht}\n#{wp}\n#{hp}\n"
     f.print "#{dx_lo}\n#{dx_hi}\n#{dy_lo}\n#{dy_hi}\n"
     f.print "#{ink_to_int(background)}\n"
@@ -74,29 +78,24 @@ def correl_many_chapel_one_cpu(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
       }
     }
   }
+end
 
-  system("#{exe} <#{in_file} >#{out_file}")
-
+def retrieve_chapel_output(out_file,dx_lo,dx_hi,dy_lo,dy_hi)
   c = []
   File.open(out_file,'r') { |f|
     dy_lo.upto(dy_hi) { |dy|
       row = []
       dx_lo.upto(dx_hi) { |dx|
-        row.push(f.gets.to_f/(256.0*256.0))
+        row.push(f.gets.to_f/(256.0*256.0)) # if changing this, also change the conversion factor inside ink_to_int
       }
       c.push(row)
     }
   }
-
-  FileUtils.rm(in_file)
-  FileUtils.rm(out_file)
-
   return c
-
 end
 
 def ink_to_int(ink)
-  return (ink*256).to_i # if changing this, also change the conversion factor applied to c when we read it back from the chapel code
+  return (ink*256).to_i # if changing this, also change the conversion factor inside retrieve_chapel_output
 end
 
 def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)

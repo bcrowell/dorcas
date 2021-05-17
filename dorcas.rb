@@ -15,7 +15,7 @@ require_relative "lib/file_util"
 
 def main()
   temp_dir = 'temp'
-  text_file = 'sample_small.png'
+  text_file = 'sample.png'
 
 
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
