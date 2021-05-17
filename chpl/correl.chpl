@@ -35,16 +35,12 @@ for j in 0..h-1 {
 for j in 0..hp-1 {
   for i in 0..wp-1 {
     pat[i,j] = stdin.read(int);
-  }
-}
-for j in 0..hp-1 {
-  for i in 0..wp-1 {
     red[i,j] = stdin.read(int);
   }
 }
 
-for dx in dx_lo..dx_hi {
-  for dy in dy_lo..dy_hi {
+for dy in dy_lo..dy_hi {
+  for dx in dx_lo..dx_hi {
     norm = 0;
     sum_p = 0;
     sum_t = 0;

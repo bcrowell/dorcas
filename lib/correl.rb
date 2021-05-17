@@ -1,4 +1,52 @@
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+end
+
+def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  in_file = 'temp_chapel_in.txt' # fixme -- file names hardcoded
+  out_file = 'temp_chapel_out.txt' # fixme -- file names hardcoded
+  exe = 'chpl/correl'
+
+  wp,hp = ink_array_dimensions(pat)
+  wt,ht = ink_array_dimensions(text)
+  File.open(in_file,'w') { |f| 
+    f.print "#{wt}\n#{ht}\n#{wp}\n#{hp}\n"
+    f.print "#{dx_lo}\n#{dx_hi}\n#{dy_lo}\n#{dy_hi}\n"
+    f.print "#{ink_to_int(background)}\n"
+    0.upto(ht-1) { |j|
+      0.upto(wt-1) { |i|
+        f.print "#{ink_to_int(text[i][j])}\n"
+      }
+    }
+    0.upto(hp-1) { |j|
+      0.upto(wp-1) { |i|
+        f.print "#{ink_to_int(pat[i][j])}\n"
+        f.print "#{ink_to_int(red[i][j])}\n"
+      }
+    }
+  }
+
+  system("#{exe} <#{in_file} >#{out_file}")
+
+  c = []
+  File.open(out_file,'r') { |f|
+    dy_lo.upto(dy_hi) { |dy|
+      row = []
+      dx_lo.upto(dx_hi) { |dx|
+        row.push(f.gets.to_f)
+      }
+      c.push(row)
+    }
+  }
+  return c
+
+end
+
+def ink_to_int(ink)
+  return (ink*256).to_i
+end
+
+def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   # returns results in [j][i] index order
   c = []
   dy_lo.upto(dy_hi) { |dy|
