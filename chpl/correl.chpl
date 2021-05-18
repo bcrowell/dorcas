@@ -2,14 +2,13 @@ use IO;
 
 type ii = int(32); // empirically, switching from 64 to 32 made little difference when max_w and max_h were fixed at small values
 
-// Making the following too big has a huge impact on performance.
-// With 2048x256, test case took 3.8 seconds; with 4096x8192, it took 11.4 seconds.
-// Experiments show that 2048x512 is fast, but 2048x1024 is slow.
-const max_w: ii = 2048; // roughly enough for 8.5 inches at 300 dpi
-const max_h: ii = 512;
+#include "../constants.h"
 
-const max_pat_w: ii = 256;
-const max_pat_h: ii = 256;
+const max_w: ii = CORREL_MAX_W; // sizes defined in constants.h
+const max_h: ii = CORREL_MAX_H;
+
+const max_pat_w: ii = CORREL_MAX_PAT_W;
+const max_pat_h: ii = CORREL_MAX_PAT_H;
 
 var w,h,wp,hp:ii;
 var norm,sum_p,sum_t,sum_pt,p,t:ii;
@@ -31,8 +30,16 @@ dy_lo = stdin.read(ii);
 dy_hi = stdin.read(ii);
 background = stdin.read(ii);
 
-if w>max_w || h>max_h || wp>max_pat_w || hp>max_pat_h then
+if w>max_w || h>max_h || wp>max_pat_w || hp>max_pat_h then {
+  writeln(-1);
+  writeln("size out of bounds in correl.chpl; sizes are limited for performance reasons ",
+             w," ",h," ",wp," ",hp," ",max_w," ",max_h," ",max_pat_w," ",max_pat_h);
   exit(-1);
+}
+else {
+  writeln(0);
+  writeln("");
+}
 
 for j in 0..h-1 {
   for i in 0..w-1 {
