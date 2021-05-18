@@ -17,7 +17,7 @@ require_relative "lib/smp"
 
 def main()
   temp_dir = 'temp'
-  text_file = 'sample.png'
+  text_file = 'sample_small.png'
 
 
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end

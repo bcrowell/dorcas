@@ -53,6 +53,18 @@ for j in 0..hp-1 {
   }
 }
 
+norm = 0;
+sum_p = 0;
+for i in 0..wp-1 {
+  for j in 0..hp-1 {
+    if red[i,j]>0 then continue;
+    p = pat[i,j];
+    norm = norm+1;
+    sum_p = sum_p + p;
+  }
+}
+p_mean = sum_p:real/norm:real;
+
 old_progress = 0.0;
 for dy in dy_lo..dy_hi {
   progress = ((dy-dy_lo):real/(dy_hi-dy_lo+1):real)*100.0;
@@ -62,22 +74,18 @@ for dy in dy_lo..dy_hi {
     old_progress = progress;
   }
   for dx in dx_lo..dx_hi {
-    norm = 0;
-    sum_p = 0;
     sum_t = 0;
     sum_pt = 0;
     for i in 0..wp-1 {
       it = i+dx;
       for j in 0..hp-1 {
-        jt = j+dy;
         if red[i,j]>0 then continue;
         p = pat[i,j];
+        jt = j+dy;
         if it<0 || it>w-1 || jt<0 || jt>h-1 then
           t = background;
         else
           t = text[it,jt];
-        norm = norm+1;
-        sum_p = sum_p + p;
         sum_t = sum_t + t;
         sum_pt = sum_pt + p*t;
       }
@@ -86,7 +94,6 @@ for dy in dy_lo..dy_hi {
     if norm==0 then
       exit(-1);
 
-    p_mean = sum_p:real/norm:real;
     t_mean = sum_t:real/norm:real;
 
     c = sum_pt:real/norm:real-p_mean*t_mean;

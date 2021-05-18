@@ -3,12 +3,6 @@ dorcas
 
 Dumb Optical Recognition using Correlation
 
-Dependencies:
-
-chapel
-
-GNU parallel
-
 ## What I want to do
 
 * Make a system that doesn't depend on a neural network as an unmodifiable, unfixable, and inscrutable black box.
@@ -28,4 +22,13 @@ GNU parallel
      May need a certain amount of human involvement at this stage.
 
 * Won't handle CJK, vertical scripts, or handwriting.
+
+* I'm not making much of an effort to make it something that could run on Windows.
+
+## Dependencies:
+
+chapel
+
+GNU parallel
+
 
