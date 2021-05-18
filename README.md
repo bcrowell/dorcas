@@ -9,7 +9,7 @@ chapel
 
 GNU parallel
 
-# What I want to do
+## What I want to do
 
 * Make a system that doesn't depend on a neural network as an unmodifiable, unfixable, and inscrutable black box.
      Instead, use some variant of old-school convolution methods.
@@ -20,7 +20,7 @@ GNU parallel
 
 * Take advantage of SMP.
 
-# Intended limitations
+## Intended limitations
 
 * May be somewhat slow, but still usable on a book-length text if you let it run for a weekend.
 
