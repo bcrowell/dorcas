@@ -17,7 +17,7 @@ require_relative "lib/smp"
 
 def main()
   temp_dir = 'temp'
-  text_file = 'sample.png'
+  text_file = 'easy.png'
 
 
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
@@ -67,7 +67,7 @@ def main()
     results.push(col)
   }
   highest_corr = 0.0
-  results = correl_many(text_ink,bw_ink,red_ink,background,i_lo,i_hi,j_lo,j_hi)
+  results = correl_many(text_ink,bw_ink,red_ink,background,i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i)
 
   hits = []
   xr = ((bbox[1]-bbox[0])*0.8).round

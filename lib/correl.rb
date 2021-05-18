@@ -1,15 +1,15 @@
 require 'fileutils'
 require 'json'
 
-def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height)
   start = Time.now
-  result = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+  result = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height)
   finish = Time.now
   print "\ntime for correl = #{finish-start} seconds\n"
   return result
 end
 
-def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height)
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
   n_cpus = guess_n_cores() # making this equal to the number of physical cores (not counting hypertrheading) gives the best performance
@@ -37,8 +37,9 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     files_to_remove.push(in_file)
     files_to_remove.push(out_file)
     out_files.push(out_file)
-    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
+    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,line_height)
     remember_slicing.push([this_dy_lo,this_dy_hi,offset])
+    print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
   }
 
   cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
@@ -58,13 +59,17 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   cpu = 0
   out_files.each { |filename|
     this_dy_lo,this_dy_hi,offset = remember_slicing[cpu]
-    cpu +=1
     this_result = retrieve_chapel_output(filename,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
     this_dy_lo.upto(this_dy_hi) { |j|
       dx_lo.upto(dx_hi) { |i|
-        result[j][i] = this_result[j-offset][i]
+        jj = j-this_dy_lo
+        if jj<0 || jj>this_result.length-1 then die("jj=#{jj} is out of range, #{result.length}, cpu=#{cpu}, j=#{j}, offset=#{offset}, this_dy=#{this_dy_lo},#{this_dy_hi}, dy_lo=#{dy_lo}, this_result.length=#{this_result.length}") end
+        if i-dx_lo<0 || i>this_result[jj].length then die("i out of range, i=#{j}, dx_lo-#{dx_lo}") end
+        foo = this_result[jj][i]
+        result[j-dy_lo][i-dx_lo] = this_result[jj][i-dx_lo]
       }
     }
+    cpu +=1
   }
   print "Retrieved chapel output.\n"
 
@@ -75,14 +80,15 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   return result
 end
 
-def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw)
+def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw,line_height)
   wp,hp = ink_array_dimensions(pat)
   wt,ht_raw = ink_array_dimensions(text)
   # Redefine array indices for the chapel code so it only knows about the rows we're providing.
   # The dy values can hang outside the actual physical bounds of the array a little, and that's ok.
   # Figure out the min and max row numbers that we're actually going to provide in the data passed to the chapel code.
-  if dy_lo_raw<0 then min_y=0 else min_y=dy_lo_raw end
-  max_y = dy_hi_raw+100 # +100 is a kludge, FIXME
+  min_y = dy_lo_raw-line_height
+  if min_y<0 then min_y = 0 end
+  max_y = dy_hi_raw+line_height
   if max_y>ht_raw-1 then max_y=ht_raw-1  end
   ht = max_y-min_y+1
   offset = min_y
@@ -105,6 +111,7 @@ def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_
       }
     }
   }
+  print "exiting prep_chapel_input, offset=#{offset}\n"
   return offset
 end
 
