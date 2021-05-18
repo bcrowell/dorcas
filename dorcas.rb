@@ -17,7 +17,7 @@ require_relative "lib/smp"
 
 def main()
   temp_dir = 'temp'
-  text_file = 'easy.png'
+  text_file = 'sample.png'
 
 
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
@@ -92,6 +92,8 @@ def main()
     }
   }
 
+  svg_filename = 'a.svg'
+  print "Writing svg file #{svg_filename}\n"
   images = []
   hits.each { |hit|
     i,j = hit
@@ -99,7 +101,7 @@ def main()
   }
   images.push([text_file,0,0,text.width,text.height,0.25])
   svg = svg_view(images,150.0)
-  File.open('a.svg','w') { |f| f.print svg }
+  File.open(svg_filename,'w') { |f| f.print svg }
 end
 
 
