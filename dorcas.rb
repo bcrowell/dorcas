@@ -13,6 +13,7 @@ require_relative "lib/svg"
 require_relative "lib/tempfile"
 require_relative "lib/file_util"
 require_relative "lib/constants"
+require_relative "lib/smp"
 
 def main()
   temp_dir = 'temp'

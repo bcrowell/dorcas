@@ -16,8 +16,10 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   rows_per_cpu = n_rows/n_cpus
   if rows_per_cpu*n_cpus<n_rows then rows_per_cpu += 1 end
   max_rows = constants()['correl_max_h']
-  print "rows_per_cpu=#{rows_per_cpu} max_rows=#{max_rows}\n" # qwe
+  wt,ht = ink_array_dimensions(text)
+  print "n_cpus=#{n_cpus} rows_per_cpu=#{rows_per_cpu} max_rows=#{max_rows} doing rows #{dy_lo}-#{dy_hi} out of 0-#{ht-1}\n"
   if rows_per_cpu>max_rows then die("rows_per_cpu=#{rows_per_cpu} is greater than CORREL_MAX_H") end
+
 
   temp_file_base = temp_file_name()
   files_to_remove = []
@@ -29,30 +31,42 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     this_dy_hi = this_dy_lo+rows_per_cpu-1
     if this_dy_lo>dy_hi then break end # can happen if number of rows to do is less than n_cpus
     if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
-    remember_slicing.push([this_dy_lo,this_dy_hi])
     file_base = temp_file_base+"-#{cpu}"
     in_file = file_base+".in"
     out_file = file_base+".out"
     files_to_remove.push(in_file)
     files_to_remove.push(out_file)
     out_files.push(out_file)
-    prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
+    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
+    remember_slicing.push([this_dy_lo,this_dy_hi,offset])
   }
 
   cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
   print cmd,"\n"
   system(cmd)
+  print "Done with processing correlations.\n"
 
-  cpu = 0
+  # Initialize the array of results with zeroes:
   result = []
+  dy_lo.upto(dy_hi) { |j|
+    row = []
+    dx_lo.upto(dx_hi) { |i| row.push(0.0) }
+    result.push(row)
+  }
+
+  # Read chapel results into the array.
+  cpu = 0
   out_files.each { |filename|
-    this_dy_lo,this_dy_hi = remember_slicing[cpu]
+    this_dy_lo,this_dy_hi,offset = remember_slicing[cpu]
     cpu +=1
     this_result = retrieve_chapel_output(filename,dx_lo,dx_hi,this_dy_lo,this_dy_hi)
-    this_result.each { |row|
-      result.push(row)
+    this_dy_lo.upto(this_dy_hi) { |j|
+      dx_lo.upto(dx_hi) { |i|
+        result[j][i] = this_result[j-offset][i]
+      }
     }
   }
+  print "Retrieved chapel output.\n"
 
   files_to_remove.each { |filename|
     FileUtils.rm(filename)
@@ -61,14 +75,25 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   return result
 end
 
-def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw)
   wp,hp = ink_array_dimensions(pat)
-  wt,ht = ink_array_dimensions(text)
+  wt,ht_raw = ink_array_dimensions(text)
+  # Redefine array indices for the chapel code so it only knows about the rows we're providing.
+  # The dy values can hang outside the actual physical bounds of the array a little, and that's ok.
+  # Figure out the min and max row numbers that we're actually going to provide in the data passed to the chapel code.
+  if dy_lo_raw<0 then min_y=0 else min_y=dy_lo_raw end
+  max_y = dy_hi_raw+100 # +100 is a kludge, FIXME
+  if max_y>ht_raw-1 then max_y=ht_raw-1  end
+  ht = max_y-min_y+1
+  offset = min_y
+  dy_lo = dy_lo_raw-offset
+  dy_hi = dy_hi_raw-offset
+  # write to a file:
   File.open(filename,'w') { |f| 
     f.print "#{wt}\n#{ht}\n#{wp}\n#{hp}\n"
     f.print "#{dx_lo}\n#{dx_hi}\n#{dy_lo}\n#{dy_hi}\n"
     f.print "#{ink_to_int(background)}\n"
-    0.upto(ht-1) { |j|
+    min_y.upto(max_y) { |j|
       0.upto(wt-1) { |i|
         f.print "#{ink_to_int(text[i][j])}\n"
       }
@@ -80,14 +105,15 @@ def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
       }
     }
   }
+  return offset
 end
 
 def retrieve_chapel_output(out_file,dx_lo,dx_hi,dy_lo,dy_hi)
   c = []
   File.open(out_file,'r') { |f|
-    err = f.gets;
+    err = f.gets.to_i;
     message = f.gets;
-    if err!=0 then die(message) end
+    if err!=0 then die("error from chapel: #{err}: #{message}") end
     dy_lo.upto(dy_hi) { |dy|
       row = []
       dx_lo.upto(dx_hi) { |dx|
