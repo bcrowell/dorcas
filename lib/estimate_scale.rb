@@ -1,5 +1,8 @@
 def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'none')
   # This could probably be made less sensitive to rotation by taking power spectra on vertical strips and adding those.
+  # In the example I looked at, the raw fft basically looks like a huge low-frequency peak, and then harmonics 1, 3, 4, and 6.
+  # The raw fft had a peak at about channel 16. The cepstrum's corresponding peak was at channel 71, and was pretty clean-looking,
+  # so it was pretty clear that it was giving a higher-resolution determination of the peak.
   n = image.height
   proj = []
   0.upto(image.height-1) { |j|
@@ -25,8 +28,8 @@ def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'none')
   while proj.length<nn do proj.push(avg) end
   fourier = fft(proj)
   # The following is just so we have some idea what frequency range to look at.
-  guess_period = 0.04*guess_dpi*guess_font_size
-  guess_freq = (nn*0.5/guess_period).to_i # Is the 0.5 right, Nyquist frequency?
+  guess_period = 0.08*guess_dpi*guess_font_size
+  guess_freq = (nn/guess_period).to_i
   min_freq = guess_freq/3
   if min_freq<3 then min_freq=3 end
   max_freq = guess_freq*3
@@ -47,8 +50,36 @@ def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'none')
   }
   period = nn/best.to_f
   print "fft period=#{period}, best frequency=#{nn.to_f/period}\n"
+
   graph_filename = "fft.pdf"
   make_graph(graph_filename,graph_x,graph_y,"#{nn}/spacing","r.m.s. amplitude")
   print "Graph written to #{graph_filename}\n"
-  return period
+
+  aa = []
+  0.upto(nn-1) { |ff|
+    if ff>=min_freq and ff<nn/2 then
+      v = fourier[ff].abs
+    else
+      v = 0.0
+    end
+    aa.push(v)
+  }
+  cepstrum = fft(aa)
+  graph_x = []
+  graph_y = []
+  max_cepstrum = 0.0
+  best_cepstrum = nil
+  0.upto(nn/4-1) { |t|
+    c = cepstrum[t].abs
+    graph_x.push(t)
+    graph_y.push(c)
+    if t<period*0.8 or t>period*1.2 then next end
+    if c>max_cepstrum then max_cepstrum=c; best_cepstrum=t end
+  }
+  graph_filename = "cepstrum.pdf"
+  make_graph(graph_filename,graph_x,graph_y,"period","cepstrum")
+  print "Cepstrum graph written to #{graph_filename}. Best period=#{best_cepstrum}.\n"
+
+  #return period
+  return best_cepstrum # seems better, has much higher resolution
 end
