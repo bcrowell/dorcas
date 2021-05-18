@@ -14,6 +14,7 @@ require_relative "lib/tempfile"
 require_relative "lib/file_util"
 require_relative "lib/constants"
 require_relative "lib/smp"
+require_relative "lib/graphing"
 
 def main()
   temp_dir = 'temp'
@@ -23,6 +24,7 @@ def main()
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
 
   text = ChunkyPNG::Image.from_file(text_file)
+  print "Input file is #{text_file}\n"
   text_line_spacing = estimate_line_spacing(text,window:'hann')
   print "text_line spacing=#{text_line_spacing}\n"
 

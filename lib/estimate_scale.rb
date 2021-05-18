@@ -34,11 +34,21 @@ def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'none')
   max = 0.0
   best = -1
   print "guess_period=#{guess_period}, min_freq=#{min_freq}, max period=#{nn/min_freq.to_f}\n" # qwe
-  min_freq.upto(max_freq) { |ff|
+  graph_x = []
+  graph_y = []
+  0.upto(nn-1) { |ff|
     a = fourier[ff].abs
+    if ff>0 and (ff<nn/8 or ff<max_freq) then
+      graph_x.push(ff)
+      graph_y.push(a)
+    end
+    if ff<min_freq or ff>max_freq then next end
     if a>max then max=a; best=ff end
   }
   period = nn/best.to_f
-  print "fft period=#{period}\n"
+  print "fft period=#{period}, best frequency=#{nn.to_f/period}\n"
+  graph_filename = "fft.pdf"
+  make_graph(graph_filename,graph_x,graph_y,"#{nn}/spacing","r.m.s. amplitude")
+  print "Graph written to #{graph_filename}\n"
   return period
 end
