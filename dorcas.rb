@@ -15,6 +15,8 @@ require_relative "lib/file_util"
 require_relative "lib/constants"
 require_relative "lib/smp"
 require_relative "lib/graphing"
+require_relative "lib/estimate_image_params"
+require_relative "lib/stat"
 
 def main()
   temp_dir = 'temp'
@@ -26,6 +28,8 @@ def main()
   print "Input file is #{text_file}\n"
   text_line_spacing = estimate_line_spacing(text,window:'hann')
   print "text_line spacing=#{text_line_spacing}\n"
+  stats = ink_stats(text)
+  print "ink stats=#{stats}\n"
 
   f = Font.new()
   print f.pango_string,"\n"
@@ -34,7 +38,7 @@ def main()
   hires = 1
   dpi = 300 # initial guess
   dpi = (hires*dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi).to_f).round
-  background = 0.0 # background ink level of text; should actually estimate this, e.g., take median and then take median of everything below that
+  background = stats['submedian'] # background ink level of text, in ink units
 
   bw,red,pat_line_spacing,bbox = char_to_pat('ε',temp_dir,f,dpi)
   print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"
