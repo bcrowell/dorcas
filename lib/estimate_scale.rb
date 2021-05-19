@@ -1,17 +1,11 @@
 def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'none')
   # This could probably be made less sensitive to rotation by taking power spectra on vertical strips and adding those.
   # In the example I looked at, the raw fft basically looks like a huge low-frequency peak, and then harmonics 1, 3, 4, and 6.
+  # The low-frequency peak is ragged enough that it has local maxima that are the biggest maxima in the spectrum.
   # The raw fft had a peak at about channel 16. The cepstrum's corresponding peak was at channel 71, and was pretty clean-looking,
   # so it was pretty clear that it was giving a higher-resolution determination of the peak.
   n = image.height
-  proj = []
-  0.upto(image.height-1) { |j|
-    x = 0.0
-    0.upto(image.width-1) { |i|
-      x = x+color_to_ink(image[i,j])
-    }
-    proj.push(x)
-  }
+  proj = project_onto_y(image)
   # Windowing:
   0.upto(image.height-1) { |j|
     x = 2.0*Math::PI*j.to_f/n

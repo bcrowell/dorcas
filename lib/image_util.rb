@@ -77,6 +77,19 @@ def bounding_box(image)
   return bbox
 end
 
+def project_onto_y(image)
+  n = image.height
+  proj = []
+  0.upto(image.height-1) { |j|
+    x = 0.0
+    0.upto(image.width-1) { |i|
+      x = x+color_to_ink(image[i,j])
+    }
+    proj.push(x)
+  }
+  return proj
+end
+
 def has_ink(color)
   # https://rdoc.info/gems/chunky_png/ChunkyPNG/Color
   # alpha = color & 0xff ... is always 255
