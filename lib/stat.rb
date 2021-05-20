@@ -39,10 +39,15 @@ def find_percentile(x,f)
 end
 
 def greatest(a)
-  g = -2*(a[0].abs)
+  return greatest_in_range(a,0,a.length-1)
+end
+
+def greatest_in_range(a,i_lo,i_hi,filter:lambda {|x| x})
+  g = nil
   ii = nil
-  0.upto(a.length) { |i|
-    if not a[i].nil? and a[i]>g then ii=i; g=a[i] end
+  i_lo.upto(i_hi) { |i|
+    aa = filter.call(a[i])
+    if g.nil? or aa>g then ii=i; g=aa end
   }
   return [ii,g]
 end

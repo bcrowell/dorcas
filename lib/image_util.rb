@@ -77,7 +77,7 @@ def bounding_box(image)
   return bbox
 end
 
-def project_onto_y(image)
+def project_onto_y(image,lo_col,hi_col)
   n = image.height
   proj = []
   0.upto(image.height-1) { |j|
@@ -90,12 +90,16 @@ def project_onto_y(image)
   return proj
 end
 
-def random_sample(image,n_points)
+def random_sample(image,n_points,threshold,scale)
   # Try to efficiently and fairly take a sample not containing any duplicated points.
   # If n_points is comparable to or greater than the number of pixels in the image, then
   # nothing really bad happens except that the details of the sampling will not be quite
   # statistically ideal. If n_points is greater than the number of pixels, then we only
   # take a number of samples equal to the number of pixels (or nearly so).
+  # Use with threshold:
+  # If threshold is not nil, then we only return results that appear to be in or near actual text (as opposed to margins or other
+  # large regions of whitespace). There must be a pixel over threshold within the distance scale.
+  # This will be much, much slower.
   sample = []
   w = image.width
   h = image.height
@@ -109,7 +113,20 @@ def random_sample(image,n_points)
     k = z%n
     i = k%w
     j = k/w
-    sample.push(color_to_ink(image[i,j]))
+    if not threshold.nil? then
+      hit = false
+      (i-scale).upto(i+scale) { |ii|
+        if ii<0 or ii>w-1 then next end
+        (j-scale).upto(j+scale) { |jj|
+          if jj<0 or jj>h-1 then next end
+          if color_to_ink(image[ii,jj])>threshold then hit=true; break end
+        }
+        if hit then break end
+      }
+    else
+      hit = true
+    end
+    if hit then sample.push(color_to_ink(image[i,j])) end
     # Wait time between events in a Poisson process is exponentially distributed. Generate a number with an exponential distribution.
     # https://www.eg.bucknell.edu/~xmeng/Course/CS6337/Note/master/node50.html
     y = rand # uniform (0,1)

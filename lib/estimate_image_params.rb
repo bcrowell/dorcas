@@ -1,5 +1,5 @@
-def ink_stats(image)
-  sample = random_sample(image,1000) # nothing bad happens if the image has less than 1000 pixels, we just get a smaller sample
+def ink_stats(image,scale)
+  sample = random_sample(image,1000,nil,nil) # nothing bad happens if the image has less than 1000 pixels, we just get a smaller sample
   median = find_median(sample)
   min = sample.min
   max = sample.max
@@ -11,12 +11,18 @@ def ink_stats(image)
   # make a sign-language "L." There's a huge peak that is the whitespace, then a fairly flat distribution of gray tones
   # going up to some cut-off. There is only a very slight hump where you'd expect the upper peak to have been. This
   # would certainly look very different on something like a monochrome computer font, or possibly at higher resolution.
-  dark = dark_ink(sample,median,submedian,supermedian,max)
-  return {'median'=>median,'min'=>min,'max'=>max,'submedian'=>submedian,'supermedian'=>supermedian,'dark'=>dark}
+  threshold,dark = dark_ink(sample,median,submedian,supermedian,max)
+  sample_in_text = random_sample(image,1000,threshold,scale)
+  mean_in_text,sd_in_text = find_mean_sd(sample_in_text)
+  return {'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
+        'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark,
+        'mean_in_text'=>mean_in_text,'sd_in_text'=>sd_in_text}
 end
 
 def dark_ink(sample,median,submedian,supermedian,max)
-  # An estimate of what the darkest ink color looks like. This is meant to give something reasonable
+  # Returns [threshold,dark].
+  # Threshold is meant to be a value such that anything over this value is definitely due to ink.
+  # Dark is meant to be an estimate of a typical ink level for a fully inked solid region. This is meant to give something reasonable
   # both in the case where there is a prominent upper peak in the distribution and in the case where there isn't.
   w = 0.4
   trough = (1.0-w)*submedian+w*max # try to find a spot that is to the right of the huge whitespace peak
@@ -27,5 +33,6 @@ def dark_ink(sample,median,submedian,supermedian,max)
   # On perfect monochrome data, it should be equal to the upper peak value.
   garbage,result1 = find_sup_sub_median(sample,x)
   garbage,result2 = find_sup_sub_median(sample,result1)
-  return result2
+  return [x,result2]
 end
+

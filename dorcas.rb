@@ -26,9 +26,9 @@ def main()
 
   text = ChunkyPNG::Image.from_file(text_file)
   print "Input file is #{text_file}\n"
-  text_line_spacing = estimate_line_spacing(text,window:'hann')
+  text_line_spacing = estimate_line_spacing(text)
   print "text_line spacing=#{text_line_spacing}\n"
-  stats = ink_stats(text)
+  stats = ink_stats(text,(text_line_spacing*0.3).round)
   print "ink stats=#{stats}\n"
 
   f = Font.new()

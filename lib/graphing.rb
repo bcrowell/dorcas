@@ -1,9 +1,15 @@
 def make_graph(pdf_file,x_values,y_values,x_label,y_label)
-  x = x_values.join(",")
-  y = y_values.join(",")
+  if x_values.nil? then
+    y = y_values.join(",")
+    data = "c(#{y})"
+  else
+    x = x_values.join(",")
+    y = y_values.join(",")
+    data = "c(#{x}),c(#{y})"
+  end
   r = <<-"R_CODE"
     pdf("#{pdf_file}")
-    plot(c(#{x}),c(#{y}),xlab="#{x_label}",ylab="#{y_label}")
+    plot(#{data},xlab="#{x_label}",ylab="#{y_label}",type="l")
   R_CODE
   file = temp_file_name()
   File.open(file,'w') { |f|

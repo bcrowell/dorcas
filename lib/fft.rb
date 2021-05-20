@@ -1,3 +1,15 @@
+def windowing(y,window)
+  n = y.length
+  y2 = []
+  0.upto(n-1) { |j|
+    x = 2.0*Math::PI*j.to_f/n
+    if window=='none' then w = 1.0 end
+    if window=='hann' then w = 0.5*(1-Math::cos(x)) end
+    y2.push(y[j]*w)
+  }
+  return y2
+end
+
 # Code by Greg Johnson, http://www.gregfjohnson.com/fftruby/
 #
 # Solve "vec = fft_matrix * beta" for beta (modulo a constant.)
