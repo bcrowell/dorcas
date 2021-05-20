@@ -39,6 +39,7 @@ def find_percentile(x,f)
 end
 
 def greatest(a)
+  # returns [i,a[i]]
   return greatest_in_range(a,0,a.length-1)
 end
 

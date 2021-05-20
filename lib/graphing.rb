@@ -15,7 +15,8 @@ def make_graph(pdf_file,x_values,y_values,x_label,y_label)
   File.open(file,'w') { |f|
     f.print r
   }
-  print "file is #{file}\n"
+  #print "file is #{file}\n"
   system("R --quiet --slave --no-save --no-restore-data <#{file}")
   FileUtils.remove_dir(file)
+  print "Graph written to file #{pdf_file}\n"
 end

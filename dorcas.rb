@@ -31,6 +31,8 @@ def main()
   stats = ink_stats(text,(text_line_spacing*0.3).round)
   print "ink stats=#{stats}\n"
 
+  exit(0)
+
   f = Font.new()
   print f.pango_string,"\n"
 
