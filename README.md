@@ -27,8 +27,9 @@ Dumb Optical Recognition using Correlation
 
 ## Dependencies:
 
+ruby
+
 chapel
 
-GNU parallel
-
+debian packages: parallel r-cran-minpack.lm
 

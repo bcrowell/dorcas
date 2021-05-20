@@ -1,14 +1,23 @@
-def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'hann')
-  verbosity = 1
-  # 1 -> reminds you, e.g., that it's only using left half of page
-  # 2 -> a couple of brief lines of summary
-  # 3 -> lots of step-by-step diagnostics, and writing of graphs
-
+def estimate_scale(image,guess_dpi:300,guess_font_size:12,spacing_multiple:1.0,window:'hann',verbosity:1)
+  # It helps if guess_dpi is right to within a factor of 2. Archive.org seems to use 500 dpi.
+  # Use spacing_multiple=2 if it's double-spaced.
+  # verbosity:
+  #   1 -> reminds you, e.g., that it's only using left half of page
+  #   2 -> a couple of brief lines of summary
+  #   3 -> lots of step-by-step diagnostics, and writing of graphs
   proj = project_onto_y(image,0,image.width/2-1)
   if verbosity>=1 then print "Analyzing line spacing based on the left half of the page.\n" end
   # ... Doing only the left half of the image serves two purposes. If the image is rotated a little, then this mitigates the problem.
   #     Also, if there are two columns of text, then this will pick up only one. This could of course be the wrong choice in
   #     some cases, e.g., if there's a picture on the left side of the page.
+  line_spacing = estimate_line_spacing(proj,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
+
+  font_height = line_spacing
+
+  return [line_spacing,font_height]
+end
+
+def estimate_line_spacing(proj,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
   if verbosity>=3 then make_graph("proj.pdf",nil,proj,"row","projection of left half") end
   # The projection looks pretty much like a square wave, the main deviation from a square wave shape being that the top has a deep indentation
   # near its middle.
@@ -20,7 +29,12 @@ def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'hann')
   if 2**pow2<n then pow2=pow2+1 end
   nn = 2**pow2
   proj_windowed = windowing_and_padding(proj,window,nn,avg)
-  guess_period = 0.08*guess_dpi*guess_font_size
+  guess_period = 0.0171*guess_dpi*guess_font_size*spacing_multiple
+  # The constant in front is derived from real-world data: took one of my books (output from LaTeX) and found that with an 11-point font,
+  # 12 lines were 57.5 mm. Calculation is then (57.5 mm)(1/12)(1/11)(1/25.4 mm). For the Giles Odyssey book, in the archive.org scan, this
+  # produces a guessed period of about 100 pixels, whereas the actual period is about 70 pixels. This seems kind of reasonable, since
+  # that book seems to have been in a tiny pocketbook format and a fairly small font. The Cheng+cepstrum algorithm seems quite robust,
+  # so it's not even a big deal if this estimate is off by a factor of 2 or something.
 
   if verbosity>=3 then print "guess_period=#{guess_period}\n" end
   cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,verbosity)
@@ -68,7 +82,7 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,v
   if tooth_width<1 then tooth_width=1 end
   results_energy = []
   results_periods = []
-  if verbosity>=3 then print "Cheng comb, length=#{y.length}, period=#{period_lo}, #{period_hi}, n_teeth=#{n_teeth}, tooth_width=#{tooth_width}\n" end
+  if verbosity>=3 then print "Cheng comb, length=#{y.length}, period=#{period_lo}-#{period_hi}, n_teeth=#{n_teeth}, tooth_width=#{tooth_width}\n" end
   period_lo.upto(period_hi) { |period|
     results_energy_this_period = []
     results_inputs_this_period = []
