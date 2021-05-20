@@ -27,9 +27,11 @@ def main()
 
   text = ChunkyPNG::Image.from_file(text_file)
   print "Input file is #{text_file}\n"
-  text_line_spacing,font_height = estimate_scale(text)
+  stats = ink_stats_1(text)
+  peak_to_bg = stats['dark']/stats['submedian']
+  text_line_spacing,font_height = estimate_scale(text,peak_to_bg)
   print "text_line spacing=#{text_line_spacing}\n"
-  stats = ink_stats(text,(text_line_spacing*0.3).round)
+  stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)
   print "ink stats=#{stats}\n"
 
   exit(0)

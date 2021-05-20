@@ -1,4 +1,4 @@
-def estimate_scale(image,guess_dpi:300,guess_font_size:12,spacing_multiple:1.0,window:'hann',verbosity:1)
+def estimate_scale(image,peak_to_bg,guess_dpi:300,guess_font_size:12,spacing_multiple:1.0,window:'hann',verbosity:1)
   # It helps if guess_dpi is right to within a factor of 2. Archive.org seems to use 500 dpi.
   # Use spacing_multiple=2 if it's double-spaced.
   # verbosity:
@@ -21,13 +21,63 @@ def estimate_scale(image,guess_dpi:300,guess_font_size:12,spacing_multiple:1.0,w
 
   line_spacing = estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
 
-  font_height = estimate_font_height(proj,proj_windowed,n,nn,line_spacing)
+  font_height = estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg)
 
   return [line_spacing,font_height]
 end
 
-def estimate_font_height(proj,proj_windowed,n,nn,line_spacing)
+def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg)
+  verbosity = 4
   # Make a blurred copy of the projection so that we can get a good estimate of where the center of each line is.
+  proj_windowed = windowing_and_padding(proj,'none',nn,avg) # make a projection without the Hann window
+  fourier = fft(proj_windowed)
+  # Low-pass filter:
+  min_period = line_spacing/2.0
+  max_freq = (nn/min_period).round
+  max_freq.upto(nn-1) { |i|
+    fourier[i] = 0.0
+  }
+  # Reverse fourier:
+  blurred = fft(fourier,direction:-1).map {|y| y.abs}
+  nb = nn/2
+  blurred = blurred[0..nb-1]
+  if verbosity>=3 then make_graph("blurred.pdf",nil,blurred,"row","projection of left half") end
+
+  top,bottom = greatest(blurred)[1],least(blurred)[1]
+  mid = 0.5*(top+bottom)
+  # Look for local maxima that are above mid.
+  half_period = (line_spacing/2.0).round
+  middies = []
+  1.upto(nb-2) { |i|
+    if not (blurred[i]>blurred[i-1] and blurred[i]>blurred[i+1]) then next end
+    ok = true
+    (i-half_period).upto(i+half_period) { |ii|
+      if ii<0 or ii>nb-1 then next end
+      if blurred[ii]>blurred[i] then ok=false; break end
+    }
+    if not ok then next end
+    if verbosity>=4 then print "  found midpoint at #{i}\n" end
+    middies.push(i)
+  }
+
+  # Make a copy of proj that's folded like an accordion pleat, so that we have a single average projection of a line of text.
+  # The center goes at array index c.
+  if verbosity>=4 then print "  half_period=#{half_period}\n" end
+  c = half_period
+  na = 2*c
+  a = []
+  0.upto(na-1) { a.push(0.0) }
+  middies.each { |mid|
+    (-half_period).upto(half_period) { |offset|
+      i = mid+offset
+      if i<0 or i>n-1 then next end
+      if offset+c<0 or offset+c>na-1 then next end
+      a[offset+c] += proj[i] 
+    }
+  }
+  if verbosity>=3 then make_graph("accordion.pdf",nil,a,"row","average projection") end
+  
+
   return line_spacing
 end
 

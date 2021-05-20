@@ -1,4 +1,4 @@
-def ink_stats(image,scale)
+def ink_stats_1(image)
   sample = random_sample(image,1000,nil,nil) # nothing bad happens if the image has less than 1000 pixels, we just get a smaller sample
   median = find_median(sample)
   min = sample.min
@@ -12,11 +12,17 @@ def ink_stats(image,scale)
   # going up to some cut-off. There is only a very slight hump where you'd expect the upper peak to have been. This
   # would certainly look very different on something like a monochrome computer font, or possibly at higher resolution.
   threshold,dark = dark_ink(sample,median,submedian,supermedian,max)
+  return {'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
+        'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark}
+end
+
+def ink_stats_2(image,stats,scale)
+  # Scale is an estimate of something like the x-height, 
+  # used so we can get some kind of guess as to how far we have to be from ink to be in total whitespace
+  threshold = stats['threshold']
   sample_in_text = random_sample(image,1000,threshold,scale)
   mean_in_text,sd_in_text = find_mean_sd(sample_in_text)
-  return {'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
-        'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark,
-        'mean_in_text'=>mean_in_text,'sd_in_text'=>sd_in_text}
+  return stats.merge({'mean_in_text'=>mean_in_text,'sd_in_text'=>sd_in_text})
 end
 
 def dark_ink(sample,median,submedian,supermedian,max)

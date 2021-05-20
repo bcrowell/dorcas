@@ -43,12 +43,18 @@ def greatest(a)
   return greatest_in_range(a,0,a.length-1)
 end
 
-def greatest_in_range(a,i_lo,i_hi,filter:lambda {|x| x})
+def least(a)
+  # returns [i,a[i]]
+  return greatest_in_range(a,0,a.length-1,flip:-1)
+end
+
+def greatest_in_range(a,i_lo,i_hi,filter:lambda {|x| x},flip:1)
+  # with flip=-1, returns the lowest
   g = nil
   ii = nil
   i_lo.upto(i_hi) { |i|
-    aa = filter.call(a[i])
+    aa = filter.call(a[i])*flip
     if g.nil? or aa>g then ii=i; g=aa end
   }
-  return [ii,g]
+  return [ii,g*flip]
 end
