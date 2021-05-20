@@ -10,25 +10,32 @@ def estimate_scale(image,guess_dpi:300,guess_font_size:12,spacing_multiple:1.0,w
   # ... Doing only the left half of the image serves two purposes. If the image is rotated a little, then this mitigates the problem.
   #     Also, if there are two columns of text, then this will pick up only one. This could of course be the wrong choice in
   #     some cases, e.g., if there's a picture on the left side of the page.
-  line_spacing = estimate_line_spacing(proj,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
 
-  font_height = line_spacing
-
-  return [line_spacing,font_height]
-end
-
-def estimate_line_spacing(proj,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
-  if verbosity>=3 then make_graph("proj.pdf",nil,proj,"row","projection of left half") end
-  # The projection looks pretty much like a square wave, the main deviation from a square wave shape being that the top has a deep indentation
-  # near its middle.
-
-  # The following is just so we have some idea what frequency range to look at.
+  # Make an fft-friendly version of the projection:
   n = proj.length
   avg,sd = find_mean_sd(proj)
   pow2 = (Math::log(n)/Math::log(2.0)).to_i
   if 2**pow2<n then pow2=pow2+1 end
   nn = 2**pow2
   proj_windowed = windowing_and_padding(proj,window,nn,avg)
+
+  line_spacing = estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
+
+  font_height = estimate_font_height(proj,proj_windowed,n,nn,line_spacing)
+
+  return [line_spacing,font_height]
+end
+
+def estimate_font_height(proj,proj_windowed,n,nn,line_spacing)
+  # Make a blurred copy of the projection so that we can get a good estimate of where the center of each line is.
+  return line_spacing
+end
+
+def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
+  if verbosity>=3 then make_graph("proj.pdf",nil,proj,"row","projection of left half") end
+  # The projection looks pretty much like a square wave, the main deviation from a square wave shape being that the top has a deep indentation
+  # near its middle.
+
   guess_period = 0.0171*guess_dpi*guess_font_size*spacing_multiple
   # The constant in front is derived from real-world data: took one of my books (output from LaTeX) and found that with an 11-point font,
   # 12 lines were 57.5 mm. Calculation is then (57.5 mm)(1/12)(1/11)(1/25.4 mm). For the Giles Odyssey book, in the archive.org scan, this
@@ -116,7 +123,7 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   # so it was pretty clear that it was giving a higher-resolution determination of the peak.
   proj = proj_windowed
   avg,sd = find_mean_sd(proj)
-  while proj.length<nn do proj.push(avg) end
+  if proj.length<nn then die("hey, proj was already supposed to be windowed and padded in windowing_and_padding") end
   fourier = fft(proj)
   if verbosity>=3 then graph_fft(fourier,max_freq,nn) end
   
