@@ -17,6 +17,7 @@ require_relative "lib/smp"
 require_relative "lib/graphing"
 require_relative "lib/estimate_image_params"
 require_relative "lib/stat"
+require_relative "lib/r_interface"
 
 def main()
   temp_dir = 'temp'

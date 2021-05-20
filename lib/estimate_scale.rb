@@ -111,10 +111,10 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
     end
     aa.push(v)
   }
-  cepstrum = fft(aa)
+  cepstrum = fft(aa).map {|a| a.abs}
   min_period = (nn/max_freq).round
   max_period = (nn/min_freq).round
-  best_cepstrum,garbage = greatest_in_range(cepstrum,min_period,max_period,filter:lambda {|a| a.abs})
+  best_cepstrum,garbage = greatest_in_range(cepstrum,min_period,max_period)
   print "best period from cepstrum = #{best_cepstrum}\n"
 
 
@@ -127,7 +127,33 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   }
   make_graph("cepstrum.pdf",graph_x,graph_y,"period","cepstrum")
 
-  return best_cepstrum
+  period = fit_gaussian_to_peak(cepstrum,best_cepstrum-2,best_cepstrum+2,[best_cepstrum,1,cepstrum[best_cepstrum]])
+  print "gaussian fit = #{period}\n"
+
+  return period
+end
+
+def fit_gaussian_to_peak(data,lo,hi,guesses)
+  # Given an array y_values and guessed parameters of a gaussian, refine the fit using least-squares.
+  # Return the centroid.
+  # The result is a real number and is hoped to have resolution better than one channel.
+  mu,sigma,height = guesses
+  x_values = []
+  y_values = []
+  lo.upto(hi) { |i|
+    x_values.push(i)
+    y_values.push(data[i])
+  }
+  x = x_values.join(",")
+  y = y_values.join(",")
+  r = <<-"R_CODE"
+    library(minpack.lm)
+    xvalues <- c(#{x})
+    yvalues <- c(#{y})
+    model <- nlsLM(yvalues ~ height*exp(-0.5*(xvalues-mu)^2/sigma^2),start = list(mu=#{mu},sigma=#{sigma},height=#{height}))
+    cat("__output__",coef(summary(model))["mu","Estimate"],"\n")
+  R_CODE
+  return run_r_code(r).to_f
 end
 
 def graph_fft(fourier,max_freq,nn)
