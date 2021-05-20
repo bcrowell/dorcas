@@ -1,10 +1,15 @@
 def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'hann')
+  verbosity = 1
+  # 1 -> reminds you, e.g., that it's only using left half of page
+  # 2 -> a couple of brief lines of summary
+  # 3 -> lots of step-by-step diagnostics, and writing of graphs
+
   proj = project_onto_y(image,0,image.width/2-1)
-  print "Analyzing line spacing based on the left half of the page.\n"
+  if verbosity>=1 then print "Analyzing line spacing based on the left half of the page.\n" end
   # ... Doing only the left half of the image serves two purposes. If the image is rotated a little, then this mitigates the problem.
   #     Also, if there are two columns of text, then this will pick up only one. This could of course be the wrong choice in
   #     some cases, e.g., if there's a picture on the left side of the page.
-  make_graph("proj.pdf",nil,proj,"row","projection of left half")
+  if verbosity>=3 then make_graph("proj.pdf",nil,proj,"row","projection of left half") end
   # The projection looks pretty much like a square wave, the main deviation from a square wave shape being that the top has a deep indentation
   # near its middle.
 
@@ -17,9 +22,9 @@ def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'hann')
   proj_windowed = windowing_and_padding(proj,window,nn,avg)
   guess_period = 0.08*guess_dpi*guess_font_size
 
-  print "guess_period=#{guess_period}\n"
-  cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period)
-  print "cheng_period=#{cheng_period}\n"
+  if verbosity>=3 then print "guess_period=#{guess_period}\n" end
+  cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,verbosity)
+  if verbosity>=3 then print "cheng_period=#{cheng_period}\n" end
 
   # Now refine the estimate using the cepstrum technique.
   guess_freq = (nn/cheng_period).round
@@ -30,15 +35,15 @@ def estimate_line_spacing(image,guess_dpi:30,guess_font_size:12,window:'hann')
   if min_freq<3 then min_freq=3 end # shouldn't actually happen
   if max_freq==guess_freq then max_freq=guess_freq+1 end
   if max_freq>nn-1 then max_freq=nn-1 end
-  print "inputs to cepstrum: min_freq=#{min_freq}, max_freq=#{max_freq}\n"
-  period = estimate_line_spacing_cepstrum(proj,proj_windowed,window,nn,cheng_period,guess_freq,min_freq,max_freq)
+  if verbosity>=3 then print "inputs to cepstrum: min_freq=#{min_freq}, max_freq=#{max_freq}\n" end
+  period = estimate_line_spacing_cepstrum(proj,proj_windowed,window,nn,cheng_period,guess_freq,min_freq,max_freq,verbosity)
 
-  print "period=#{period}, best frequency=#{nn.to_f/period}\n"
+  if verbosity>=2 then print "Line spacing is estimated to have period #{period}.\n" end
 
   return period
 end
 
-def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period)
+def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,verbosity)
   # Differentiate and square.
   n = proj.length
   y = []
@@ -48,7 +53,7 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period)
     y.push(a**2)
   }
 
-  make_graph("sq_diff.pdf",nil,y,"row","y'^2")
+  if verbosity>=3 then make_graph("sq_diff.pdf",nil,y,"row","y'^2") end
 
   period_lo = (guess_period*0.3).round
   period_hi = (guess_period*3.0).round
@@ -63,7 +68,7 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period)
   if tooth_width<1 then tooth_width=1 end
   results_energy = []
   results_periods = []
-  print "Cheng comb, length=#{y.length}, period=#{period_lo}, #{period_hi}, n_teeth=#{n_teeth}, tooth_width=#{tooth_width}\n"
+  if verbosity>=3 then print "Cheng comb, length=#{y.length}, period=#{period_lo}, #{period_hi}, n_teeth=#{n_teeth}, tooth_width=#{tooth_width}\n" end
   period_lo.upto(period_hi) { |period|
     results_energy_this_period = []
     results_inputs_this_period = []
@@ -85,12 +90,12 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period)
   }
   m,energy = greatest(results_energy)
   period = results_periods[m]
-  print "Cheng comb gives best period=#{period}\n"
-  make_graph("cheng.pdf",results_periods,results_energy,"period","energy")
+  if verbosity>=3 then print "Cheng comb gives best period=#{period}\n" end
+  if verbosity>=3 then make_graph("cheng.pdf",results_periods,results_energy,"period","energy") end
   return period
 end
 
-def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period,guess_freq,min_freq,max_freq)
+def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period,guess_freq,min_freq,max_freq,verbosity)
   # In the example I looked at, the raw fft basically looks like a huge low-frequency peak, and then harmonics 1, 3, 4, and 6.
   # The low-frequency peak is ragged enough that it has local maxima that are the biggest maxima in the spectrum.
   # The raw fft had a peak at about channel 16. The cepstrum's corresponding peak was at channel 71, and was pretty clean-looking,
@@ -99,7 +104,7 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   avg,sd = find_mean_sd(proj)
   while proj.length<nn do proj.push(avg) end
   fourier = fft(proj)
-  graph_fft(fourier,max_freq,nn)
+  if verbosity>=3 then graph_fft(fourier,max_freq,nn) end
   
   # cepstrum analysis:
   aa = []
@@ -115,7 +120,7 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   min_period = (nn/max_freq).round
   max_period = (nn/min_freq).round
   best_cepstrum,garbage = greatest_in_range(cepstrum,min_period,max_period)
-  print "best period from cepstrum = #{best_cepstrum}\n"
+  if verbosity>=3 then print "best period from cepstrum = #{best_cepstrum}\n" end
 
 
   graph_x = []
@@ -125,10 +130,10 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
     graph_x.push(t)
     graph_y.push(c)
   }
-  make_graph("cepstrum.pdf",graph_x,graph_y,"period","cepstrum")
+  if verbosity>=3 then make_graph("cepstrum.pdf",graph_x,graph_y,"period","cepstrum") end
 
   period = fit_gaussian_to_peak(cepstrum,best_cepstrum-2,best_cepstrum+2,[best_cepstrum,1,cepstrum[best_cepstrum]])
-  print "gaussian fit = #{period}\n"
+  if verbosity>=3 then print "gaussian fit = #{period}\n" end
 
   return period
 end
