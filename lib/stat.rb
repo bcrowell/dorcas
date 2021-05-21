@@ -53,6 +53,7 @@ def greatest_in_range(a,i_lo,i_hi,filter:lambda {|x| x},flip:1)
   g = nil
   ii = nil
   i_lo.upto(i_hi) { |i|
+    if i<0 or i>a.length-1 then next end
     aa = filter.call(a[i])*flip
     if g.nil? or aa>g then ii=i; g=aa end
   }

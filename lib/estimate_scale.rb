@@ -21,13 +21,13 @@ def estimate_scale(image,peak_to_bg,guess_dpi:300,guess_font_size:12,spacing_mul
 
   line_spacing = estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)
 
-  font_height = estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg)
+  font_height = estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,verbosity)
 
   return [line_spacing,font_height]
 end
 
-def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg)
-  verbosity = 4
+def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,verbosity)
+  # Try to estimate x-height. (Estimating capital height or hp height seems much harder.)
   # Make a blurred copy of the projection so that we can get a good estimate of where the center of each line is.
   proj_windowed = windowing_and_padding(proj,'none',nn,avg) # make a projection without the Hann window
   fourier = fft(proj_windowed)
@@ -63,22 +63,50 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg)
   # Make a copy of proj that's folded like an accordion pleat, so that we have a single average projection of a line of text.
   # The center goes at array index c.
   if verbosity>=4 then print "  half_period=#{half_period}\n" end
-  c = half_period
+  c = (half_period).round
   na = 2*c
   a = []
   0.upto(na-1) { a.push(0.0) }
   middies.each { |mid|
-    (-half_period).upto(half_period) { |offset|
+    (-c).upto(c) { |offset|
       i = mid+offset
       if i<0 or i>n-1 then next end
       if offset+c<0 or offset+c>na-1 then next end
       a[offset+c] += proj[i] 
     }
   }
+  # Try to subtract background:
+  peak = greatest_in_range(a,c-half_period,c+half_period)[1]
+  bg1 = peak/peak_to_bg # estimate from global stats for the document
+  bg2 = greatest_in_range(a,c-half_period,c+half_period,flip:-1)[1] # estimate from the accordion itself
+  # bg2 seems to be higher, probably because crap gets in the tiny, narrow pure-white spaces between lines
+  bg = greatest([bg1,bg2])[1]
+  a = a.map{ |x| (x-bg)/(peak-bg)} # scale so that 1=max and 0=bg (approximately)
   if verbosity>=3 then make_graph("accordion.pdf",nil,a,"row","average projection") end
   
+  # Try to guess x-height.
+  f = 0.42 # fraction of peak height at which we pick off the shoulder; set empirically from some sample text
+  right_shoulder = nil
+  c.upto(c+half_period) { |i|
+    if a[i]<f then right_shoulder=i; break end
+  }
+  left_shoulder = nil
+  c.downto(c-half_period) { |i|
+    if a[i]<f then left_shoulder=i; break end
+  }
+  sane_x_height = 0.5*line_spacing/spacing_multiple # just a rough guess as a fallback
+  if left_shoulder.nil? or right_shoulder.nil? then
+    x_height = sane_x_height
+  else
+    x_height = right_shoulder-left_shoulder
+    if x_height>0.6*line_spacing or x_height<sane_x_height*0.5 then
+      # ... fails sanity check; the 0.5 in the second condition is to allow for the possibility that the user failed
+      #     to override the default of spacing_multiple=1 but in fact it's double-spaced
+      x_height = sane_x_height
+    end
+  end
 
-  return line_spacing
+  return x_height
 end
 
 def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spacing_multiple,window,verbosity)

@@ -20,19 +20,26 @@ require_relative "lib/stat"
 require_relative "lib/r_interface"
 
 def main()
-  temp_dir = 'temp'
   text_file = 'sample.png'
+  spacing_multiple = 1.0 # set to 2 if double-spaced
 
+  temp_dir = 'temp'
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
 
   text = ChunkyPNG::Image.from_file(text_file)
   print "Input file is #{text_file}\n"
   stats = ink_stats_1(text)
   peak_to_bg = stats['dark']/stats['submedian']
-  text_line_spacing,font_height = estimate_scale(text,peak_to_bg)
-  print "text_line spacing=#{text_line_spacing}\n"
+  text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple)
+  print "text_line spacing=#{text_line_spacing}, x_height=#{x_height}\n"
   stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)
   print "ink stats=#{stats}\n"
+  if x_height<0.35*text_line_spacing/spacing_multiple then 
+    warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
+  end
+
+  # The result of all this is that text_line_spacing is quite robust and precise, whereas x_height is
+  # total crap, should probably not be used for anything more than the warning above.
 
   exit(0)
 
@@ -118,6 +125,13 @@ end
 def die(message)
   $stderr.print message,"\n"
   exit(-1)
+end
+
+def warn(message)
+  $stderr.print "****************************************************************************************************************\n"
+  $stderr.print "              WARNING\n"
+  $stderr.print message,"\n"
+  $stderr.print "****************************************************************************************************************\n"
 end
 
 main()
