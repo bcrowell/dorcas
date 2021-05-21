@@ -28,11 +28,18 @@ end
 
 def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,verbosity)
   # Try to estimate x-height. (Estimating capital height or hp height seems much harder.)
+
+  # The following two parameters cannot be varied independently, have to be tuned up together. I picked them by playing
+  # with a sample from Giles, Odyssey. Picked p_blur to be big enough so structure was visible in accordion.pdf, small enough so that there were no
+  # bogus oscillations. Picked p_shoulder to give roughly the right x_height for this example.
+  p_blur = 2.5 # frequencies above 2.5 times the fundamental get filtered out
+  p_shoulder = 0.48 # pick off shoulders of projection at this level
+
   # Make a blurred copy of the projection so that we can get a good estimate of where the center of each line is.
   proj_windowed = windowing_and_padding(proj,'none',nn,avg) # make a projection without the Hann window
   fourier = fft(proj_windowed)
   # Low-pass filter:
-  min_period = line_spacing/2.0
+  min_period = line_spacing/p_blur
   max_freq = (nn/min_period).round
   max_freq.upto(nn-1) { |i|
     fourier[i] = 0.0
@@ -61,6 +68,7 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,
   }
 
   # Make a copy of proj that's folded like an accordion pleat, so that we have a single average projection of a line of text.
+  verbosity=3
   # The center goes at array index c.
   if verbosity>=4 then print "  half_period=#{half_period}\n" end
   c = (half_period).round
@@ -82,12 +90,14 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,
   # bg2 seems to be higher, probably because crap gets in the tiny, narrow pure-white spaces between lines
   bg = greatest([bg1,bg2])[1]
   a = a.map{ |x| (x-bg)/(peak-bg)} # scale so that 1=max and 0=bg (approximately)
+  if verbosity>=4 then print "half_period=#{half_period}, peak=#{peak}, bg=#{bg}\n" end
   if verbosity>=3 then make_graph("accordion.pdf",nil,a,"row","average projection") end
   
   # Try to guess x-height.
-  f = 0.42 # fraction of peak height at which we pick off the shoulder; set empirically from some sample text
+  f = p_shoulder # fraction of peak height at which we pick off the shoulder; set empirically from some sample text
   right_shoulder = nil
   c.upto(c+half_period) { |i|
+    if i<0 or i>a.length-1 then next end
     if a[i]<f then right_shoulder=i; break end
   }
   left_shoulder = nil

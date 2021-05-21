@@ -18,8 +18,8 @@ end
 
 def find_sup_sub_median(x,x0)
   # Submedian is just my made-up term for the median of all data that lie below some value x0 (typically the mean).
-  sub = find_median(x.select{ |a| a<x0})
-  sup = find_median(x.select{ |a| a>x0})
+  sub = find_median(x.select{ |a| a<=x0})
+  sup = find_median(x.select{ |a| a>=x0})
   return [sub,sup]
 end
 
