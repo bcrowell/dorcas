@@ -69,7 +69,7 @@ old_progress = 0.0;
 for dy in dy_lo..dy_hi {
   progress = ((dy-dy_lo):real/(dy_hi-dy_lo+1):real)*100.0;
   if progress>old_progress+25.0 || dy==dy_hi then {
-    stderr.writeln(progress:int); // without the newline, flush() doesn't have the desired effect
+    //stderr.writeln(progress:int); // without the newline, flush() doesn't have the desired effect
     stderr.flush();
     old_progress = progress;
   }

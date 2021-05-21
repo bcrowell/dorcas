@@ -1,15 +1,15 @@
 require 'fileutils'
 require 'json'
 
-def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height)
+def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
   start = Time.now
-  result = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height)
+  results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
   finish = Time.now
   print "\ntime for correl = #{finish-start} seconds\n"
-  return result
+  return results
 end
 
-def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height)
+def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
   n_cpus = guess_n_cores() # making this equal to the number of physical cores (not counting hypertrheading) gives the best performance
@@ -66,7 +66,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_heig
         if jj<0 || jj>this_result.length-1 then die("jj=#{jj} is out of range, #{result.length}, cpu=#{cpu}, j=#{j}, offset=#{offset}, this_dy=#{this_dy_lo},#{this_dy_hi}, dy_lo=#{dy_lo}, this_result.length=#{this_result.length}") end
         if i-dx_lo<0 || i>this_result[jj].length then die("i out of range, i=#{j}, dx_lo-#{dx_lo}") end
         foo = this_result[jj][i]
-        result[j-dy_lo][i-dx_lo] = this_result[jj][i-dx_lo]
+        result[j-dy_lo][i-dx_lo] = this_result[jj][i-dx_lo]/norm
       }
     }
     cpu +=1
@@ -151,7 +151,7 @@ def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
   return c
 end
 
-def correl(text,pat,red,background,dx,dy)
+def correl(text,pat,red,background,dx,dy,norm)
   # dx,dy are offsets of pat within text
   wp,hp = ink_array_dimensions(pat)
   wt,ht = ink_array_dimensions(text)
@@ -179,5 +179,5 @@ def correl(text,pat,red,background,dx,dy)
   }
   p_mean = sum_p/norm
   t_mean = sum_t/norm
-  return sum_pt/norm-p_mean*t_mean
+  return (sum_pt/norm-p_mean*t_mean)/norm
 end

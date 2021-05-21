@@ -38,21 +38,38 @@ def main()
     warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
   end
 
-  # The result of all this is that text_line_spacing is quite robust and precise, whereas x_height is
+  # The result of all this is that text_line_spacing is quite robust and fairly precise, whereas x_height is
   # total crap, should probably not be used for anything more than the warning above.
+  # Although the value of text_line_spacing is good, the way I'm using it in setting the font size is
+  # not super great, sometimes results in a font whose size is wrong by 15%.
 
-  exit(0)
+  threshold = 0.65 # lowest correlation that we consider to be of interest
 
-  f = Font.new()
-  print f.pango_string,"\n"
+  if false then
+    char = 'ε'
+    f = Font.new(serif:false,italic:true)
+    threshold = 0.4
+    text_line_spacing *= 0.85
+  end
+  if true then
+    char = 'π'
+    f = Font.new(serif:false,italic:true)
+    threshold = 0.75
+    text_line_spacing *= 0.85
+  end
+  if false then
+    char = 'h'
+    f = Font.new(serif:true,italic:false)
+  end
 
-  # estimate scale so that pattern has resolution approximately equal to that of text multiplied by hires, which should be a power of 2
-  hires = 1
+  print "character=#{char}, ",f.pango_string,"\n"
+
+  # estimate scale so that pattern has resolution approximately equal to that of text
   dpi = 300 # initial guess
-  dpi = (hires*dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi).to_f).round
+  dpi = (dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi).to_f).round
   background = stats['submedian'] # background ink level of text, in ink units
 
-  bw,red,pat_line_spacing,bbox = char_to_pat('ε',temp_dir,f,dpi)
+  bw,red,pat_line_spacing,bbox = char_to_pat(char,temp_dir,f,dpi)
   print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"
   bw.save('bw.png')
   red.save('red.png')
@@ -68,8 +85,12 @@ def main()
   text_ink = image_to_ink_array(text)
   bw_ink = image_to_ink_array(bw)
   red_ink = image_to_ink_array(red)
+  pat_stats = ink_stats_pat(bw_ink,red_ink) # calculates mean and sd
+  print "pat_stats=#{pat_stats}\n"
 
-  threshold = 0.03 # lowest inner product that we consider to be of interest
+  sdt = stats['sd_in_text']
+  sdp = pat_stats['sd']
+  norm = sdt*sdp # normalization factor for correlations
   # i and j are horizontal and vertical offsets of pattern relative to text; non-black part of pat can stick out beyond edges
   j_lo = bbox[2]-pat_line_spacing
   j_hi = ht-1+bbox[3]
@@ -84,7 +105,7 @@ def main()
     results.push(col)
   }
   highest_corr = 0.0
-  results = correl_many(text_ink,bw_ink,red_ink,background,i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i)
+  results = correl_many(text_ink,bw_ink,red_ink,background,i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
 
   hits = []
   xr = ((bbox[1]-bbox[0])*0.8).round

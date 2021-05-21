@@ -1,3 +1,16 @@
+def ink_stats_pat(bw,red)
+  data = []
+  wp,hp = ink_array_dimensions(bw)
+  0.upto(wp-1) { |i|
+    0.upto(hp-1) { |j|
+      if red[i][j]>0.0 then next end
+      data.push(bw[i][j])
+    }
+  }
+  mean,sd = find_mean_sd(data)
+  return {'mean'=>mean,'sd'=>sd}
+end
+
 def ink_stats_1(image)
   sample = random_sample(image,1000,nil,nil) # nothing bad happens if the image has less than 1000 pixels, we just get a smaller sample
   median = find_median(sample)

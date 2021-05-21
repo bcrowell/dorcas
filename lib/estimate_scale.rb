@@ -29,11 +29,10 @@ end
 def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,verbosity)
   # Try to estimate x-height. (Estimating capital height or hp height seems much harder.)
 
-  # The following two parameters cannot be varied independently, have to be tuned up together. I picked them by playing
-  # with a sample from Giles, Odyssey. Picked p_blur to be big enough so structure was visible in accordion.pdf, small enough so that there were no
-  # bogus oscillations. Picked p_shoulder to give roughly the right x_height for this example.
-  p_blur = 2.5 # frequencies above 2.5 times the fundamental get filtered out
-  p_shoulder = 0.48 # pick off shoulders of projection at this level
+  # Need p_blur to be such that the peaks we pick off are really the center of the x-height.
+  # Picked p_shoulder to give roughly the right x_height for this example.
+  p_blur = 2.0 # for use in picking off phase of lines; frequencies above 2.5 times the fundamental get filtered out
+  p_shoulder = 0.42 # pick off shoulders of projection at this level
 
   # Make a blurred copy of the projection so that we can get a good estimate of where the center of each line is.
   proj_windowed = windowing_and_padding(proj,'none',nn,avg) # make a projection without the Hann window
