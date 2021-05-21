@@ -45,13 +45,13 @@ def main()
 
   threshold = 0.65 # lowest correlation that we consider to be of interest
 
-  if false then
+  if true then
     char = 'ε'
-    f = Font.new(serif:false,italic:true)
-    threshold = 0.4
+    f = Font.new(font_name:"BosporosU",serif:false,italic:true)
+    threshold = 0.8 # with other font, worked OK at 0.4
     text_line_spacing *= 0.85
   end
-  if true then
+  if false then
     char = 'π'
     f = Font.new(serif:false,italic:true)
     threshold = 0.75

@@ -105,13 +105,19 @@ def string_to_image(s,dir,font,out_file,side,dpi)
 end
 
 class Font
-  def initialize(serif:true,italic:false,bold:false,size:12)
-    @serif,@italic,@bold,@size = serif,italic,bold,size
+  def initialize(font_name:nil,serif:true,italic:false,bold:false,size:12)
+    @serif,@italic,@bold,@size,@font_name = serif,italic,bold,size,font_name
+    # font_name is, e.g., "BosporosU" if the font is in BosporosU.ttf in one of the standard locations
   end
 
   def pango_string()
     a = []
-    if @serif then a.push("serif") else a.push("sans") end
+    if not @font_name.nil? then 
+      a.push(@font_name)
+    else
+      if @serif then a.push("serif") else a.push("sans") end
+      # E.g., doing "BosporosU sans" causes it to fall back on some other sans serif font rather than Bosporos.
+    end
     if @italic then a.push("italic") end
     if @bold then a.push("bold") end
     a.push(size.to_s)
@@ -123,5 +129,5 @@ class Font
     return image.height
   end
 
-  attr_reader :serif,:italic,:bold,:size
+  attr_reader :serif,:italic,:bold,:size,:font_name
 end
