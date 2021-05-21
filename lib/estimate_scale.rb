@@ -85,34 +85,39 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,
   }
   # Try to subtract background:
   peak = greatest_in_range(a,c-half_period,c+half_period)[1]
-  bg1 = peak/peak_to_bg # estimate from global stats for the document
-  bg2 = greatest_in_range(a,c-half_period,c+half_period,flip:-1)[1] # estimate from the accordion itself
-  # bg2 seems to be higher, probably because crap gets in the tiny, narrow pure-white spaces between lines
-  bg = greatest([bg1,bg2])[1]
-  a = a.map{ |x| (x-bg)/(peak-bg)} # scale so that 1=max and 0=bg (approximately)
-  if verbosity>=4 then print "half_period=#{half_period}, peak=#{peak}, bg=#{bg}\n" end
-  if verbosity>=3 then make_graph("accordion.pdf",nil,a,"row","average projection") end
-  
-  # Try to guess x-height.
-  f = p_shoulder # fraction of peak height at which we pick off the shoulder; set empirically from some sample text
-  right_shoulder = nil
-  c.upto(c+half_period) { |i|
-    if i<0 or i>a.length-1 then next end
-    if a[i]<f then right_shoulder=i; break end
-  }
-  left_shoulder = nil
-  c.downto(c-half_period) { |i|
-    if a[i]<f then left_shoulder=i; break end
-  }
+
   sane_x_height = 0.5*line_spacing/spacing_multiple # just a rough guess as a fallback
-  if left_shoulder.nil? or right_shoulder.nil? then
-    x_height = sane_x_height
-  else
-    x_height = right_shoulder-left_shoulder
-    if x_height>0.6*line_spacing or x_height<sane_x_height*0.5 then
-      # ... fails sanity check; the 0.5 in the second condition is to allow for the possibility that the user failed
-      #     to override the default of spacing_multiple=1 but in fact it's double-spaced
+  x_height = sane_x_height
+
+  if peak>0 then # not sure why sometimes I get peak==0, but avoid crashes when that happens
+    bg1 = peak/peak_to_bg # estimate from global stats for the document
+    bg2 = greatest_in_range(a,c-half_period,c+half_period,flip:-1)[1] # estimate from the accordion itself
+    # bg2 seems to be higher, probably because crap gets in the tiny, narrow pure-white spaces between lines
+    bg = greatest([bg1,bg2])[1]
+    a = a.map{ |x| (x-bg)/(peak-bg)} # scale so that 1=max and 0=bg (approximately)
+    if verbosity>=4 then print "half_period=#{half_period}, peak=#{peak}, bg=#{bg}\n" end
+    if verbosity>=3 then make_graph("accordion.pdf",nil,a,"row","average projection") end
+  
+    # Try to guess x-height.
+    f = p_shoulder # fraction of peak height at which we pick off the shoulder; set empirically from some sample text
+    right_shoulder = nil
+    c.upto(c+half_period) { |i|
+      if i<0 or i>a.length-1 then next end
+      if a[i]<f then right_shoulder=i; break end
+    }
+    left_shoulder = nil
+    c.downto(c-half_period) { |i|
+      if a[i]<f then left_shoulder=i; break end
+    }
+    if left_shoulder.nil? or right_shoulder.nil? then
       x_height = sane_x_height
+    else
+      x_height = right_shoulder-left_shoulder
+      if x_height>0.6*line_spacing or x_height<sane_x_height*0.5 then
+        # ... fails sanity check; the 0.5 in the second condition is to allow for the possibility that the user failed
+        #     to override the default of spacing_multiple=1 but in fact it's double-spaced
+        x_height = sane_x_height
+      end
     end
   end
 
