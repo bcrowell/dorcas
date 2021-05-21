@@ -22,7 +22,11 @@ def char_to_pat(c,dir,font,dpi)
     ii = w-i-1
     if nred[ii]<nred[w-1] then right=ii; break end
   }
-  if left.nil? or right.nil? then die("left or right is nil, left=#{left}, right=#{right}") end
+  if left.nil? or right.nil? then
+    bw.save("debug1.png")
+    red.save("debug2.png")
+    die("left or right is nil, left=#{left}, right=#{right}; bw written to debug1.png, red written to debug2.png")
+  end
   bw2  = bw.crop(left,0,right-left+1,h)
   red2 = red.crop(left,0,right-left+1,h)
   bbox[0] -= left
@@ -68,7 +72,27 @@ end
 
 def red_one_side(c,dir,font,out_file,side,image,dpi)
   red = image_empty_copy(image)
-  if side==0 then other = "iAWTS1!HIμ.,;:'{{-_=|\`~?/" else other="!]':?>HIT1iXo" end
+  script = char_to_code_block(c) # returns greek, latin, or hebrew
+  # Many fonts that contain one script don't contain coverage of other scripts. Rendering libraries will sub in some other font, but
+  # this produces goofy results, such as unpredictable variations in line height. So use guard-rail characters
+  # that are from the same script.
+  # side=0 means guard-rail chars will be on the right of our character, 1 means left
+  other = nil
+  if script=='latin' then
+    if side==0 then other = "AT1!H.,;:'{_=|~?/" else other="!]':?HTiXo" end
+  end
+  if script=='greek' then
+    # Don't add characters to the following that may not be covered in a Greek font.
+    if side==0 then other = "ΠΩΔΥΗ.,'" else other="ΠΩΔΥΗ'" end
+  end
+  if script=='hebrew' then
+    # Don't add characters to the following that may not be covered in a Hebrew font.
+    if side==0 then other = "ח.,'" else other="ר''" end
+  end
+  if other.nil? then
+    # provide some kind of fall-back
+    if side==0 then other = "1.,'" else other="1''" end
+  end
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
     image2 = string_to_image(s,dir,font,out_file,side,dpi)
@@ -91,13 +115,15 @@ end
 
 def string_to_image(s,dir,font,out_file,side,dpi)
   # side=0 for left, 1 for right
-  # empirically, pango-view seems to return a result whose height doesn't depend on the input
+  # Empirically, pango-view seems to return a result whose height doesn't depend on the input, but with the following
+  # exception: if it can't find a character in the font you're using, it picks some other font in which to render that
+  # character; but then if that other font has a greater height, the whole image gets taller.
   pango_font = font.pango_string()
   in_file = dir+"/"+"temp1.txt"
+  if side==0 then align="left" else align="right" end
   File.open(in_file,'w') { |f|
     f.print s
   }
-  if side==0 then align="left" else align="right" end
   cmd = "pango-view -q --align=#{align} --dpi=#{dpi} --margin 0 --font=\"#{pango_font}\" --width=200 -o #{out_file} #{in_file}"
   system(cmd)
   image = ChunkyPNG::Image.from_file(out_file)

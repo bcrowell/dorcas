@@ -18,6 +18,7 @@ require_relative "lib/graphing"
 require_relative "lib/estimate_image_params"
 require_relative "lib/stat"
 require_relative "lib/r_interface"
+require_relative "lib/string_util"
 
 def main()
   text_file = 'sample.png'
@@ -47,9 +48,14 @@ def main()
 
   if true then
     char = 'ε'
-    f = Font.new(font_name:"BosporosU",serif:false,italic:true)
-    threshold = 0.8 # with other font, worked OK at 0.4
-    text_line_spacing *= 0.85
+
+    #f = Font.new(font_name:"BosporosU",serif:false,italic:true)
+    # threshold = 0.8 # with system default font, worked OK at 0.4
+    # text_line_spacing *= 0.85
+
+    f = Font.new(font_name:"GFSPorson",serif:false,italic:true)
+    threshold = 0.5
+    text_line_spacing *= 1.2
   end
   if false then
     char = 'π'
@@ -144,7 +150,8 @@ end
 
 
 def die(message)
-  $stderr.print message,"\n"
+  #  $stderr.print message,"\n"
+  raise message # gives a stack trace
   exit(-1)
 end
 

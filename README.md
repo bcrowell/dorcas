@@ -31,5 +31,5 @@ ruby
 
 chapel
 
-debian packages: parallel r-cran-minpack.lm
+debian packages: parallel r-cran-minpack.lm unicode
 

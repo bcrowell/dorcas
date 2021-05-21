@@ -38,7 +38,11 @@ end
 
 def image_bitwise(image,image2,op)
   w,h = image.width,image.height
-  if image.height!=image2.height or image.width!=image2.width then die("unequal heights or widths for images") end
+  if image.height!=image2.height or image.width!=image2.width then 
+    image.save("debug1.png")
+    image2.save("debug2.png")
+    die("unequal heights or widths for images being combined bitwise, #{w}x#{h} and #{image2.width}x#{image2.height}; images saved in debug1.png and debug2.png; this can happen if char_to_pat renders some characters in a fallback font that has a different line height") 
+  end
   result = image_empty_copy(image)
   0.upto(w-1) { |i|
     0.upto(h-1) { |j|
