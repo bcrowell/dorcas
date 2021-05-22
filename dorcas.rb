@@ -23,7 +23,8 @@ require_relative "lib/string_util"
 def main()
 
 
-  print run_r_code("cat('__output__137')")
+  f = Font.new(font_name:"GFSPorson",serif:false,italic:true)
+  print f;
   exit(0)
 
   text_file = 'sample.png'
