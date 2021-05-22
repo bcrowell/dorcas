@@ -1,56 +1,5 @@
 # coding: utf-8
 
-class Font
-  def initialize(font_name:nil,file_path:nil,serif:true,italic:false,bold:false,size:12)
-    # The most reliable way to specify a font us by using file_path and size.
-    # If using font_name, then it needs to be a font name that is recognized by fc-match. For example,
-    # on my system 'fc-match BosporosU' verifies that such a font is installed, as opposed to giving some fallback font.
-    # Use of serif, italic, and bold args is not implemented. This is difficult to do well because most fonts do not contain multiple styles.
-    # If, e.g., you need italics, it's best to explicitly name a .ttf file that is a purely italic font.
-    @serif,@italic,@bold,@size = serif,italic,bold,size
-    # font_name is, e.g., "BosporosU" if the font is in BosporosU.ttf in one of the standard locations
-    if (not font_name.nil?) and file_path.nil? then
-      file_path = `fc-match -f "%{file}" #{font_name}`
-    end
-    if not file_path.nil? then
-      font_name = `fc-query -f "%{family}" #{file_path}`
-    end
-    @font_name,@file_path = font_name,file_path
-  end
-
-  def to_s()
-    if false then # not implemented
-      styling = "bold: #{self.bold} italic: #{self.italic} serif: #{self.serif} "
-    else
-      styling = ''
-    end
-    result = "Font:\n  name: #{self.font_name}\n  file: #{self.file_path}\n #{styling} size: #{self.size}\n"
-  end
-
-  def pango_string()
-    # Ignores file_path because pango doesn't seem to allow explicit naming of font files.
-    a = []
-    if not @font_name.nil? then 
-      a.push(@font_name)
-    else
-      if !@serif then a.push("sans") end
-      # E.g., doing "BosporosU sans" causes it to fall back on some other sans serif font rather than Bosporos.
-      # There is no recognized keyword 'serif', only a keyword 'sans'.
-    end
-    if @italic then a.push("italic") end
-    if @bold then a.push("bold") end
-    a.push(size.to_s)
-    return a.join(' ')
-  end
-
-  def line_height_pixels(dir,dpi)
-    image = string_to_image("A",dir,self,"test_line_height.png",0,dpi)
-    return image.height
-  end
-
-  attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
-end
-
 def char_to_pat(c,dir,font,dpi)
   bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi)
   # for each column in red, count number of red pixels
@@ -123,31 +72,12 @@ end
 
 def red_one_side(c,dir,font,out_file,side,image,dpi)
   red = image_empty_copy(image)
-  script = char_to_code_block(c) # returns greek, latin, or hebrew
-  # Many fonts that contain one script don't contain coverage of other scripts. Rendering libraries may leave a blank or sub in some other font, but
-  # this produces goofy results, such as unpredictable variations in line height. So use guard-rail characters
-  # that are from the same script. This was an issue for GFSPorson, which lacks Latin characters.
-
+  script = Script.new(c)
   # To find out how much white "personal space" the character has around it, we render various other "guard-rail" characters
   # to the right and left of it. The logical "or" of these is space that we know can be occupied by other characters. I visualize
-  # this as red."
+  # this as red.
   # side=0 means guard-rail chars will be on the right of our character, 1 means left
-  other = nil
-  if script=='latin' then
-    #if side==0 then other = "AT1!H.,;:'{_=|~?/" else other="!]':?HTiXo" end
-  end
-  if script=='greek' then
-    # Don't add characters to the following that may not be covered in a Greek font. In particular, GFSPorson lacks Latin characters.
-    if side==0 then other = "ΠΩΔΥΗ.,'" else other="ΠΩΔΥΗ'" end
-  end
-  if script=='hebrew' then
-    # Don't add characters to the following that may not be covered in a Hebrew font.
-    if side==0 then other = "ח.,'" else other="ר''" end
-  end
-  if other.nil? then
-    # provide some kind of fall-back
-    if side==0 then other = "1.,'" else other="1''" end
-  end
+  other = script.guard_rail_chars(side)
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
     image2 = string_to_image(s,dir,font,out_file,side,dpi)
@@ -169,7 +99,7 @@ end
 
 
 def string_to_image(s,dir,font,out_file,side,dpi)
-  return string_to_image_gd(s,dir,font,out_file,side,dpi)
+  return string_to_image_pango_view(s,dir,font,out_file,side,dpi)
 end
 
 def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
@@ -195,8 +125,8 @@ end
 def string_to_image_gd(s,dir,font,out_file,side,dpi)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
   # advantage: unlike pango-view, lets you really force a particular font
-  # We ignore side, but crop the resulting image so that it's snug against both the left and the right.
-  verbosity = 4
+  verbosity = 3
+  scale_for_resolution = dpi/72.0 # haven't seen clear documentation as to how GD actually does this
   temp_file_1 = temp_file_name()
   code = <<-"PERL"
     use strict;
@@ -208,20 +138,21 @@ def string_to_image_gd(s,dir,font,out_file,side,dpi)
     my $white = $image->colorAllocate(255,255,255);
     $image->filledRectangle(0,0,$w-1,$h-1,$white);
     my $ttf_path = "#{escape_double_quotes(font.file_path)}";
-    my $ptsize = #{font.size};
-    my %options = {'resolution'=>"#{dpi},#{dpi}"};
+    my $ptsize = #{(font.size*scale_for_resolution).round};
+    my %options = {'resolution'=>"#{dpi},#{dpi}"}; # has little or no effect by itself, is just hinting
     my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,$h*0.75,"#{escape_double_quotes(s)}",\%options);
     open(F, '>', "#{escape_double_quotes(temp_file_1)}") or die $!;
     binmode F;
     print F $image->png;
     close F;
-    print "__output__",$bounds[0],",",$bounds[2],",",$bounds[5],",",$bounds[1],"\n" # left, right, top, bottom -- https://metacpan.org/pod/GD
+    print "__output__",$bounds[0],",",$bounds[2],",",$bounds[5],",",$bounds[1],"\\n" # left, right, top, bottom -- https://metacpan.org/pod/GD
   PERL
-  if verbosity>=4 then print code; print "escaped s=#{escape_double_quotes(s)}\n" end
+  if verbosity>=3 then print code; print "escaped s=#{escape_double_quotes(s)}\n" end
   output = run_perl_code(code)
   left,right,top,bottom = output.split(/,/).map {|x| x.to_i}
-  if verbosity>=4 then print "output=#{output}, lrtb=#{[left,right,top,bottom]}\n" end
+  if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
   image = ChunkyPNG::Image.from_file(temp_file_1)
+  die("algorithm is wrong, maybe render in middle, do arithmetic on bounds, then crop")
   image.crop(left,top,right-left+1,bottom-top+1)
   image.save(out_file)
   if verbosity>=3 then print "saved to #{out_file}\n" end
