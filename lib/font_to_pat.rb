@@ -1,5 +1,41 @@
 # coding: utf-8
 
+class Font
+  def initialize(font_name:nil,file_path:nil,serif:true,italic:false,bold:false,size:12)
+    @serif,@italic,@bold,@size = serif,italic,bold,size
+    # font_name is, e.g., "BosporosU" if the font is in BosporosU.ttf in one of the standard locations
+    if (not font_name.nil?) and file_path.nil? then
+      file_path = `fc-match -f "%{file}" #{font_name}`
+    end
+    if font_name.nil? and (not file_path.nil?) then
+      font_name = `fc-query -f "%{family}" #{file_path}`
+    end
+    @font_name,@file_path = font_name,file_path
+  end
+
+  def pango_string()
+    a = []
+    if not @font_name.nil? then 
+      a.push(@font_name)
+    else
+      if !@serif then a.push("sans") end
+      # E.g., doing "BosporosU sans" causes it to fall back on some other sans serif font rather than Bosporos.
+      # There is no recognized keyword 'serif', only a keyword 'sans'.
+    end
+    if @italic then a.push("italic") end
+    if @bold then a.push("bold") end
+    a.push(size.to_s)
+    return a.join(' ')
+  end
+
+  def line_height_pixels(dir,dpi)
+    image = string_to_image("A",dir,self,"test_line_height.png",0,dpi)
+    return image.height
+  end
+
+  attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
+end
+
 def char_to_pat(c,dir,font,dpi)
   bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi)
   # for each column in red, count number of red pixels
@@ -75,14 +111,18 @@ def red_one_side(c,dir,font,out_file,side,image,dpi)
   script = char_to_code_block(c) # returns greek, latin, or hebrew
   # Many fonts that contain one script don't contain coverage of other scripts. Rendering libraries will sub in some other font, but
   # this produces goofy results, such as unpredictable variations in line height. So use guard-rail characters
-  # that are from the same script.
+  # that are from the same script. This was an issue for GFSPorson, which lacks Latin characters.
+
+  # To find out how much white "personal space" the character has around it, we render various other "guard-rail" characters
+  # to the right and left of it. The logical "or" of these is space that we know can be occupied by other characters. I visualize
+  # this as red."
   # side=0 means guard-rail chars will be on the right of our character, 1 means left
   other = nil
   if script=='latin' then
     if side==0 then other = "AT1!H.,;:'{_=|~?/" else other="!]':?HTiXo" end
   end
   if script=='greek' then
-    # Don't add characters to the following that may not be covered in a Greek font.
+    # Don't add characters to the following that may not be covered in a Greek font. In particular, GFSPorson lacks Latin characters.
     if side==0 then other = "ΠΩΔΥΗ.,'" else other="ΠΩΔΥΗ'" end
   end
   if script=='hebrew' then
@@ -114,10 +154,17 @@ end
 
 
 def string_to_image(s,dir,font,out_file,side,dpi)
+  return string_to_image_pango_view(s,dir,font,out_file,side,dpi)
+end
+
+def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
   # side=0 for left, 1 for right
   # Empirically, pango-view seems to return a result whose height doesn't depend on the input, but with the following
   # exception: if it can't find a character in the font you're using, it picks some other font in which to render that
-  # character; but then if that other font has a greater height, the whole image gets taller.
+  # character; but then if that other font has a greater height, the whole image gets taller. For this reason, I have
+  # code above that tries to autodetect the script that a character is in, and only use guard-rail characters from
+  # that script.
+  # See comment block below with some perl code I could shell out to if I decide to dump pango-view.
   pango_font = font.pango_string()
   in_file = dir+"/"+"temp1.txt"
   if side==0 then align="left" else align="right" end
@@ -130,30 +177,38 @@ def string_to_image(s,dir,font,out_file,side,dpi)
   return image
 end
 
-class Font
-  def initialize(font_name:nil,serif:true,italic:false,bold:false,size:12)
-    @serif,@italic,@bold,@size,@font_name = serif,italic,bold,size,font_name
-    # font_name is, e.g., "BosporosU" if the font is in BosporosU.ttf in one of the standard locations
-  end
-
-  def pango_string()
-    a = []
-    if not @font_name.nil? then 
-      a.push(@font_name)
-    else
-      if @serif then a.push("serif") else a.push("sans") end
-      # E.g., doing "BosporosU sans" causes it to fall back on some other sans serif font rather than Bosporos.
-    end
-    if @italic then a.push("italic") end
-    if @bold then a.push("bold") end
-    a.push(size.to_s)
-    return a.join(' ')
-  end
-
-  def line_height_pixels(dir,dpi)
-    image = string_to_image("A",dir,self,"test_line_height.png",0,dpi)
-    return image.height
-  end
-
-  attr_reader :serif,:italic,:bold,:size,:font_name
+def string_to_image_gd(s,dir,font,out_file,side,dpi)
+  # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
+  # advantage: unlike pango-viewlets you really force a particular font
+  # We ignore side, but crop the resulting image so that it's snug against both the left and the right.
+  temp_file_1 = temp_file_name()
+  s2 = s.gsub(/"/,'\\"') # escape double quotes
+  code <<-"PERL"
+    use strict;
+    use GD;
+    my $w = 1000;
+    my $h = 300;
+    my $image = new GD::Image($w,$h);
+    my $black = $image->colorAllocate(0,0,0);
+    my $white = $image->colorAllocate(255,255,255);
+    $image->filledRectangle(0,0,$w-1,$h-1,$white);
+    my $ttf_path = #{font.file_path};
+    my $ptsize = #{font.size};
+    my %options = {'resolution'=>"#{dpi},#{dpi}"};
+    my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,$h*0.75,"#{s2}",\%options);
+    open(F, '>', #{temp_file_1}) or die $!;
+    binmode F;
+    print F $image->png;
+    close F;
+    print "__output__",$bounds[0],",",$bounds[2],",",$bounds[5],",",$bounds[1],"\n" # left, right, top, bottom -- https://metacpan.org/pod/GD
+  PERL
+  output = run_perl_code(code)
+  left,right,top,bottom = output.split(/,/)
+  image = ChunkyPNG::Image.from_file(temp_file_1)
+  image.crop(left,top,right-left+1,bottom-top+1)
+  image.save(out_file)
+  return image
 end
+
+
+=end

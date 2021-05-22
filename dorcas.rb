@@ -17,7 +17,7 @@ require_relative "lib/smp"
 require_relative "lib/graphing"
 require_relative "lib/estimate_image_params"
 require_relative "lib/stat"
-require_relative "lib/r_interface"
+require_relative "lib/other_interpreters"
 require_relative "lib/string_util"
 
 def main()
