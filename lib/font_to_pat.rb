@@ -109,7 +109,7 @@ end
 def red_one_side(c,dir,font,out_file,side,image,dpi)
   red = image_empty_copy(image)
   script = char_to_code_block(c) # returns greek, latin, or hebrew
-  # Many fonts that contain one script don't contain coverage of other scripts. Rendering libraries will sub in some other font, but
+  # Many fonts that contain one script don't contain coverage of other scripts. Rendering libraries may leave a blank or sub in some other font, but
   # this produces goofy results, such as unpredictable variations in line height. So use guard-rail characters
   # that are from the same script. This was an issue for GFSPorson, which lacks Latin characters.
 
@@ -119,7 +119,7 @@ def red_one_side(c,dir,font,out_file,side,image,dpi)
   # side=0 means guard-rail chars will be on the right of our character, 1 means left
   other = nil
   if script=='latin' then
-    if side==0 then other = "AT1!H.,;:'{_=|~?/" else other="!]':?HTiXo" end
+    #if side==0 then other = "AT1!H.,;:'{_=|~?/" else other="!]':?HTiXo" end
   end
   if script=='greek' then
     # Don't add characters to the following that may not be covered in a Greek font. In particular, GFSPorson lacks Latin characters.
@@ -211,4 +211,4 @@ def string_to_image_gd(s,dir,font,out_file,side,dpi)
 end
 
 
-=end
+

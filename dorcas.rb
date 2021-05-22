@@ -21,6 +21,11 @@ require_relative "lib/other_interpreters"
 require_relative "lib/string_util"
 
 def main()
+
+
+  print run_r_code("cat('__output__137')")
+  exit(0)
+
   text_file = 'sample.png'
   spacing_multiple = 1.0 # set to 2 if double-spaced
 

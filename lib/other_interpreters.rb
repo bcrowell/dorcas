@@ -1,9 +1,9 @@
 def run_r_code(code)
-  return run_interpreted_code,code,'r')
+  return run_interpreted_code(code,'r')
 end
 
 def run_perl_code(code)
-  return run_interpreted_code,code,'perl')
+  return run_interpreted_code(code,'perl')
 end
 
 def run_interpreted_code(code,language)
