@@ -1,3 +1,4 @@
+# coding: utf-8
 class Script
   def initialize(s)
     # s can either be a name ('latin','greek','hebrew') or a sample character in that script ('w','θ',...)
@@ -9,6 +10,17 @@ class Script
   end
 
   attr_reader :name
+
+  def to_s()
+    return "Script: #{self.name}"
+  end
+
+  def full_height_string()
+    if self.name=='latin'  then return 'hp' end
+    if self.name=='greek'  then return 'ζγμ' end
+    if self.name=='hebrew' then return 'לץ' end
+    return '1,' # likely to be rendered in any font
+  end
 
   def guard_rail_chars(side)
     # To find out how much white "personal space" the character has around it, we render various other "guard-rail" characters

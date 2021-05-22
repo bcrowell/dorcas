@@ -71,12 +71,15 @@ def main()
     f = Font.new(serif:true,italic:false)
   end
 
+  script = Script.new('greek')
+
   print f
+  print script,"\n"
   print "character=#{char}\n"
 
   # estimate scale so that pattern has resolution approximately equal to that of text
   dpi = 300 # initial guess
-  dpi = (dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi).to_f).round
+  dpi = (dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi,script).to_f).round
   background = stats['submedian'] # background ink level of text, in ink units
 
   bw,red,pat_line_spacing,bbox = char_to_pat(char,temp_dir,f,dpi)

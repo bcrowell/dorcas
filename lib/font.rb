@@ -41,8 +41,8 @@ class Font
     return a.join(' ')
   end
 
-  def line_height_pixels(dir,dpi)
-    image = string_to_image("A",dir,self,"test_line_height.png",0,dpi)
+  def line_height_pixels(dir,dpi,script)
+    image = string_to_image_pango_view(script.full_height_string(),dir,self,"test_line_height.png",0,dpi)
     return image.height
   end
 
