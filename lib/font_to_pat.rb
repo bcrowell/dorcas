@@ -169,7 +169,7 @@ end
 
 
 def string_to_image(s,dir,font,out_file,side,dpi)
-  return string_to_image_pango_view(s,dir,font,out_file,side,dpi)
+  return string_to_image_gd(s,dir,font,out_file,side,dpi)
 end
 
 def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
@@ -194,11 +194,11 @@ end
 
 def string_to_image_gd(s,dir,font,out_file,side,dpi)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
-  # advantage: unlike pango-viewlets you really force a particular font
+  # advantage: unlike pango-view, lets you really force a particular font
   # We ignore side, but crop the resulting image so that it's snug against both the left and the right.
+  verbosity = 4
   temp_file_1 = temp_file_name()
-  s2 = s.gsub(/"/,'\\"') # escape double quotes
-  code <<-"PERL"
+  code = <<-"PERL"
     use strict;
     use GD;
     my $w = 1000;
@@ -207,21 +207,24 @@ def string_to_image_gd(s,dir,font,out_file,side,dpi)
     my $black = $image->colorAllocate(0,0,0);
     my $white = $image->colorAllocate(255,255,255);
     $image->filledRectangle(0,0,$w-1,$h-1,$white);
-    my $ttf_path = #{font.file_path};
+    my $ttf_path = "#{escape_double_quotes(font.file_path)}";
     my $ptsize = #{font.size};
     my %options = {'resolution'=>"#{dpi},#{dpi}"};
-    my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,$h*0.75,"#{s2}",\%options);
-    open(F, '>', #{temp_file_1}) or die $!;
+    my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,$h*0.75,"#{escape_double_quotes(s)}",\%options);
+    open(F, '>', "#{escape_double_quotes(temp_file_1)}") or die $!;
     binmode F;
     print F $image->png;
     close F;
     print "__output__",$bounds[0],",",$bounds[2],",",$bounds[5],",",$bounds[1],"\n" # left, right, top, bottom -- https://metacpan.org/pod/GD
   PERL
+  if verbosity>=4 then print code; print "escaped s=#{escape_double_quotes(s)}\n" end
   output = run_perl_code(code)
-  left,right,top,bottom = output.split(/,/)
+  left,right,top,bottom = output.split(/,/).map {|x| x.to_i}
+  if verbosity>=4 then print "output=#{output}, lrtb=#{[left,right,top,bottom]}\n" end
   image = ChunkyPNG::Image.from_file(temp_file_1)
   image.crop(left,top,right-left+1,bottom-top+1)
   image.save(out_file)
+  if verbosity>=3 then print "saved to #{out_file}\n" end
   return image
 end
 

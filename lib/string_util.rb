@@ -17,4 +17,7 @@ def char_unicode_property(c,property)
   return result
 end
 
+def escape_double_quotes(s)
+  return s.gsub(/"/,'\\"') # escape double quotes
+end
 
