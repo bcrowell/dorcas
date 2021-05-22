@@ -22,11 +22,6 @@ require_relative "lib/string_util"
 
 def main()
 
-
-  f = Font.new(font_name:"GFSPorson",serif:false,italic:true)
-  print f;
-  exit(0)
-
   text_file = 'sample.png'
   spacing_multiple = 1.0 # set to 2 if double-spaced
 
@@ -74,7 +69,8 @@ def main()
     f = Font.new(serif:true,italic:false)
   end
 
-  print "character=#{char}, ",f.pango_string,"\n"
+  print f
+  print "character=#{char}\n"
 
   # estimate scale so that pattern has resolution approximately equal to that of text
   dpi = 300 # initial guess

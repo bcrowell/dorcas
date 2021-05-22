@@ -28,6 +28,7 @@ class Font
   end
 
   def pango_string()
+    # Ignores file_path because pango doesn't seem to allow explicit naming of font files.
     a = []
     if not @font_name.nil? then 
       a.push(@font_name)
