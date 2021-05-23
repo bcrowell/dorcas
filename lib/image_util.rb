@@ -1,3 +1,14 @@
+def ink_array_to_image(ink)
+  w,h = ink_array_dimensions(ink)
+  im = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      im[i,j] = ink_to_color(ink[i][j])
+    }
+  }
+  return im
+end
+
 def image_to_ink_array(image)
   w,h = image.width,image.height
   return generate_array(w,h,lambda {|i,j| color_to_ink(image[i,j]) })
@@ -193,52 +204,106 @@ def has_ink(color)
   return (rgb != 0xffffff)
 end
 
-def enhance_contrast(image,background,threshold,dark)
+def enhance_contrast(image,background,threshold,dark,do_foreground:true,do_background:false,severe:false)
   # changes the image in place
   # leaves threshold in place, but pushes more pixels closer to background and dark values
   # This may help for scans of old books set with lead type, where some letters come out faint. The faintness reduces correlations a *lot*.
+  # The default is to do only the foreground. This is appropriate with single images, as opposed to averages or composites.
+  # Consider the case where you have a value that's above background but below threshold.
+  # Tried two possibilities: (1) enhance it using the same kind of curve as above threshold, but rotated 180 degrees; (2) leave it alone.
+  # Doing 1 worsens dropouts where the ink is faint.
+  # Doing 2 leaves a lot of cruft in the background.
+  # Decided 1 was better for single images.
   w,h = image.width,image.height
   0.upto(w-1) { |i|
     0.upto(h-1) { |j|
       x = color_to_ink(image[i,j])
-      x = enhance_contrast_one_pixel(x,background,threshold,dark)
+      x = enhance_contrast_one_pixel(x,background,threshold,dark,do_foreground,do_background,severe)
       x = ink_to_color(x)
       image[i,j] = x
     }
   }
 end
 
-def enhance_contrast_one_pixel(x,background,threshold,dark)
+def enhance_contrast_one_pixel(x,background,threshold,dark,do_foreground,do_background,severe)
   # inputs x, which is a ChunkyPNG color; returns an ink value on [0,1]
-  xx = (contrast_helper(x,background,threshold,dark)-background)/(dark-background)
+  xx = (contrast_helper(x,background,threshold,dark,do_foreground,do_background,severe)-background)/(dark-background)
   if xx<-0.0001 or xx>1.0001 then
     die("coding error, output of enhance_contrast_one_pixel is not in [0,1], x,xx,background,threshold,dark=#{[x,xx,background,threshold,dark]}")
   end
   return xx
 end
 
-def contrast_helper(x,background,threshold,dark)
+def contrast_helper(x,background,threshold,dark,do_foreground,do_background,severe)
   if x>dark then return dark end
   if x<background then return background end
-  if x>threshold then return threshold+contrast_helper2(x-threshold,dark-threshold) end
-  # The remaining case is where it's between background and threshold.
-  # Tried two possibilities: (1) enhance it using the same kind of curve as above threshold, but rotated 180 degrees; (2) leave it alone.
-  # Doing 1 worsens dropouts where the ink is faint.
-  # Doing 2 leaves a lot of cruft in the background.
-  # Decided 1 was better.
-  return threshold-contrast_helper2(-(x-threshold),-(background-threshold)) # ... option 1
-  # return x # ... option 2
+  if x>threshold then
+    if do_foreground then
+      return threshold+contrast_helper2(x-threshold,dark-threshold,severe)
+    else
+      return x
+    end
+  end
+  if do_background then
+    #return background
+    return threshold-contrast_helper2(-(x-threshold),-(background-threshold),severe)
+  else
+    return x 
+  end
 end
 
-def contrast_helper2(x,max)
+def contrast_helper2(x,max,severe)
   # x is in [0,max], output is in [0,max]
   xx = x.to_f/max.to_f
   # Find a function that takes [0,1] to [0,1], is quadratic, and has slope b at x=0.
   # That function is ax^2+bx+c, where c=0, 1=a+b+c, and s=b.
   # b=1 gives no enhancement, b=2 is the maximum that doesn't result in a non-monotonic function.
   # b=2 is equivalent to rotating the page 180 degrees, squaring the function, and then rotating back.
-  # To get more enhancement, could do the equivalent of b=2, but with a higher exponent, but this would be slower.
   b = 2.0
   y = (1.0-b)*xx*xx+b*xx
+  if severe then
+    if y<0.25 then y=y*4 else y=1.0 end
+  end
   return y*max
+end
+
+def average_images(images)
+  w,h = images[0].width,images[0].height
+  n = images.length
+  avg = generate_array(w,h,lambda {|i,j| 0.0})
+  images.each { |im|
+    if im.width!=w or im.height!=h then die("w and h don't match") end
+    if im.class!=ChunkyPNG::Image then die("class of im is #{im.class}") end
+  }
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      sum = 0.0
+      images.each { |im|
+        sum += color_to_ink(im[i,j])
+      }
+      avg[i][j] = sum/n
+    }
+  }
+  return ink_array_to_image(avg)
+end
+
+def remove_flyspecks(image,threshold,radius)
+  w,h = image.width,image.height
+  radius.upto(w-1-radius) { |i|
+    radius.upto(h-1-radius) { |j|
+      x = color_to_ink(image[i,j])
+      if x>threshold then next end
+      dark_nearby = false
+      (-radius).upto(radius) { |di|
+        (-radius).upto(radius) { |dj|
+          if color_to_ink(image[i+di,j+dj])>threshold then dark_nearby=true end
+        }
+      }
+      if !dark_nearby then 
+        x = x-threshold
+        if x<0 then x=0 end
+        image[i,j] = ink_to_color(x)
+      end
+    }
+  }
 end

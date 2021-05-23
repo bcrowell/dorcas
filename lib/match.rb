@@ -94,6 +94,19 @@ def swatches(hits,text,pat,stats)
   clusters.each { |cl|
     print "  #{cl}\n"
   }
+  cl_averages = []
+  clusters.each { |cl|
+    member_images = cl.map {|i| images[i]}
+    av = average_images(member_images)
+    enhance_contrast(av,0.0,0.5,1.0,do_foreground:false,do_background:true)
+    remove_flyspecks(av,0.25,1)
+    cl_averages.push(av)
+  }
+  i = 0
+  cl_averages.each { |cl_avg|
+    cl_avg.save("cl#{i}.png")
+    i += 1
+  }
 end
 
 def correlate_swatches(images)
