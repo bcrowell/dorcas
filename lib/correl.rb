@@ -182,3 +182,13 @@ def correl(text,pat,red,background,dx,dy,norm)
   t_mean = sum_t/norm
   return (sum_pt/norm-p_mean*t_mean)/norm
 end
+
+def mean_product_simple_list_of_floats(a,b)
+  if a.length!=b.length then die("unequal lengths") end
+  norm = a.length.to_f
+  sum = 0.0
+  0.upto(a.length-1) { |i|
+    sum += a[i]*b[i]
+  }
+  return sum/norm
+end

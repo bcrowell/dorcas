@@ -15,6 +15,19 @@ def ink_array_dimensions(a)
   return [a.length,a[0].length]
 end
 
+def image_to_list_of_floats(image)
+  result = []
+  ink = image_to_ink_array(image)
+  w,h = ink_array_dimensions(ink)
+  f = []
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      f.push(ink[i][j])
+    }
+  }
+  return f
+end
+
 def color_to_ink(color) # returns a measure of darkness
   r,g,b = ChunkyPNG::Color.r(color),ChunkyPNG::Color.g(color),ChunkyPNG::Color.b(color)
   return 1.0-(r+g+b)/(3.0*255.0)

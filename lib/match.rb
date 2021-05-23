@@ -88,4 +88,28 @@ def swatches(hits,text,pat,stats)
     images.push(sw)
     sw.save("swatch#{k}.png")
   }
+  correlate_swatches(images)
+end
+
+def correlate_swatches(images)
+  flat = []
+  images.each  { |image|
+    flat.push(image_to_list_of_floats(image))
+  }
+  n = flat.length
+  mean = []
+  sd = []
+  flat.each { |f|
+    m,s = find_mean_sd(f)
+    mean.push(m)
+    sd.push(s)
+  }
+  0.upto(n-1) { |i|
+    0.upto(i-1) { |j|
+      u = mean_product_simple_list_of_floats(flat[i],flat[j])
+      c = (u-mean[i]*mean[j])/(sd[i]*sd[j])
+      print sprintf("  %2d %2d %4.2f\n",i,j,c)
+    }
+  }
+  
 end
