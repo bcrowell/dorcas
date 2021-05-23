@@ -88,7 +88,12 @@ def swatches(hits,text,pat,stats)
     images.push(sw)
     sw.save("swatch#{k}.png")
   }
-  correlate_swatches(images)
+  c = correlate_swatches(images)
+  clusters = find_clusters(c,0.85)
+  print "clusters:\n"
+  clusters.each { |cl|
+    print "  #{cl}\n"
+  }
 end
 
 def correlate_swatches(images)
@@ -110,4 +115,5 @@ def correlate_swatches(images)
   },symm:true)
   print "correlation matrix for swatches 0-#{n-1}:\n"
   print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round})
+  return c
 end
