@@ -109,7 +109,5 @@ def correlate_swatches(images)
       return (u-mean[i]*mean[j])/(sd[i]*sd[j])
   },symm:true)
   print "correlation matrix for swatches 0-#{n-1}:\n"
-  0.upto(n-1) { |i|
-    print "  ",(c[i].map {|x| sprintf("%3d",(x*100).round) }).join(" "),"\n"
-  }  
+  print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round})
 end

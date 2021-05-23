@@ -23,3 +23,11 @@ def generate_array(w,h,fn,symm:false)
   end
   return a
 end
+
+def array_to_string(a,indentation,format,fn:lambda {|x| x})
+  lines = []
+  0.upto(a.length-1) { |i|
+    print "  ",(a[i].map {|x| sprintf(format,fn.call(x)) }).join(" "),"\n"
+  }  
+  return lines.join("\n")
+end
