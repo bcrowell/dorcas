@@ -3,8 +3,6 @@
 def char_to_pat(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
-    bw.save("debug1.png")
-    red.save("debug2.png")
   return [bw,red,line_spacing,bbox]
 end
 
@@ -109,7 +107,7 @@ def string_to_image(s,dir,font,out_file,side,dpi,script)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
   # advantage: unlike pango-view, lets you really force a particular font
   verbosity = 2
-  temp_file_1 = temp_file_name()
+  temp_file = temp_file_name()
   height = font.line_spacing_pixels(dpi,script)
   code = <<-"PERL"
     use strict;
@@ -124,7 +122,7 @@ def string_to_image(s,dir,font,out_file,side,dpi,script)
     my $ptsize = #{font_size_and_dpi_to_size_for_gd(font.size,dpi)};
     my %options = {'resolution'=>"#{dpi},#{dpi}"}; # has little or no effect by itself, is just hinting
     my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,$h*0.75,"#{escape_double_quotes(s)}",\%options);
-    open(F, '>', "#{escape_double_quotes(temp_file_1)}") or die $!;
+    open(F, '>', "#{escape_double_quotes(temp_file)}") or die $!;
     binmode F;
     print F $image->png;
     close F;
@@ -134,7 +132,8 @@ def string_to_image(s,dir,font,out_file,side,dpi,script)
   output = run_perl_code(code)
   left,right,top,bottom = output.split(/,/).map {|x| x.to_i}
   if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
-  image = ChunkyPNG::Image.from_file(temp_file_1)
+  image = ChunkyPNG::Image.from_file(temp_file)
+  FileUtils.rm(temp_file)
 
   if side==1 then
     # Because GD doesn't support drawing right-aligned text, we have to scooch it over.
