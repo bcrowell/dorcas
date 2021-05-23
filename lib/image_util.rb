@@ -187,3 +187,53 @@ def has_ink(color)
   rgb = (color >> 8)
   return (rgb != 0xffffff)
 end
+
+def enhance_contrast(image,background,threshold,dark)
+  # changes the image in place
+  # leaves threshold in place, but pushes more pixels closer to background and dark values
+  # This may help for scans of old books set with lead type, where some letters come out faint. The faintness reduces correlations a *lot*.
+  w,h = image.width,image.height
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      x = color_to_ink(image[i,j])
+      x = enhance_contrast_one_pixel(x,background,threshold,dark)
+      x = ink_to_color(x)
+      image[i,j] = x
+    }
+  }
+end
+
+def enhance_contrast_one_pixel(x,background,threshold,dark)
+  # inputs x, which is a ChunkyPNG color; returns an ink value on [0,1]
+  xx = (contrast_helper(x,background,threshold,dark)-background)/(dark-background)
+  if xx<-0.0001 or xx>1.0001 then
+    die("coding error, output of enhance_contrast_one_pixel is not in [0,1], x,xx,background,threshold,dark=#{[x,xx,background,threshold,dark]}")
+  end
+  return xx
+end
+
+def contrast_helper(x,background,threshold,dark)
+  if x>dark then return dark end
+  if x<background then return background end
+  if x>threshold then return threshold+contrast_helper2(x-threshold,dark-threshold) end
+  # The remaining case is where it's between background and threshold.
+  # Tried two possibilities: (1) enhance it using the same kind of curve as above threshold, but rotated 180 degrees; (2) leave it alone.
+  # Doing 1 worsens dropouts where the ink is faint.
+  # Doing 2 leaves a lot of cruft in the background.
+  # Decided 1 was better.
+  return threshold-contrast_helper2(-(x-threshold),-(background-threshold)) # ... option 1
+  # return x # ... option 2
+end
+
+def contrast_helper2(x,max)
+  # x is in [0,max], output is in [0,max]
+  xx = x.to_f/max.to_f
+  # Find a function that takes [0,1] to [0,1], is quadratic, and has slope b at x=0.
+  # That function is ax^2+bx+c, where c=0, 1=a+b+c, and s=b.
+  # b=1 gives no enhancement, b=2 is the maximum that doesn't result in a non-monotonic function.
+  # b=2 is equivalent to rotating the page 180 degrees, squaring the function, and then rotating back.
+  # To get more enhancement, could do the equivalent of b=2, but with a higher exponent, but this would be slower.
+  b = 2.0
+  y = (1.0-b)*xx*xx+b*xx
+  return y*max
+end

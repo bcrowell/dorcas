@@ -84,6 +84,7 @@ def swatches(hits,text,pat,stats)
     # This erases nearby characters, but can also have the effect of erasing part of a mismatched letter. For example,
     # an ε in the seed font can match α in the text. Masking gets rid of the two "twigs" on the right side of the alpha
     # and makes it look like an omicron.
+    enhance_contrast(sw,stats['background'],stats['threshold'],stats['dark'])
     images.push(sw)
     sw.save("swatch#{k}.png")
   }
