@@ -127,7 +127,6 @@ def string_to_image_gd(s,dir,font,out_file,side,dpi)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
   # advantage: unlike pango-view, lets you really force a particular font
   verbosity = 3
-  scale_for_resolution = dpi/72.0 # haven't seen clear documentation as to how GD actually does this
   temp_file_1 = temp_file_name()
   code = <<-"PERL"
     use strict;
@@ -139,7 +138,7 @@ def string_to_image_gd(s,dir,font,out_file,side,dpi)
     my $white = $image->colorAllocate(255,255,255);
     $image->filledRectangle(0,0,$w-1,$h-1,$white);
     my $ttf_path = "#{escape_double_quotes(font.file_path)}";
-    my $ptsize = #{(font.size*scale_for_resolution).round};
+    my $ptsize = #{font_size_and_dpi_to_size_for_gd(font.size,dpi)};
     my %options = {'resolution'=>"#{dpi},#{dpi}"}; # has little or no effect by itself, is just hinting
     my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,$h*0.75,"#{escape_double_quotes(s)}",\%options);
     open(F, '>', "#{escape_double_quotes(temp_file_1)}") or die $!;

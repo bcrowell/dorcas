@@ -3,6 +3,7 @@
 
 require 'oily_png'
   # ubuntu package ruby-oily-png
+require 'json'
 
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
@@ -73,14 +74,19 @@ def main()
 
   script = Script.new('greek')
 
-  print f
-  print script,"\n"
-  print "character=#{char}\n"
-
   # estimate scale so that pattern has resolution approximately equal to that of text
   dpi = 300 # initial guess
   dpi = (dpi*text_line_spacing.to_f/f.line_height_pixels(temp_dir,dpi,script).to_f).round
   background = stats['submedian'] # background ink level of text, in ink units
+
+  print f
+  print "font metrics: #{f.metrics(dpi,script)}\n"
+  print script,"\n"
+  print "character: #{char}\n"
+
+
+  exit(0) # qwe
+
 
   bw,red,pat_line_spacing,bbox = char_to_pat(char,temp_dir,f,dpi)
   print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"

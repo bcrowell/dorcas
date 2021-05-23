@@ -19,7 +19,14 @@ class Script
     if self.name=='latin'  then return 'hp' end
     if self.name=='greek'  then return 'ζγμ' end
     if self.name=='hebrew' then return 'לץ' end
-    return '1,' # likely to be rendered in any font
+    return '1,' # likely to be rendered in any font; probably too short for any font that actually has descenders, but don't know what else to fall back on
+  end
+
+  def x_height_string()
+    if self.name=='latin'  then return 'm' end
+    if self.name=='greek'  then return 'ν' end
+    if self.name=='hebrew' then return 'א' end
+    return '1' # likely to be rendered in any font; probably too tall for any font that actually has ascenders, but don't know what else to fall back on
   end
 
   def guard_rail_chars(side)

@@ -1,5 +1,4 @@
 require 'fileutils'
-require 'json'
 
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
   start = Time.now

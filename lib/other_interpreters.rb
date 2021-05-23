@@ -28,6 +28,7 @@ def run_interpreted_code(code,language)
   if $?!=0 then die("error running #{human_lang} code in file #{file} -- file has been preserved") end
   FileUtils.remove_dir(file)
   output =~ /__output__(.*)/
+  #print "output=#{output}=, 1=#{$1}=\n"
   return $1
 end
 
