@@ -1,4 +1,5 @@
 def stats_to_string(stats)
+  # used for both text stats and pat stats
   a = []
   stats.keys.sort.each { |k|
     x = stats[k]
@@ -13,6 +14,10 @@ def stats_to_string(stats)
     end
     a.push("#{k}:#{s}")
   }
-  a[6] = a[6] + "\n "
-  return "  "+a.join(" ")+"\n"
+  if a.length>=8 then
+    a[6] = a[6] + "\n " 
+    return "  "+a.join(" ")+"\n"
+  else
+    return a.join(" ")
+  end
 end

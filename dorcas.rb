@@ -38,11 +38,10 @@ def main()
   stats = ink_stats_1(text)
   peak_to_bg = stats['dark']/stats['submedian']
   text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple)
-  print "text_line spacing=#{text_line_spacing}, x_height=#{x_height}"
   stats['line_spacing'] = text_line_spacing
   stats['x_height'] = x_height
   stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)
-  print "ink stats:\n#{stats_to_string(stats)}\n"
+  print "ink stats:\n#{stats_to_string(stats)}"
   if x_height<0.35*text_line_spacing/spacing_multiple then 
     warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
   end

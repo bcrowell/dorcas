@@ -9,6 +9,7 @@ def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,nor
 end
 
 def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
+  verbosity=1
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
   n_cpus = guess_n_cores() # making this equal to the number of physical cores (not counting hypertrheading) gives the best performance
@@ -41,8 +42,9 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
     #print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
   }
 
-  cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
-  print cmd,"\n"
+  if verbosity>=2 then v="--verbose" else v="" end
+  cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel #{v} #{exe} \"<\"{} \">\"{.}.out"
+  #print cmd,"\n"
   system(cmd)
   print "Done with processing correlations.\n"
 

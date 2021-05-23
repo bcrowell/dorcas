@@ -17,7 +17,7 @@ def match(text,pat,stats,threshold)
   bw_ink = image_to_ink_array(pat.bw)
   red_ink = image_to_ink_array(pat.red)
   pat_stats = ink_stats_pat(bw_ink,red_ink) # calculates mean and sd
-  print "pat_stats=#{pat_stats}\n"
+  print "pat_stats: #{stats_to_string(pat_stats)}\n"
 
   sdt = stats['sd_in_text']
   sdp = pat_stats['sd']
