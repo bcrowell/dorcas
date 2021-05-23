@@ -20,6 +20,11 @@ def color_to_ink(color) # returns a measure of darkness
   return 1.0-(r+g+b)/(3.0*255.0)
 end
 
+def ink_to_color(ink) # inverse of color_to_ink
+  gray = ((1.0-ink)*255).round
+  return ChunkyPNG::Color.rgb(gray,gray,gray)
+end
+
 def erase_inside_box(image,bbox)
   bbox[0].upto(bbox[1]) { |i|
     bbox[2].upto(bbox[3]) { |j|
@@ -37,12 +42,7 @@ def image_or(image,image2)
 end
 
 def image_bitwise(image,image2,op)
-  w,h = image.width,image.height
-  if image.height!=image2.height or image.width!=image2.width then 
-    image.save("debug1.png")
-    image2.save("debug2.png")
-    die("unequal heights or widths for images being combined bitwise, #{w}x#{h} and #{image2.width}x#{image2.height}; images saved in debug1.png and debug2.png; this can happen if char_to_pat renders some characters in a fallback font that has a different line height") 
-  end
+  w,h = assert_same_size(image,image2)
   result = image_empty_copy(image)
   0.upto(w-1) { |i|
     0.upto(h-1) { |j|
@@ -54,6 +54,39 @@ def image_bitwise(image,image2,op)
     }
   }
   return result
+end
+
+def mask_to_background(image,mask,background,fatten)
+  # changes the image in place
+  # background is an ink value
+  # fatten is an amount by which to beef up the mask
+  background_color = ink_to_color(background)
+  w,h = assert_same_size(image,mask)
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      done = false
+      (-fatten).upto(fatten) { |di|
+        ii = i+di
+        if ii<0 or ii>w-1 then next end
+        (-fatten).upto(fatten) { |dj|
+          jj = j+dj
+          if jj<0 or jj>h-1 then next end
+          if has_ink(mask[ii,jj]) then image[i,j]=background_color; done=true; break end
+        }
+        if done then break end
+      }
+    }
+  }
+end
+
+def assert_same_size(image,image2)
+  w,h = image.width,image.height
+  if image.height!=image2.height or image.width!=image2.width then 
+    image.save("debug1.png")
+    image2.save("debug2.png")
+    die("unequal heights or widths for images being combined bitwise, #{w}x#{h} and #{image2.width}x#{image2.height}; images saved in debug1.png and debug2.png; this can happen if char_to_pat renders some characters in a fallback font that has a different line height") 
+  end
+  return [w,h]
 end
 
 def image_empty_copy(image)
@@ -147,9 +180,10 @@ def random_sample(image,n_points,threshold,scale)
 end
 
 def has_ink(color)
+  # color is a ChunkyPNG::Color
   # https://rdoc.info/gems/chunky_png/ChunkyPNG/Color
   # alpha = color & 0xff ... is always 255
-  # Or should I be comparing with ChunkyPNG::Color::WHITE or something?
+  # This only tests whether or not the color is totally white, so use only on artificially constructed images, not camera data.
   rgb = (color >> 8)
   return (rgb != 0xffffff)
 end

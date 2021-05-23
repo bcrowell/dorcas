@@ -25,7 +25,8 @@ def ink_stats_1(image)
   # going up to some cut-off. There is only a very slight hump where you'd expect the upper peak to have been. This
   # would certainly look very different on something like a monochrome computer font, or possibly at higher resolution.
   threshold,dark = dark_ink(sample,median,submedian,supermedian,max)
-  return {'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
+  background = submedian
+  return {'background'=>background,'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
         'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark}
 end
 

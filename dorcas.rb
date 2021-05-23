@@ -94,6 +94,7 @@ def main()
 
   hits = match(text,pat,stats,threshold)
   matches_as_svg('a.svg',text_file,text,pat,hits)
+  swatches(hits,text,pat,stats)
 
 end
 

@@ -2,7 +2,7 @@ def matches_as_svg(svg_filename,text_file,text,pat,hits)
   print "Writing svg file #{svg_filename}\n"
   images = []
   hits.each { |hit|
-    i,j = hit
+    c,i,j = hit
     images.push(["bw.png",i,j,pat.bw.width,pat.bw.height,1.0])
   }
   images.push([text_file,0,0,text.width,text.height,0.25])

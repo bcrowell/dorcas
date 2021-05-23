@@ -7,6 +7,14 @@ class Pat
   end
 
   attr_reader :bw,:red,:line_spacing,:bbox
+
+  def width()
+    return bw.width
+  end
+
+  def height()
+    return bw.height
+  end
 end
 
 def char_to_pat(c,dir,font,dpi,script)

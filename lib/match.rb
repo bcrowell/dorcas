@@ -54,12 +54,37 @@ def match(text,pat,stats,threshold)
         if local_max then
           ci = (i+wp/2).round
           cj = (j+hp/2).round
-          print " local max: center,correl=#{ci},#{cj},#{c}\n"
-          hits.push([i,j])
+          hits.push([c,i,j])
         end
       end
     }
   }
+  hits.sort! {|a,b| b[0] <=> a[0]} # sort in descending order by score
+  print "hits:\n"
+  count = 0
+  hits.each { |hit|
+    print sprintf("  %2d corr=%4.2f x=%4d y=%4d\n",count,hit[0],hit[1],hit[2])
+    count += 1
+  }
   return hits
 end
 
+def swatches(hits,text,pat,stats)
+  nhits = hits.length
+  wt,ht = text.width,text.height
+  wp,hp = pat.width,pat.height
+  if nhits>10 then nhits=10 end
+  images = []
+  0.upto(nhits-1) { |k|
+    c,i,j = hits[k]
+    if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n" end
+    sw = text.crop(i,j,wp,hp)
+    fatten = (stats['x_height']*0.09).round # rough guess as to how much to fatten up the red mask so that we get everything
+    mask_to_background(sw,pat.red,stats['background'],fatten)
+    # This erases nearby characters, but can also have the effect of erasing part of a mismatched letter. For example,
+    # an ε in the seed font can match α in the text. Masking gets rid of the two "twigs" on the right side of the alpha
+    # and makes it look like an omicron.
+    images.push(sw)
+    sw.save("swatch#{k}.png")
+  }
+end
