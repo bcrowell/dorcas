@@ -38,7 +38,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
     out_files.push(out_file)
     offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,line_spacing)
     remember_slicing.push([this_dy_lo,this_dy_hi,offset])
-    print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
+    #print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
   }
 
   cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel --verbose #{exe} \"<\"{} \">\"{.}.out"
@@ -110,7 +110,7 @@ def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_
       }
     }
   }
-  print "exiting prep_chapel_input, offset=#{offset}\n"
+  #print "exiting prep_chapel_input, offset=#{offset}\n"
   return offset
 end
 

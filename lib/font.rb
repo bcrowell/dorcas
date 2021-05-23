@@ -16,6 +16,8 @@ class Font
     @font_name,@file_path = font_name,file_path
   end
 
+  attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
+
   def to_s()
     if false then # not implemented
       styling = "bold: #{self.bold} italic: #{self.italic} serif: #{self.serif} "
@@ -51,7 +53,6 @@ class Font
     return get_font_metrics_from_perl_gd(self,font_size_and_dpi_to_size_for_gd(self.size,dpi),script)
   end
 
-  attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
 end
 
 def get_font_metrics_from_perl_gd(font,size,script)

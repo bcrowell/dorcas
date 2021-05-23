@@ -1,9 +1,18 @@
 # coding: utf-8
 
+class Pat
+  def initialize(bw,red,line_spacing,bbox)
+    @bw,@red,@line_spacing,@bbox = bw,red,line_spacing,bbox
+    # bw and red are ChunkyPNG objects
+  end
+
+  attr_reader :bw,:red,:line_spacing,:bbox
+end
+
 def char_to_pat(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
-  return [bw,red,line_spacing,bbox]
+  return Pat.new(bw,red,line_spacing,bbox)
 end
 
 def crop_pat(bw,red,line_spacing,bbox)

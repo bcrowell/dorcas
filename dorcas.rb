@@ -5,6 +5,7 @@ require 'oily_png'
   # ubuntu package ruby-oily-png
 require 'json'
 
+require_relative "lib/match"
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
 require_relative "lib/image_util"
@@ -37,6 +38,8 @@ def main()
   peak_to_bg = stats['dark']/stats['submedian']
   text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple)
   print "text_line spacing=#{text_line_spacing}, x_height=#{x_height}\n"
+  stats['line_spacing'] = text_line_spacing
+  stats['x_height'] = x_height
   stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)
   print "ink stats=#{stats}\n"
   if x_height<0.35*text_line_spacing/spacing_multiple then 
@@ -77,80 +80,26 @@ def main()
   # estimate scale so that pattern has resolution approximately equal to that of text
   dpi = 300 # initial guess
   dpi = (dpi*text_line_spacing.to_f/f.line_spacing_pixels(dpi,script).to_f).round
-  background = stats['submedian'] # background ink level of text, in ink units
+  stats['background'] = stats['submedian'] # background ink level of text, in ink units
 
   print f
   print "font metrics: #{f.metrics(dpi,script)}\n"
   print script,"\n"
   print "character: #{char}\n"
 
-  bw,red,pat_line_spacing,bbox = char_to_pat(char,temp_dir,f,dpi,script)
-  print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"
-  bw.save('bw.png')
-  red.save('red.png')
+  pat = char_to_pat(char,temp_dir,f,dpi,script)
+  print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
+  pat.bw.save('bw.png')
+  pat.red.save('red.png')
 
-  scale = text_line_spacing/pat_line_spacing
-
-  wt,ht = text.width,text.height
-  wp,hp = bw.width,bw.height
-  wbox = bbox[1]-bbox[0]+1 # width of black
-  lbox = bbox[0] # left side of black
-  rbox = bbox[1] # right side of black
-
-  text_ink = image_to_ink_array(text)
-  bw_ink = image_to_ink_array(bw)
-  red_ink = image_to_ink_array(red)
-  pat_stats = ink_stats_pat(bw_ink,red_ink) # calculates mean and sd
-  print "pat_stats=#{pat_stats}\n"
-
-  sdt = stats['sd_in_text']
-  sdp = pat_stats['sd']
-  norm = sdt*sdp # normalization factor for correlations
-  # i and j are horizontal and vertical offsets of pattern relative to text; non-black part of pat can stick out beyond edges
-  j_lo = bbox[2]-pat_line_spacing
-  j_hi = ht-1+bbox[3]
-  i_lo = -lbox
-  i_hi = wt-1-rbox
-  results = []
-  i_lo.upto(i_hi) { |i|
-    col = []
-    j_lo.upto(j_hi) { |j|
-      col.push(nil)
-    }
-    results.push(col)
-  }
-  highest_corr = 0.0
-  results = correl_many(text_ink,bw_ink,red_ink,background,i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
-
-  hits = []
-  xr = ((bbox[1]-bbox[0])*0.8).round
-  yr = ((bbox[3]-bbox[2])*0.8).round
-  (j_lo+yr).upto(j_hi-yr) { |j|
-    (i_lo+xr).upto(i_hi-xr) { |i|
-      c = results[j-j_lo][i-i_lo]
-      if c>threshold then
-        local_max = true
-        (-xr).upto(xr) { |di|
-          (-yr).upto(yr) { |dj|
-            if results[j+dj-j_lo][i+di-i_lo]>c then local_max=false end
-          }
-        }
-        if local_max then
-          ci = (i+wp/2).round
-          cj = (j+hp/2).round
-          print " local max: center,correl=#{ci},#{cj},#{c}\n"
-          hits.push([i,j])
-        end
-      end
-    }
-  }
+  hits = match(text,pat,stats,threshold)
 
   svg_filename = 'a.svg'
   print "Writing svg file #{svg_filename}\n"
   images = []
   hits.each { |hit|
     i,j = hit
-    images.push(["bw.png",i,j,bw.width,bw.height,1.0])
+    images.push(["bw.png",i,j,pat.bw.width,pat.bw.height,1.0])
   }
   images.push([text_file,0,0,text.width,text.height,0.25])
   svg = svg_view(images,150.0)
