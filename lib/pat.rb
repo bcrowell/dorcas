@@ -106,30 +106,6 @@ end
 
 
 def string_to_image(s,dir,font,out_file,side,dpi,script)
-  return string_to_image_gd(s,dir,font,out_file,side,dpi,script)
-end
-
-def string_to_image_pango_view(s,dir,font,out_file,side,dpi,script)
-  # side=0 for left, 1 for right
-  # Empirically, pango-view seems to return a result whose height doesn't depend on the input, but with the following
-  # exception: if it can't find a character in the font you're using, it picks some other font in which to render that
-  # character; but then if that other font has a greater height, the whole image gets taller. For this reason, I have
-  # code above that tries to autodetect the script that a character is in, and only use guard-rail characters from
-  # that script.
-  # See comment block below with some perl code I could shell out to if I decide to dump pango-view.
-  pango_font = font.pango_string()
-  in_file = dir+"/"+"temp1.txt"
-  if side==0 then align="left" else align="right" end
-  File.open(in_file,'w') { |f|
-    f.print s
-  }
-  cmd = "pango-view -q --align=#{align} --dpi=#{dpi} --margin 0 --font=\"#{pango_font}\" --width=200 -o #{out_file} #{in_file}"
-  system(cmd)
-  image = ChunkyPNG::Image.from_file(out_file)
-  return image
-end
-
-def string_to_image_gd(s,dir,font,out_file,side,dpi,script)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
   # advantage: unlike pango-view, lets you really force a particular font
   verbosity = 2

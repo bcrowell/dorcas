@@ -58,8 +58,8 @@ def main()
     # text_line_spacing *= 0.85
 
     f = Font.new(font_name:"GFSPorson",serif:false,italic:true)
-    threshold = 0.5
-    text_line_spacing *= 0.9
+    threshold = 0.62
+    text_line_spacing *= 0.93
   end
   if false then
     char = 'π'
