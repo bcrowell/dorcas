@@ -22,6 +22,7 @@ require_relative "lib/estimate_image_params"
 require_relative "lib/stat"
 require_relative "lib/other_interpreters"
 require_relative "lib/string_util"
+require_relative "lib/array_util"
 require_relative "lib/reports"
 require_relative "lib/svg"
 

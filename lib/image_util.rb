@@ -1,14 +1,6 @@
 def image_to_ink_array(image)
   w,h = image.width,image.height
-  ink = []
-  0.upto(w-1) { |i|
-    col = []
-    0.upto(h-1) { |j|
-      col.push(color_to_ink(image[i,j]))
-    }
-    ink.push(col)
-  }
-  return ink
+  return generate_array(w,h,lambda {|i,j| color_to_ink(image[i,j]) })
 end
 
 def ink_array_dimensions(a)

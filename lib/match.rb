@@ -104,12 +104,12 @@ def correlate_swatches(images)
     mean.push(m)
     sd.push(s)
   }
-  0.upto(n-1) { |i|
-    0.upto(i-1) { |j|
+  c = generate_array(n,n,lambda { |i,j|
       u = mean_product_simple_list_of_floats(flat[i],flat[j])
-      c = (u-mean[i]*mean[j])/(sd[i]*sd[j])
-      print sprintf("  %2d %2d %4.2f\n",i,j,c)
-    }
-  }
-  
+      return (u-mean[i]*mean[j])/(sd[i]*sd[j])
+  },symm:true)
+  print "correlation matrix for swatches 0-#{n-1}:\n"
+  0.upto(n-1) { |i|
+    print "  ",(c[i].map {|x| sprintf("%3d",(x*100).round) }).join(" "),"\n"
+  }  
 end
