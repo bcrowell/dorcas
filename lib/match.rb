@@ -81,7 +81,7 @@ def swatches(hits,text,pat,stats,char)
   images = []
   0.upto(nhits-1) { |k|
     c,i,j = hits[k]
-    if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n" end
+    if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n"; next end
     sw = text.crop(i,j,wp,hp)
     fatten = (stats['x_height']*0.09).round # rough guess as to how much to fatten up the red mask so that we get everything
     mask_to_background(sw,pat.red,stats['background'],fatten)
