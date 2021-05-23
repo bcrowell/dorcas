@@ -1,3 +1,4 @@
+# coding: utf-8
 def match(text,pat,stats,threshold)
   # text is a ChunkyPNG object
   # pat is a Pat
@@ -70,6 +71,8 @@ def match(text,pat,stats,threshold)
 end
 
 def swatches(hits,text,pat,stats)
+  # Generates images for the best matches in the text for a particular pattern.
+  # Analyzes them into clusters. Returns a composite image for the best-matching cluster.
   nhits = hits.length
   wt,ht = text.width,text.height
   wp,hp = pat.width,pat.height
@@ -107,6 +110,7 @@ def swatches(hits,text,pat,stats)
     cl_avg.save("cl#{i}.png")
     i += 1
   }
+  return cl_averages[0]
 end
 
 def correlate_swatches(images)

@@ -28,13 +28,39 @@ require_relative "lib/reports"
 require_relative "lib/svg"
 
 def main()
+  temp_dir,output_dir = create_directories()
 
   text_file = 'sample.png'
   spacing_multiple = 1.0 # set to 2 if double-spaced
+  seed_font = Font.new(font_name:"GFSPorson")
+  threshold = 0.62 # lowest correlation that we consider to be of interest
+  fudge_size = 0.93
+  script = Script.new('greek')
 
-  temp_dir = 'temp'
-  if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
+  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,script,spacing_multiple)
+  dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
 
+  print seed_font
+  print "font metrics: #{seed_font.metrics(dpi,script)}\n"
+  print script,"\n"
+
+  match_character('ε',text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats)
+end
+
+def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats)
+  print "Searching for character #{char} in text file #{text_file}\n"
+  pat = char_to_pat(char,temp_dir,f,dpi,script)
+  print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
+  pat.bw.save('bw.png') # needed later to build svg
+  pat.red.save('red.png')
+
+  hits = match(text,pat,stats,threshold)
+  matches_as_svg('a.svg',text_file,text,pat,hits)
+  image = swatches(hits,text,pat,stats)
+  image.save(output_dir+"/"+char+".png")
+end
+
+def analyze_text_image(text_file,script,spacing_multiple)
   text = ChunkyPNG::Image.from_file(text_file)
   print "Input file is #{text_file}\n"
   stats = ink_stats_1(text)
@@ -47,59 +73,32 @@ def main()
   if x_height<0.35*text_line_spacing/spacing_multiple then 
     warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
   end
+  stats['background'] = stats['submedian'] # background ink level of text, in ink units
 
   # The result of all this is that text_line_spacing is quite robust and fairly precise, whereas x_height is
   # total crap, should probably not be used for anything more than the warning above.
   # Although the value of text_line_spacing is good, the way I'm using it in setting the font size is
   # not super great, sometimes results in a font whose size is wrong by 15%.
 
-  threshold = 0.65 # lowest correlation that we consider to be of interest
-
-  if true then
-    char = 'ε'
-
-    #f = Font.new(font_name:"BosporosU",serif:false,italic:true)
-    # threshold = 0.8 # with system default font, worked OK at 0.4
-    # text_line_spacing *= 0.85
-
-    f = Font.new(font_name:"GFSPorson",serif:false,italic:true)
-    threshold = 0.62
-    text_line_spacing *= 0.93
-  end
-  if false then
-    char = 'π'
-    f = Font.new(serif:false,italic:true)
-    threshold = 0.75
-    text_line_spacing *= 0.85
-  end
-  if false then
-    char = 'h'
-    f = Font.new(serif:true,italic:false)
-  end
-
-  script = Script.new('greek')
-
-  # estimate scale so that pattern has resolution approximately equal to that of text
-  dpi = 300 # initial guess
-  dpi = (dpi*text_line_spacing.to_f/f.line_spacing_pixels(dpi,script).to_f).round
-  stats['background'] = stats['submedian'] # background ink level of text, in ink units
-
-  print f
-  print "font metrics: #{f.metrics(dpi,script)}\n"
-  print script,"\n"
-  print "character: #{char}\n"
-
-  pat = char_to_pat(char,temp_dir,f,dpi,script)
-  print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
-  pat.bw.save('bw.png') # needed later to build svg
-  pat.red.save('red.png')
-
-  hits = match(text,pat,stats,threshold)
-  matches_as_svg('a.svg',text_file,text,pat,hits)
-  swatches(hits,text,pat,stats)
-
+  return [text,stats,peak_to_bg]
 end
 
+def match_seed_font_scale(font,stats,script,fudge_size)
+  # estimate scale so that pattern has resolution approximately equal to that of text
+  text_line_spacing = stats['line_spacing']*fudge_size
+  dpi = 300 # initial guess
+  dpi = (dpi*text_line_spacing.to_f/font.line_spacing_pixels(dpi,script).to_f).round
+
+  return dpi
+end
+
+def create_directories()
+  temp_dir = 'temp'
+  if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
+  output_dir = 'output'
+  if not File.exists?(output_dir) then Dir.mkdir(output_dir) end
+  return [temp_dir,output_dir]
+end
 
 def die(message)
   #  $stderr.print message,"\n"
