@@ -15,6 +15,11 @@ class Script
     return "script: #{self.name}"
   end
 
+  def alphabet()
+    if self.name=='latin'  then return 'abcdefghijklmnopqrstuvwxyz' end
+    if self.name=='greek'  then return 'αβγδεζηθικλμνξοπρστυφχψω' end # omitted ς
+  end
+
   def full_height_string()
     if self.name=='latin'  then return 'hp' end
     if self.name=='greek'  then return 'ζγμ' end
