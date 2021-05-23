@@ -24,7 +24,7 @@ class Font
     else
       styling = ''
     end
-    result = "Font:\n  name: #{self.font_name}\n  file: #{self.file_path}\n #{styling} size: #{self.size}\n"
+    result = "font:\n  name: #{self.font_name}\n  file: #{self.file_path}\n #{styling} size: #{self.size}\n"
   end
 
   def pango_string()

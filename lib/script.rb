@@ -12,7 +12,7 @@ class Script
   attr_reader :name
 
   def to_s()
-    return "Script: #{self.name}"
+    return "script: #{self.name}"
   end
 
   def full_height_string()

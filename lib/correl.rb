@@ -4,7 +4,7 @@ def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,nor
   start = Time.now
   results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   finish = Time.now
-  print "\ntime for correl = #{finish-start} seconds\n"
+  print "time for correl = #{finish-start} seconds\n"
   return results
 end
 
@@ -46,7 +46,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
   cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel #{v} #{exe} \"<\"{} \">\"{.}.out"
   #print cmd,"\n"
   system(cmd)
-  print "Done with processing correlations.\n"
+  #print "Done with processing correlations.\n"
 
   # Initialize the array of results with zeroes:
   result = []
