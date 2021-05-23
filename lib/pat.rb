@@ -2,6 +2,11 @@
 
 def char_to_pat(c,dir,font,dpi)
   bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi)
+  bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
+  return [bw,red,line_spacing,bbox]
+end
+
+def crop_pat(bw,red,line_spacing,bbox)
   # for each column in red, count number of red pixels
   w,h = red.width,red.height
   nred = []
@@ -99,7 +104,7 @@ end
 
 
 def string_to_image(s,dir,font,out_file,side,dpi)
-  return string_to_image_pango_view(s,dir,font,out_file,side,dpi)
+  return string_to_image_gd(s,dir,font,out_file,side,dpi)
 end
 
 def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
@@ -125,7 +130,7 @@ end
 def string_to_image_gd(s,dir,font,out_file,side,dpi)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
   # advantage: unlike pango-view, lets you really force a particular font
-  verbosity = 3
+  verbosity = 2
   temp_file_1 = temp_file_name()
   code = <<-"PERL"
     use strict;
@@ -146,13 +151,22 @@ def string_to_image_gd(s,dir,font,out_file,side,dpi)
     close F;
     print "__output__",$bounds[0],",",$bounds[2],",",$bounds[5],",",$bounds[1],"\\n" # left, right, top, bottom -- https://metacpan.org/pod/GD
   PERL
-  if verbosity>=3 then print code; print "escaped s=#{escape_double_quotes(s)}\n" end
+  if verbosity>=4 then print code; print "escaped s=#{escape_double_quotes(s)}\n" end
   output = run_perl_code(code)
   left,right,top,bottom = output.split(/,/).map {|x| x.to_i}
   if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
   image = ChunkyPNG::Image.from_file(temp_file_1)
-  die("algorithm is wrong, maybe render in middle, do arithmetic on bounds, then crop")
-  image.crop(left,top,right-left+1,bottom-top+1)
+
+  if side==1 then
+    # Because GD doesn't support drawing right-aligned text, we have to scooch it over.
+    # In the following, I'm afraid to use methods like crop! and replace! because in the past those have crashed.
+    offset = image.width-right
+    image4 = image.crop(0,0,image.width-offset,image.height) # make it narrower, otherwise the replace method complains
+    image2 = ChunkyPNG::Image.new(image.width,image.height,ChunkyPNG::Color::WHITE)
+    image3 = image2.replace(image4,offset_x=offset)
+    image = image3
+  end
+
   image.save(out_file)
   if verbosity>=3 then print "saved to #{out_file}\n" end
   return image
