@@ -70,7 +70,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
     }
     cpu +=1
   }
-  print "Retrieved chapel output.\n"
+  #print "Retrieved chapel output.\n"
 
   files_to_remove.each { |filename|
     FileUtils.rm(filename)

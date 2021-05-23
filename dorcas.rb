@@ -13,7 +13,6 @@ require_relative "lib/font"
 require_relative "lib/script"
 require_relative "lib/pat"
 require_relative "lib/correl"
-require_relative "lib/svg"
 require_relative "lib/tempfile"
 require_relative "lib/file_util"
 require_relative "lib/constants"
@@ -23,6 +22,8 @@ require_relative "lib/estimate_image_params"
 require_relative "lib/stat"
 require_relative "lib/other_interpreters"
 require_relative "lib/string_util"
+require_relative "lib/reports"
+require_relative "lib/svg"
 
 def main()
 
@@ -37,11 +38,11 @@ def main()
   stats = ink_stats_1(text)
   peak_to_bg = stats['dark']/stats['submedian']
   text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple)
-  print "text_line spacing=#{text_line_spacing}, x_height=#{x_height}\n"
+  print "text_line spacing=#{text_line_spacing}, x_height=#{x_height}"
   stats['line_spacing'] = text_line_spacing
   stats['x_height'] = x_height
   stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)
-  print "ink stats=#{stats}\n"
+  print "ink stats:\n#{stats_to_string(stats)}\n"
   if x_height<0.35*text_line_spacing/spacing_multiple then 
     warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
   end
@@ -89,21 +90,12 @@ def main()
 
   pat = char_to_pat(char,temp_dir,f,dpi,script)
   print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
-  pat.bw.save('bw.png')
+  pat.bw.save('bw.png') # needed later to build svg
   pat.red.save('red.png')
 
   hits = match(text,pat,stats,threshold)
+  matches_as_svg('a.svg',text_file,text,pat,hits)
 
-  svg_filename = 'a.svg'
-  print "Writing svg file #{svg_filename}\n"
-  images = []
-  hits.each { |hit|
-    i,j = hit
-    images.push(["bw.png",i,j,pat.bw.width,pat.bw.height,1.0])
-  }
-  images.push([text_file,0,0,text.width,text.height,0.25])
-  svg = svg_view(images,150.0)
-  File.open(svg_filename,'w') { |f| f.print svg }
 end
 
 

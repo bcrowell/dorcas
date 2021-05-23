@@ -62,3 +62,4 @@ def match(text,pat,stats,threshold)
   }
   return hits
 end
+
