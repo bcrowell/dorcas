@@ -103,7 +103,6 @@ def string_to_image(s,dir,font,out_file,side,dpi)
 end
 
 def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
-  # Even if I decide to switch from this to GD for most rendering, may still need it for Font.line_height_pixels().
   # side=0 for left, 1 for right
   # Empirically, pango-view seems to return a result whose height doesn't depend on the input, but with the following
   # exception: if it can't find a character in the font you're using, it picks some other font in which to render that

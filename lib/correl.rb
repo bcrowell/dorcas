@@ -1,14 +1,14 @@
 require 'fileutils'
 
-def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
+def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   start = Time.now
-  results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
+  results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   finish = Time.now
   print "\ntime for correl = #{finish-start} seconds\n"
   return results
 end
 
-def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_height,norm)
+def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
   n_cpus = guess_n_cores() # making this equal to the number of physical cores (not counting hypertrheading) gives the best performance
@@ -36,7 +36,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_heig
     files_to_remove.push(in_file)
     files_to_remove.push(out_file)
     out_files.push(out_file)
-    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,line_height)
+    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,line_spacing)
     remember_slicing.push([this_dy_lo,this_dy_hi,offset])
     print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
   }
@@ -79,15 +79,15 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_heig
   return result
 end
 
-def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw,line_height)
+def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw,line_spacing)
   wp,hp = ink_array_dimensions(pat)
   wt,ht_raw = ink_array_dimensions(text)
   # Redefine array indices for the chapel code so it only knows about the rows we're providing.
   # The dy values can hang outside the actual physical bounds of the array a little, and that's ok.
   # Figure out the min and max row numbers that we're actually going to provide in the data passed to the chapel code.
-  min_y = dy_lo_raw-line_height
+  min_y = dy_lo_raw-line_spacing
   if min_y<0 then min_y = 0 end
-  max_y = dy_hi_raw+line_height
+  max_y = dy_hi_raw+line_spacing
   if max_y>ht_raw-1 then max_y=ht_raw-1  end
   ht = max_y-min_y+1
   offset = min_y

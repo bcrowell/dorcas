@@ -41,13 +41,9 @@ class Font
     return a.join(' ')
   end
 
-  def line_height_pixels(dir,dpi,script)
-    image = string_to_image_pango_view(script.full_height_string(),dir,self,"test_line_height.png",0,dpi)
-    print "******** line_height_pixels = #{image.height}\n"
-    ht1 = image.height
-    ht2 = self.metrics(dpi,script)['line_spacing']
-    print "********* ht2 = #{ht2}\n"
-    return ht1
+  def line_spacing_pixels(dpi,script)
+    # Gives baseline-to-baseline spacing.
+    return self.metrics(dpi,script)['line_spacing']
   end
 
   def metrics(dpi,script)
