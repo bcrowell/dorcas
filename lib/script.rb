@@ -18,6 +18,7 @@ class Script
   def alphabet()
     if self.name=='latin'  then return 'abcdefghijklmnopqrstuvwxyz' end
     if self.name=='greek'  then return 'αβγδεζηθικλμνξοπρστυφχψω' end # omitted ς
+    die("no alphabet available for script #{self.name}")
   end
 
   def full_height_string()

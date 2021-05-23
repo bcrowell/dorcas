@@ -66,11 +66,12 @@ def match(text,pat,stats,threshold)
   hits.each { |hit|
     print sprintf("  %2d corr=%4.2f x=%4d y=%4d\n",count,hit[0],hit[1],hit[2])
     count += 1
+    if count>10 then print "  ...plus more hits for a total of #{hits.length}\n"; break end
   }
   return hits
 end
 
-def swatches(hits,text,pat,stats)
+def swatches(hits,text,pat,stats,char)
   # Generates images for the best matches in the text for a particular pattern.
   # Analyzes them into clusters. Returns a composite image for the best-matching cluster.
   nhits = hits.length
@@ -91,7 +92,7 @@ def swatches(hits,text,pat,stats)
     images.push(sw)
     sw.save("swatch#{k}.png")
   }
-  c = correlate_swatches(images)
+  c = correlate_swatches(images,char)
   clusters = find_clusters(c,0.85)
   print "clusters:\n"
   clusters.each { |cl|
@@ -113,7 +114,7 @@ def swatches(hits,text,pat,stats)
   return cl_averages[0]
 end
 
-def correlate_swatches(images)
+def correlate_swatches(images,char)
   flat = []
   images.each  { |image|
     flat.push(image_to_list_of_floats(image))
@@ -130,7 +131,7 @@ def correlate_swatches(images)
       u = mean_product_simple_list_of_floats(flat[i],flat[j])
       return (u-mean[i]*mean[j])/(sd[i]*sd[j])
   },symm:true)
-  print "correlation matrix for swatches 0-#{n-1}:\n"
+  print "correlation matrix for character '#{char}' swatches 0-#{n-1}:\n"
   print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round})
   return c
 end
