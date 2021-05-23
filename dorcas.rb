@@ -59,7 +59,7 @@ def main()
 
     f = Font.new(font_name:"GFSPorson",serif:false,italic:true)
     threshold = 0.5
-    text_line_spacing *= 1.2
+    text_line_spacing *= 0.9
   end
   if false then
     char = 'π'
@@ -84,7 +84,7 @@ def main()
   print script,"\n"
   print "character: #{char}\n"
 
-  bw,red,pat_line_spacing,bbox = char_to_pat(char,temp_dir,f,dpi)
+  bw,red,pat_line_spacing,bbox = char_to_pat(char,temp_dir,f,dpi,script)
   print "pat_line_spacing=#{pat_line_spacing}, bbox=#{bbox}\n"
   bw.save('bw.png')
   red.save('red.png')

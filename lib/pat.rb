@@ -1,8 +1,10 @@
 # coding: utf-8
 
-def char_to_pat(c,dir,font,dpi)
-  bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi)
+def char_to_pat(c,dir,font,dpi,script)
+  bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
+    bw.save("debug1.png")
+    red.save("debug2.png")
   return [bw,red,line_spacing,bbox]
 end
 
@@ -40,15 +42,15 @@ def crop_pat(bw,red,line_spacing,bbox)
   return [bw2,red2,line_spacing,bbox]
 end
 
-def char_to_pat_without_cropping(c,dir,font,dpi)
+def char_to_pat_without_cropping(c,dir,font,dpi,script)
   out_file = dir+"/"+"temp2.png"
   image = []
   bboxes = []
   red = []
   0.upto(1) { |side|
-    image.push(string_to_image(c,dir,font,out_file,side,dpi))
+    image.push(string_to_image(c,dir,font,out_file,side,dpi,script))
     bboxes.push(bounding_box(image[side]))
-    red.push(red_one_side(c,dir,font,out_file,side,image[side],dpi))
+    red.push(red_one_side(c,dir,font,out_file,side,image[side],dpi,script))
   }
   #print "bounding boxes=#{bboxes}\n"
   box_w = bboxes[0][1]-bboxes[0][0]
@@ -75,7 +77,7 @@ def char_to_pat_without_cropping(c,dir,font,dpi)
   return [image_final,red_final,pat_line_spacing,final_bbox]
 end
 
-def red_one_side(c,dir,font,out_file,side,image,dpi)
+def red_one_side(c,dir,font,out_file,side,image,dpi,script)
   red = image_empty_copy(image)
   script = Script.new(c)
   # To find out how much white "personal space" the character has around it, we render various other "guard-rail" characters
@@ -85,7 +87,7 @@ def red_one_side(c,dir,font,out_file,side,image,dpi)
   other = script.guard_rail_chars(side)
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
-    image2 = string_to_image(s,dir,font,out_file,side,dpi)
+    image2 = string_to_image(s,dir,font,out_file,side,dpi,script)
     red = image_or(red,image_minus(image2,image))
   }
   bbox = bounding_box(image)
@@ -103,11 +105,11 @@ def red_one_side(c,dir,font,out_file,side,image,dpi)
 end
 
 
-def string_to_image(s,dir,font,out_file,side,dpi)
-  return string_to_image_gd(s,dir,font,out_file,side,dpi)
+def string_to_image(s,dir,font,out_file,side,dpi,script)
+  return string_to_image_gd(s,dir,font,out_file,side,dpi,script)
 end
 
-def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
+def string_to_image_pango_view(s,dir,font,out_file,side,dpi,script)
   # side=0 for left, 1 for right
   # Empirically, pango-view seems to return a result whose height doesn't depend on the input, but with the following
   # exception: if it can't find a character in the font you're using, it picks some other font in which to render that
@@ -127,16 +129,17 @@ def string_to_image_pango_view(s,dir,font,out_file,side,dpi)
   return image
 end
 
-def string_to_image_gd(s,dir,font,out_file,side,dpi)
+def string_to_image_gd(s,dir,font,out_file,side,dpi,script)
   # quirks: if a character is missing from the font, it just silently doesn't output it, and instead outputs a little bit of whitespace
   # advantage: unlike pango-view, lets you really force a particular font
   verbosity = 2
   temp_file_1 = temp_file_name()
+  height = font.line_spacing_pixels(dpi,script)
   code = <<-"PERL"
     use strict;
     use GD;
     my $w = 1000;
-    my $h = 300;
+    my $h = #{height};
     my $image = new GD::Image($w,$h);
     my $black = $image->colorAllocate(0,0,0);
     my $white = $image->colorAllocate(255,255,255);
