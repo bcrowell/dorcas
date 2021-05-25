@@ -58,14 +58,14 @@ def crop_pat(bw,red,line_spacing,bbox)
 end
 
 def char_to_pat_without_cropping(c,dir,font,dpi,script)
-  out_file = dir+"/"+"temp2.png"
   image = []
   bboxes = []
   red = []
   0.upto(1) { |side|
-    image.push(string_to_image(c,dir,font,out_file,side,dpi,script))
-    bboxes.push(bounding_box(image[side]))
-    red.push(red_one_side(c,dir,font,out_file,side,image[side],dpi,script))
+    baseline,bbox,im = string_to_image(c,dir,font,side,dpi,script)
+    image.push(im)
+    bboxes.push(bbox)
+    red.push(red_one_side(c,dir,font,side,image[side],dpi,script))
   }
   #print "bounding boxes=#{bboxes}\n"
   box_w = bboxes[0][1]-bboxes[0][0]
@@ -92,7 +92,7 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
   return [image_final,red_final,pat_line_spacing,final_bbox]
 end
 
-def red_one_side(c,dir,font,out_file,side,image,dpi,script)
+def red_one_side(c,dir,font,side,image,dpi,script)
   red = image_empty_copy(image)
   script = Script.new(c)
   # To find out how much white "personal space" the character has around it, we render various other "guard-rail" characters
@@ -102,7 +102,7 @@ def red_one_side(c,dir,font,out_file,side,image,dpi,script)
   other = script.guard_rail_chars(side)
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
-    image2 = string_to_image(s,dir,font,out_file,side,dpi,script)
+    trash1,trash2,image2 = string_to_image(s,dir,font,side,dpi,script)
     red = image_or(red,image_minus(image2,image))
   }
   bbox = bounding_box(image)
@@ -120,7 +120,7 @@ def red_one_side(c,dir,font,out_file,side,image,dpi,script)
 end
 
 
-def string_to_image(s,dir,font,out_file,side,dpi,script)
+def string_to_image(s,dir,font,side,dpi,script)
   verbosity = 2
   temp_file = temp_file_name()
   line_spacing = font.line_spacing_pixels(dpi,script)
@@ -146,11 +146,13 @@ def string_to_image(s,dir,font,out_file,side,dpi,script)
     image2 = ChunkyPNG::Image.new(image.width,image.height,ChunkyPNG::Color::WHITE)
     image3 = image2.replace(image4,offset_x=offset)
     image = image3
+    left += offset
+    right += offset
   end
+  
+  bbox = [left,right,top,bottom]
 
-  image.save(out_file)
-  if verbosity>=3 then print "saved to #{out_file}\n" end
-  return image
+  return [baseline,bbox,image]
 end
 
 
