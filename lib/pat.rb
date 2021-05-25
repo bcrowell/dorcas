@@ -65,7 +65,10 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
     baseline,bbox,im = string_to_image(c,dir,font,side,dpi,script)
     image.push(im)
     bboxes.push(bbox)
+    start = Time.now # qwe
     red.push(red_one_side(c,dir,font,side,image[side],dpi,script))
+    finish = Time.now # qwe
+    print "time=#{finish-start}\n" # qwe
   }
   #print "bounding boxes=#{bboxes}\n"
   box_w = bboxes[0][1]-bboxes[0][0]
@@ -144,9 +147,10 @@ def string_to_image(s,dir,font,side,dpi,script)
   metrics = font.metrics(dpi,script)
   hpheight = metrics['hpheight']
   descent = metrics['descent']
+  em = metrics['em']
   margin = 1
   
-  baseline,left,right,top,bottom = ttf_render_string(s,temp_file,ttf_file_path,dpi,point_size,hpheight,descent,margin)
+  baseline,left,right,top,bottom = ttf_render_string(s,temp_file,ttf_file_path,dpi,point_size,hpheight,descent,margin,em)
   if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
   image = ChunkyPNG::Image.from_file(temp_file)
   FileUtils.rm(temp_file)

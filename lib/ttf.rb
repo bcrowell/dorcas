@@ -13,7 +13,7 @@ Quirks: if a character is missing from the font, it just silently doesn't output
 it, and instead outputs a little bit of whitespace
 =end
 
-def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descender,margin)
+def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descender,margin,em)
   # Returns baseline and bounding box in the format [baseline,left,right,top,bottom].
   # Rendered text is aligned vertically in such a way that the descenders, if any, are at the bottom of the image,
   # and ascenders are at the top, except that a margin is added at the top and bottom as well.
@@ -22,10 +22,11 @@ def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descen
   image_height = font_height+2*margin
   baseline = font_height-margin-descender
   verbosity = 2
+  max_width = 3*em # making this too big incurs a big performance hit
   code = <<-"PERL"
     use strict;
     use GD;
-    my $w = 1000;
+    my $w = #{max_width};
     my $h = #{image_height};
     my $image = new GD::Image($w,$h);
     my $black = $image->colorAllocate(0,0,0);

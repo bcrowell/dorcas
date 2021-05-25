@@ -54,11 +54,9 @@ def image_minus(image,image2)
   return image_bitwise(image,image2,lambda { |x,y| x and !y})
 end
 
-def image_or(image,image2)
-  return image_bitwise(image,image2,lambda { |x,y| x or y})
-end
-
 def image_bitwise(image,image2,op)
+  # This function seems to be a bit of a bottleneck in terms of performance, and when I hit control-C and look at a stack trace, it
+  # seems like the issue is simply accessing pixels in the image. Unfortunately, I don't know how to improve that.
   w,h = assert_same_size(image,image2)
   result = image_empty_copy(image)
   0.upto(w-1) { |i|
@@ -71,6 +69,13 @@ def image_bitwise(image,image2,op)
     }
   }
   return result
+end
+
+def image_or(image,image2)
+  # This function seems to be a bit of a bottleneck in terms of performance, and when I hit control-C and look at a stack trace, it
+  # seems like the issue is simply accessing pixels in the image. Unfortunately, I don't know how to improve that.
+  # I tried converting both images to grayscale first, but that was slower.
+  return image_bitwise(image,image2,lambda { |x,y| x or y})
 end
 
 def mask_to_background(image,mask,background,fatten)
