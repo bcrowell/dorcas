@@ -71,7 +71,7 @@ def match(text,pat,stats,threshold)
   return hits
 end
 
-def swatches(hits,text,pat,stats,char)
+def swatches(hits,text,pat,stats,char,cluster_threshold)
   # Generates images for the best matches in the text for a particular pattern.
   # Analyzes them into clusters. Returns a composite image for the best-matching cluster.
   nhits = hits.length
@@ -93,7 +93,7 @@ def swatches(hits,text,pat,stats,char)
     sw.save("swatch#{k}.png")
   }
   c = correlate_swatches(images,char)
-  clusters = find_clusters(c,0.85)
+  clusters = find_clusters(c,cluster_threshold)
   print "clusters:\n"
   clusters.each { |cl|
     print "  #{cl}\n"

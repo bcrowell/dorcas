@@ -34,7 +34,8 @@ def main()
   text_file = 'sample.png'
   spacing_multiple = 1.0 # set to 2 if double-spaced
   seed_font = Font.new(font_name:"GFSPorson")
-  threshold = 0.62 # lowest correlation that we consider to be of interest
+  threshold = 0.62 # lowest correlation between seed font and image that we consider to be of interest
+  cluster_threshold = 0.85 # lowest correlation between two characters in the image that we take as meaning that they're the same
   fudge_size = 0.93
   script = Script.new('greek')
 
@@ -45,15 +46,15 @@ def main()
   print "metrics for seed font: #{seed_font.metrics(dpi,script)}\n"
   print script,"\n"
 
-  #match_character('δ',text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats)
+  #match_character('δ',text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
 
   script.alphabet.chars.each { |char|
-    match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats)
+    match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
   }
 
 end
 
-def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats)
+def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold)
   print "Searching for character #{char} in text file #{text_file}\n"
   pat = char_to_pat(char,temp_dir,f,dpi,script)
   print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
@@ -62,7 +63,7 @@ def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,thresho
 
   hits = match(text,pat,stats,threshold)
   matches_as_svg('a.svg',text_file,text,pat,hits)
-  image = swatches(hits,text,pat,stats,char)
+  image = swatches(hits,text,pat,stats,char,cluster_threshold)
   if image.nil? then print "  no matches found for #{char}\n"; return end
   image.save(dir_and_file_to_path(output_dir,char+".png"))
 end
