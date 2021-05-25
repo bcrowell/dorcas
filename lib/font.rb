@@ -50,12 +50,13 @@ class Font
   end
 
   def metrics(dpi,script)
-    # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing.
+    # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing, em, max_kern.
     # dpi must be an integer, so that memoization works
     if dpi.class != Integer then die("dpi must be of Integer type, so that memoization will work") end
     key = "#{dpi},#{script}"
     if @memoized_metrics.has_key?(key) then return @memoized_metrics[key] end
     result = font_metrics_helper(self,dpi,script)
+    result['max_kern'] = (result['em']*0.15).round # https://en.wikipedia.org/wiki/Kerning
     @memoized_metrics[key] = result
     return result
   end
@@ -68,10 +69,11 @@ end
 
 def font_metrics_helper(font,dpi,script)
   # glue code for the low-level interface
-  # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing.
+  # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing, em.
   ttf_file_path = font.file_path
   x_height_str = script.x_height_string()
   full_height_str = script.full_height_string()
+  m_width_str = script.m_width_string()
   point_size = font_size_and_dpi_to_size_for_gd(self.size,dpi)
-  return ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_height_str)
+  return ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_height_str,m_width_str)
 end

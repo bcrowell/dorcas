@@ -42,9 +42,10 @@ def ink_to_color(ink) # inverse of color_to_ink
 end
 
 def erase_inside_box(image,bbox)
+  w,h = image.width,image.height
   bbox[0].upto(bbox[1]) { |i|
     bbox[2].upto(bbox[3]) { |j|
-      image[i,j] = ChunkyPNG::Color::WHITE
+      if i>=0 and i<=w-1 and j>=0 and j<=h-1 then image[i,j] = ChunkyPNG::Color::WHITE end
     }
   }
 end

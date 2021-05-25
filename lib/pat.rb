@@ -106,7 +106,20 @@ def red_one_side(c,dir,font,side,image,dpi,script)
     red = image_or(red,image_minus(image2,image))
   }
   bbox = bounding_box(image)
-  erase_inside_box(red,bbox) # when side=1, text is not aligned in precisely the same spot every time, varies by ~1 pixel
+
+  # When side=1, it seems like the main character is not aligned in precisely the same spot every time, varies by ~1 pixel. 
+  # I'm not sure if this is a +-1 bug in GD or in my code. Kerning shouldn't actually cause this to happen, since by definition,
+  # right-alignment should be right-alignment. The effect is in fact quite small compared to a big kerning correction, seems to
+  # be only 1 pixel. But it does happen, and this causes the red pattern to contain glitches at the left and right edges of
+  # the main character. Remove these glitches.
+  if side==1 then
+    bigger_bbox = bbox.clone
+    max_kern = font.metrics(dpi,script)['max_kern'] # efficient because memoized
+    bigger_bbox[0] -= 1
+    bigger_bbox[1] += 1
+    erase_inside_box(red,bigger_bbox) 
+  end
+
   w,h = image.width,image.height
   0.upto(h-1) { |j|
     started = false

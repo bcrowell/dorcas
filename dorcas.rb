@@ -45,9 +45,12 @@ def main()
   print "metrics for seed font: #{seed_font.metrics(dpi,script)}\n"
   print script,"\n"
 
+  #match_character('δ',text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats)
+
   script.alphabet.chars.each { |char|
     match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats)
   }
+
 end
 
 def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats)
@@ -61,7 +64,7 @@ def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,thresho
   matches_as_svg('a.svg',text_file,text,pat,hits)
   image = swatches(hits,text,pat,stats,char)
   if image.nil? then print "  no matches found for #{char}\n"; return end
-  image.save(output_dir+"/"+char+".png")
+  image.save(dir_and_file_to_path(output_dir,char+".png"))
 end
 
 def analyze_text_image(text_file,script,spacing_multiple)

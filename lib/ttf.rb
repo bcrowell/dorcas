@@ -1,5 +1,6 @@
 =begin
-Low-level interface to ttf fonts.
+Low-level interface to truetype fonts.
+Opentype is a superser of truetype.
 Currently I'm doing this with Perl's GD library, but because that seems to be
 buggy and no longer actively maintained, I've tried to isolate that interface
 here so that it will be easy to switch to somethig else later if I need to.
@@ -47,8 +48,8 @@ def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descen
   return [baseline,left,right,top,bottom]
 end
 
-def ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_height_str)
-  # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing.
+def ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_height_str,m_width_str)
+  # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing, em.
   code = <<-"PERL"
     use GD::Simple;
     use strict;
@@ -64,18 +65,21 @@ def ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_heigh
     my $m = '#{x_height_str}';     # such as 'm' for Latin script
     my $hp = '#{full_height_str}'; # such as 'hp' for Latin script
     my $mm = "$m\n$m";
+    my $em_str = "#{m_width_str}";
 
     my @mbounds   = GD::Image->stringFT($black,$font,$size,0,0,0,$m);
     my @hpbounds  = GD::Image->stringFT($black,$font,$size,0,0,0,$hp);
     my @mmbounds  = GD::Image->stringFT($black,$font,$size,0,0,0,$mm);
+    my @embounds  = GD::Image->stringFT($black,$font,$size,0,0,0,$em_str);
     my $xheight     = $mbounds[3]-$mbounds[5];
     my $ascent      = $mbounds[5]-$hpbounds[5];
     my $descent     = $hpbounds[3]-$mbounds[3];
     my $mm_height   = $mmbounds[3]-$mmbounds[5];
     my $hpheight    = $hpbounds[3]-$hpbounds[5];
+    my $em          = $embounds[2]-$embounds[0];
     my $leading     = $mm_height - 2*$xheight - $ascent - $descent;
 
-    print "__output__{\\"xheight\\":$xheight,\\"ascent\\":$ascent,\\"descent\\":$descent,\\"hpheight\\":$hpheight,\\"leading\\":$leading}";
+    print "__output__{\\"xheight\\":$xheight,\\"ascent\\":$ascent,\\"descent\\":$descent,\\"hpheight\\":$hpheight,\\"leading\\":$leading,\\"em\\":$em}";
   PERL
   result = JSON.parse(run_perl_code(code))
   result['line_spacing'] = result['hpheight']+result['leading']

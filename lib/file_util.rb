@@ -16,3 +16,7 @@ def slurp_file_with_detailed_error_reporting(file)
     return [nil,"Error opening file #{file} for input: #{$!}."]
   end
 end
+
+def dir_and_file_to_path(dir,file)
+  return dir+"/"+file # bug: won't work on windows
+end

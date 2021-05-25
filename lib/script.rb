@@ -18,7 +18,11 @@ class Script
 
   def alphabet()
     if self.name=='latin'  then return 'abcdefghijklmnopqrstuvwxyz' end
-    if self.name=='greek'  then return 'αβγδεζηθικλμνξοπρστυφχψω' end # omitted ς
+    if self.name=='greek'  then return 'αβγδεζηθικλμνξοπρστυφχψως' end
+    # ... Word-final form of ς is at the end.
+    if self.name=='hebrew'  then return 'אבגדהוזחטילמנסעפצקרשתםןףץ' end
+    # ... Word-final forms are all at the end.
+    #     To edit the Hebrew list, use mg, not emacs. Emacs tries to be smart about RTL but freaks out and gets it wrong on a line that mixes RTL and LTR.
     die("no alphabet available for script #{self.name}")
   end
 
@@ -34,6 +38,15 @@ class Script
     if self.name=='greek'  then return 'ν' end
     if self.name=='hebrew' then return 'א' end
     return '1' # likely to be rendered in any font; probably too tall for any font that actually has ascenders, but don't know what else to fall back on
+  end
+
+  def m_width_string()
+    # Wikipedia https://en.wikipedia.org/wiki/Em_(typography) says that the em unit is today defined simply as
+    # the point size of the font. However, I want a way to find out how big characters are really, truly rendered.
+    if self.name=='latin'  then return 'M' end
+    if self.name=='greek'  then return 'Μ' end # capital mu
+    if self.name=='hebrew' then return 'ש' end
+    return '81' # likely to be rendered in any font; in most fonts its width is about the same as the width of M
   end
 
   def guard_rail_chars(side)
