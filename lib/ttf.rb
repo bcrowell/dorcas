@@ -51,6 +51,8 @@ end
 
 def ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_height_str,m_width_str)
   # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing, em.
+  # Ascent is defined the normal, standard way in typography, from the baseline to the top of the tallest letter; the Perl GD docs
+  # define it a nonstandard way, but this code does it the standard way.
   code = <<-"PERL"
     use GD::Simple;
     use strict;
@@ -72,13 +74,14 @@ def ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_heigh
     my @hpbounds  = GD::Image->stringFT($black,$font,$size,0,0,0,$hp);
     my @mmbounds  = GD::Image->stringFT($black,$font,$size,0,0,0,$mm);
     my @embounds  = GD::Image->stringFT($black,$font,$size,0,0,0,$em_str);
-    my $xheight     = $mbounds[3]-$mbounds[5];
-    my $ascent      = $mbounds[5]-$hpbounds[5];
-    my $descent     = $hpbounds[3]-$mbounds[3];
+    my $baseline    = $mbounds[3];
+    my $xheight     = $baseline-$mbounds[5];
+    my $ascent      = $baseline-$hpbounds[5]; # standard definition in typography, not Perl GD's definition
+    my $descent     = $hpbounds[3]-$baseline;
     my $mm_height   = $mmbounds[3]-$mmbounds[5];
     my $hpheight    = $hpbounds[3]-$hpbounds[5];
     my $em          = $embounds[2]-$embounds[0];
-    my $leading     = $mm_height - 2*$xheight - $ascent - $descent;
+    my $leading     = $mm_height - $xheight - $ascent - $descent; # using standard definition of ascent
 
     print "__output__{\\"xheight\\":$xheight,\\"ascent\\":$ascent,\\"descent\\":$descent,\\"hpheight\\":$hpheight,\\"leading\\":$leading,\\"em\\":$em}";
   PERL

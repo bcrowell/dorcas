@@ -1,12 +1,12 @@
 # coding: utf-8
 
 class Pat
-  def initialize(bw,red,line_spacing,bbox)
+  def initialize(bw,red,line_spacing,baseline,bbox)
     @bw,@red,@line_spacing,@bbox = bw,red,line_spacing,bbox
     # bw and red are ChunkyPNG objects
   end
 
-  attr_reader :bw,:red,:line_spacing,:bbox
+  attr_reader :bw,:red,:line_spacing,:baseline,:bbox
 
   def width()
     return bw.width
@@ -18,9 +18,9 @@ class Pat
 end
 
 def char_to_pat(c,dir,font,dpi,script)
-  bw,red,line_spacing,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
+  bw,red,line_spacing,baseline,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
-  return Pat.new(bw,red,line_spacing,bbox)
+  return Pat.new(bw,red,line_spacing,baseline,bbox)
 end
 
 def crop_pat(bw,red,line_spacing,bbox)
@@ -61,8 +61,10 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
   image = []
   bboxes = []
   red = []
+  my_baseline = nil
   0.upto(1) { |side|
     baseline,bbox,im = string_to_image(c,dir,font,side,dpi,script)
+    my_baseline = baseline # should be the same both times through the loop
     image.push(im)
     bboxes.push(bbox)
     start = Time.now # qwe
@@ -92,7 +94,7 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
     }
   }
   pat_line_spacing = image_final.height # this may be wrong, but it seems like pango sets the height of the image to the line height
-  return [image_final,red_final,pat_line_spacing,final_bbox]
+  return [image_final,red_final,pat_line_spacing,my_baseline,final_bbox]
 end
 
 def red_one_side(c,dir,font,side,image,dpi,script)
