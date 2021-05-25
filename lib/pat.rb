@@ -126,7 +126,14 @@ def string_to_image(s,dir,font,out_file,side,dpi,script)
   line_spacing = font.line_spacing_pixels(dpi,script)
   point_size = font_size_and_dpi_to_size_for_gd(font.size,dpi)
   ttf_file_path = font.file_path
-  left,right,top,bottom = ttf_render_string(s,temp_file,ttf_file_path,dpi,line_spacing,point_size)
+
+  # fixme: inefficient
+  metrics = font.metrics(dpi,script)
+  hpheight = metrics['hpheight']
+  descent = metrics['descent']
+  margin = 1
+  
+  baseline,left,right,top,bottom = ttf_render_string(s,temp_file,ttf_file_path,dpi,point_size,hpheight,descent,margin)
   if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
   image = ChunkyPNG::Image.from_file(temp_file)
   FileUtils.rm(temp_file)
