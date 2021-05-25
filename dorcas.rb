@@ -26,6 +26,7 @@ require_relative "lib/string_util"
 require_relative "lib/array_util"
 require_relative "lib/reports"
 require_relative "lib/svg"
+require_relative "lib/ttf"
 
 def main()
   temp_dir,output_dir = create_directories()
