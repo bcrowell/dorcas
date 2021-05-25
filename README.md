@@ -43,4 +43,9 @@ The user evaluates whether the seed font is a good match; fine-tunes spacing_mul
 and fiddles with the threshold for matching.
 
 2. Initial matching: Run the software on an image that's big enough to have most of the common letters of the
-alphabet.
+alphabet. The software tries to find swatches from the image that match as many as possible of the letters
+of the alphabet in the seed font. The user can fiddle with cluster_threshold if desired. They
+then delete any swatches that look wrong, and possibly hand edit any glitches or flyspecks.
+
+3. Iteration: Continue the process. Any letter for which we already have a good-enough swatch is matched
+to the swatch, not to the seed font.
