@@ -14,6 +14,7 @@ class Font
       font_name = `fc-query -f "%{family}" #{file_path}`
     end
     @font_name,@file_path = font_name,file_path
+    @memoized_metrics = {}
   end
 
   attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
@@ -50,7 +51,13 @@ class Font
 
   def metrics(dpi,script)
     # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing.
-    return font_metrics_helper(self,dpi,script)
+    # dpi must be an integer, so that memoization works
+    if dpi.class != Integer then die("dpi must be of Integer type, so that memoization will work") end
+    key = "#{dpi},#{script}"
+    if @memoized_metrics.has_key?(key) then return @memoized_metrics[key] end
+    result = font_metrics_helper(self,dpi,script)
+    @memoized_metrics[key] = result
+    return result
   end
 
 end

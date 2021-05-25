@@ -127,7 +127,7 @@ def string_to_image(s,dir,font,out_file,side,dpi,script)
   point_size = font_size_and_dpi_to_size_for_gd(font.size,dpi)
   ttf_file_path = font.file_path
 
-  # fixme: inefficient
+  # The following is not inefficient, because font.metrics() is memoized.
   metrics = font.metrics(dpi,script)
   hpheight = metrics['hpheight']
   descent = metrics['descent']

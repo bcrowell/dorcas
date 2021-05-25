@@ -7,6 +7,7 @@ class Script
     else
       @name = char_to_code_block(s) # returns greek, latin, or hebrew
     end
+    # Make sure the name instance variable uniquely identifies the script, so that memoization works in font.metrics().
   end
 
   attr_reader :name
