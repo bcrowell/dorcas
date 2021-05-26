@@ -44,7 +44,7 @@ class Pat
     temp_files.each { |n| FileUtils.rm(n) }
   end
 
-  def from_file(filename,line_spacing)
+  def Pat.from_file(filename,line_spacing)
     temp_files = []
     read_as_name = ["bw.png","red.png","data.json"]
     name_to_index = {}
@@ -71,7 +71,7 @@ class Pat
       end
     end
     temp_files.each { |n| FileUtils.rm_f(n) }
-    if bw.nil or red.nil or data.nil then die("error reading #{filename}, didn't find all required parts") end
+    if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
     return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'])
   end
 end
