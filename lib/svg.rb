@@ -1,12 +1,41 @@
-def patterns_as_svg(svg_filename,unsorted_pats)
+def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
+  if not File.exists?(dir) then Dir.mkdir(dir) end
+  svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
   pats = {}
   unsorted_pats.each { |pat|
     pats[char_to_short_name(pat.c)] = pat
   }
+  heights = []
+  pats.each { |name,pat|
+    heights.push(pat.bw.height)
+  }
+  max_height = greatest(heights)
+  images = []
+  bw_filename = {}
+  count = 0
   pats.each { |name,pat|
     c = pat.c
     print "character: #{name}\n"
+    basic_png_filename = name+"_bw.png"
+    bw_filename[name] = basic_png_filename
+    pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
+    images.push([basic_png_filename,0,count*max_height,pat.bw.width,pat.bw.height,1.0])
+    count += 1
   }
+  svg = svg_code_patset(images,300.0)
+  File.open(svg_filename,'w') { |f| f.print svg }
+end
+
+def svg_code_patset(image_info,dpi)
+  images = []
+  scale = 25.4/dpi # to convert from pixels to mm
+  image_info.each { |i|
+    filename,x,y,w,h,opacity = i
+    images.push(svg_image(filename,x*scale,y*scale,w*scale,h*scale,opacity))
+  }
+  images_svg = images.join("\n")
+  svg = "#{svg_header()}  #{images_svg} </svg>"
+  return svg
 end
 
 def matches_as_svg(svg_filename,text_file,text,pat,hits)

@@ -55,7 +55,7 @@ def main()
     pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
     pats.push(pat)
   }
-  patterns_as_svg("b.svg",pats)
+  patset_as_svg("b","b.svg",pats)
 
 end
 
