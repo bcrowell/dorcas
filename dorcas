@@ -91,7 +91,7 @@ def main()
   chars = job.characters[0][2]
   warn("usig first element of characters")
   chars.chars.each { |char|
-    pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
+    pat = match_character(char,text,text_file,temp_dir,job.prev,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
     if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
   }
 
@@ -102,21 +102,29 @@ def main()
 
 end
 
-def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold)
+def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold)
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
-  pat = char_to_pat(char,temp_dir,f,dpi,script,char)
+  pat_from_prev = false
+  if !(prev_dir.nil?) then
+    prev_pat_filename = Pat.char_to_filename(prev_dir,char)
+    pat_from_prev = File.exists?(prev_pat_filename)
+  end
+  if pat_from_prev then
+    pat = Pat.from_file(prev_pat_filename)
+  else
+    pat = char_to_pat(char,temp_dir,f,dpi,script,char)
+  end
   print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
   pat.bw.save('bw.png') # needed later to build svg
   pat.red.save('red.png')
 
   hits = match(text,pat,stats,threshold)
   matches_as_svg('a.svg',text_file,text,pat,hits)
-  image = swatches(hits,text,pat,stats,char,cluster_threshold)
-  if image.nil? then print "  no matches found for #{char}\n"; return end
-  name = char_to_short_name(char)
-  # image.save(dir_and_file_to_path(output_dir,name+".png"))
-  pat.save(dir_and_file_to_path(output_dir,name+".pat"))
+  composite = swatches(hits,text,pat,stats,char,cluster_threshold)
+  if composite.nil? then print "  no matches found for #{char}\n"; return end
+  pat.transplant(composite)
+  pat.save(Pat.char_to_filename(output_dir,char))
   return pat
 end
 

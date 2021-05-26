@@ -21,9 +21,25 @@ class Pat
     return bw.height
   end
 
+  def transplant_from_file(filename)
+    my new_pat = Pat.from_file(filename)
+    self.transplant(new_pat.bw)
+  end
+
+  def transplant(new_bw)
+    if new_bw.width!=self.width or new_bw.height!=self.height then die("error transplanting swatch into pattern, not the same dimensions") end
+    @bw = new_bw
+  end
+
+  def Pat.char_to_filename(dir,c)
+    # Generate the conventional filename we would expect for this unicode character.
+    name = char_to_short_name(c)
+    return dir_and_file_to_path(dir,name+".pat")
+  end
+
   def save(filename)
     # My convention is that the filename has extension .pat.
-    data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>self.c,'unicode_name'=>char_to_name(self.c)}
+    data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>self.c,'unicode_name'=>char_to_name(self.c),'line_spacing'=>self.line_spacing}
     # ...the call to char_to_name() is currently pretty slow
     temp_files = []
     write_as_name = ["bw.png","red.png","data.json"]
@@ -47,7 +63,8 @@ class Pat
     temp_files.each { |n| FileUtils.rm(n) }
   end
 
-  def Pat.from_file(filename,line_spacing)
+  def Pat.from_file(filename,line_spacing:nil)
+    # The file should normally have a line_spacing in it, in which case that overrides any non-nil value supplied here.
     temp_files = []
     read_as_name = ["bw.png","red.png","data.json"]
     name_to_index = {}
@@ -75,6 +92,7 @@ class Pat
     end
     temp_files.each { |n| FileUtils.rm_f(n) }
     if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
+    if data.has_key?('line_spacing') then line_spacing=data['line_spacing'] end
     return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'])
   end
 end
