@@ -91,8 +91,12 @@ def main()
   warn("usig first element of characters")
   chars.chars.each { |char|
     pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
-    if not (pat.nil?) then pats.push(pat) end
+    if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
   }
+
+  patset_svg_dir = "b"
+  patset_svg_file = "b.svg"
+  print "Writing a summary of swatches to #{dir_and_file_to_path(patset_svg_dir,patset_svg_file)}\n"
   patset_as_svg("b","b.svg",pats)
 
 end

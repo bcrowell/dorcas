@@ -2,12 +2,19 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   if not File.exists?(dir) then Dir.mkdir(dir) end
   svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
   pats = {}
-  unsorted_pats.each { |pat|
-    pats[char_to_short_name(pat.c)] = pat
+  unsorted_pats.each { |x|
+    matched,match = x
+    if matched then
+      pat = match
+      pats[char_to_short_name(pat.c)] = [pat.c,matched,pat]
+    else
+      c = match
+      pats[char_to_short_name(c)] = [c,matched,nil]
+    end
   }
   heights = []
-  pats.each { |name,pat|
-    heights.push(pat.bw.height)
+  pats.each { |name,x|
+    if x[1] then heights.push(x[2].bw.height) end
   }
   max_height = greatest(heights)[1]
   row_height = max_height*1.3
@@ -16,15 +23,15 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   labels = []
   bw_filename = {}
   count = 0
-  pats.keys.sort {|a,b| pats[a].c <=> pats[b].c}.each { |name|
-    pat = pats[name]
-    c = pat.c
-    print "character: #{name}\n"
-    basic_png_filename = name+"_bw.png"
-    bw_filename[name] = basic_png_filename
-    pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
+  pats.keys.sort {|a,b| a[0] <=> b[0]}.each { |name|
+    c,matched,pat = pats[name]
     y = count*row_height
-    images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
+    if matched then
+      basic_png_filename = name+"_bw.png"
+      bw_filename[name] = basic_png_filename
+      pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
+      images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
+    end
     rough_font_size = max_height*0.27
     labels.push([c,   col_width,  y,rough_font_size])
     labels.push([name,col_width*2,y,rough_font_size])
@@ -35,18 +42,20 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
 end
 
 def svg_code_patset(image_info,label_info,dpi)
+  x_offset = 10 # in mm
+  y_offset = 10
   images = []
   scale = 25.4/dpi # to convert from pixels to mm
   image_info.each { |i|
     filename,x,y,w,h,opacity = i
-    images.push(svg_image(filename,x*scale,y*scale,w*scale,h*scale,opacity))
+    images.push(svg_image(filename,x*scale+x_offset,y*scale+y_offset,w*scale,h*scale,opacity))
   }
   images_svg = images.join("\n")
   labels = []
   label_info.each { |i|
     text,x,y,h = i
     fudge_y_pos = 2.8 # why is this necessary?
-    labels.push(svg_text(text,x*scale,(y+fudge_y_pos*h)*scale,h*scale))
+    labels.push(svg_text(text,x*scale+x_offset,(y+fudge_y_pos*h)*scale+y_offset,h*scale))
   }
   labels_svg = labels.join("\n")
   svg = "#{svg_header()}  #{images_svg} #{labels_svg} </svg>"
