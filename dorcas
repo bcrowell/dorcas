@@ -6,6 +6,7 @@ require 'oily_png'
 require 'json'
 require 'zip'
 
+require_relative "lib/job"
 require_relative "lib/match"
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
@@ -32,13 +33,18 @@ require_relative "lib/ttf"
 def main()
   temp_dir,output_dir = create_directories()
 
-  text_file = 'sample.png'
-  spacing_multiple = 1.0 # set to 2 if double-spaced
-  seed_font = Font.new(font_name:"GFSPorson")
-  threshold = 0.62 # lowest correlation between seed font and image that we consider to be of interest
-  cluster_threshold = 0.85 # lowest correlation between two characters in the image that we take as meaning that they're the same
-  fudge_size = 0.93
+  job_file = ARGV[0]
+  job = Job.from_file(job_file)
+  print job
+
+  text_file = job.image
+  spacing_multiple = job.spacing_multiple # set to 2 if double-spaced
+  threshold = job.threshold # lowest correlation between seed font and image that we consider to be of interest
+  cluster_threshold = job.cluster_threshold # lowest correlation between two characters in the image that we take as meaning that they're the same
+  fudge_size = job.adjust_size
+
   script = Script.new('greek')
+  seed_font = Font.new(font_name:"GFSPorson")
 
   text,stats,peak_to_bg,dpi = analyze_text_image(text_file,script,spacing_multiple)
   dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)

@@ -10,6 +10,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     heights.push(pat.bw.height)
   }
   max_height = greatest(heights)[1]
+  row_height = max_height*1.3
   col_width = max_height*1.5
   images = []
   labels = []
@@ -21,7 +22,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     basic_png_filename = name+"_bw.png"
     bw_filename[name] = basic_png_filename
     pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
-    y = count*max_height*1.3
+    y = count*row_height
     images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
     rough_font_size = max_height*0.27
     labels.push([c,   col_width,  y,rough_font_size])
