@@ -22,7 +22,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
     y = count*max_height
     images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
-    labels.push([c,name,pat.bw.width*2,y])
+    labels.push([c,name,pat.bw.width*2,y,max_height*0.25])
     count += 1
   }
   svg = svg_code_patset(images,labels,300.0)
@@ -39,18 +39,19 @@ def svg_code_patset(image_info,label_info,dpi)
   images_svg = images.join("\n")
   labels = []
   label_info.each { |i|
-    c,name,x,y = i
-    labels.push(svg_text(c,x*scale,y*scale))
+    c,name,x,y,h = i
+    labels.push(svg_text(c,x*scale,(y+h)*scale,h*scale))
   }
   labels_svg = labels.join("\n")
   svg = "#{svg_header()}  #{images_svg} #{labels_svg} </svg>"
   return svg
 end
 
-def svg_text(text,x,y)
+def svg_text(text,x,y,size_mm)
+  # size_mm is the font's point size, expressed in mm; fonts' sizes are normally the em width
 svg = 
 <<-"SVG"
-  <text x="#{x}" y="#{y}"><tspan>#{text}</tspan></text>
+  <text x="#{x}" y="#{y}" style="font-size:#{mm_to_pt(size_mm)}"><tspan>#{text}</tspan></text>
 SVG
 end
 
@@ -113,4 +114,8 @@ svg =
   </metadata>
   SVG
   return svg
+end
+
+def mm_to_pt(mm)
+  return mm/(25.4/72.0) # https://en.wikipedia.org/wiki/Point_(typography)
 end
