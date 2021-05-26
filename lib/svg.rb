@@ -10,6 +10,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     heights.push(pat.bw.height)
   }
   max_height = greatest(heights)[1]
+  col_width = max_height*1.5
   images = []
   labels = []
   bw_filename = {}
@@ -20,9 +21,11 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     basic_png_filename = name+"_bw.png"
     bw_filename[name] = basic_png_filename
     pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
-    y = count*max_height
+    y = count*max_height*1.3
     images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
-    labels.push([c,name,pat.bw.width*2,y,max_height*0.25])
+    rough_font_size = max_height*0.27
+    labels.push([c,   col_width,  y,rough_font_size])
+    labels.push([name,col_width*2,y,rough_font_size])
     count += 1
   }
   svg = svg_code_patset(images,labels,300.0)
@@ -39,8 +42,9 @@ def svg_code_patset(image_info,label_info,dpi)
   images_svg = images.join("\n")
   labels = []
   label_info.each { |i|
-    c,name,x,y,h = i
-    labels.push(svg_text(c,x*scale,(y+h)*scale,h*scale))
+    text,x,y,h = i
+    fudge_y_pos = 2.8 # why is this necessary?
+    labels.push(svg_text(text,x*scale,(y+fudge_y_pos*h)*scale,h*scale))
   }
   labels_svg = labels.join("\n")
   svg = "#{svg_header()}  #{images_svg} #{labels_svg} </svg>"

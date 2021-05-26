@@ -51,7 +51,7 @@ def main()
 
   pats = []
   #script.alphabet.chars.each { |char|
-  "ε".chars.each { |char|
+  "γδε".chars.each { |char|
     pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
     pats.push(pat)
   }
