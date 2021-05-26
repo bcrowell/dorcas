@@ -63,8 +63,7 @@ class Pat
     temp_files.each { |n| FileUtils.rm(n) }
   end
 
-  def Pat.from_file(filename,line_spacing:nil)
-    # The file should normally have a line_spacing in it, in which case that overrides any non-nil value supplied here.
+  def Pat.from_file(filename)
     temp_files = []
     read_as_name = ["bw.png","red.png","data.json"]
     name_to_index = {}
@@ -84,16 +83,20 @@ class Pat
         i = name_to_index[name_in_archive]
         temp = temp_files[i]
         entry.extract(temp) # read into temp file
-        content = entry.get_input_stream.read # read into memory
+        if i==0 or i==1 then
+          content = ChunkyPNG::Image.from_file(temp)
+        else
+          content = JSON.parse(entry.get_input_stream.read)
+        end
         if i==0 then bw=content end
         if i==1 then red=content end
-        if i==2 then data=JSON.parse(content) end
+        if i==2 then data=content end
       end
     end
     temp_files.each { |n| FileUtils.rm_f(n) }
     if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
     if data.has_key?('line_spacing') then line_spacing=data['line_spacing'] end
-    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'])
+    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
   end
 end
 

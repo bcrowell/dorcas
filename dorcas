@@ -103,6 +103,7 @@ def main()
 end
 
 def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold)
+  verbosity = 2
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
   pat_from_prev = false
@@ -111,11 +112,13 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
     pat_from_prev = File.exists?(prev_pat_filename)
   end
   if pat_from_prev then
+    if verbosity>=2 then print "  Taking pattern from previous run, swatch in #{prev_pat_filename}\n" end
     pat = Pat.from_file(prev_pat_filename)
   else
+    if verbosity>=2 then print "  Generating new character from seed font.\n" end
     pat = char_to_pat(char,temp_dir,f,dpi,script,char)
   end
-  print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
+  if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
   pat.bw.save('bw.png') # needed later to build svg
   pat.red.save('red.png')
 
