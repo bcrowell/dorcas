@@ -43,7 +43,40 @@ class Pat
     end
     temp_files.each { |n| FileUtils.rm(n) }
   end
+
+  def from_file(filename,line_spacing)
+    temp_files = []
+    read_as_name = ["bw.png","red.png","data.json"]
+    name_to_index = {}
+    n_pieces = read_as_name.length
+    0.upto(n_pieces-1) { |i|
+      temp_files.push(temp_file_name())
+      name_to_index[read_as_name[i]] = i
+    }
+    bw,red,data = nil,nil,nil
+    # https://github.com/rubyzip/rubyzip
+    Zip::File.open(filename) do |zipfile|
+      zipfile.each do |entry|
+        # Their sample code has sanity check on entry.size here.
+        # Extract to file or directory based on name in the archive
+        name_in_archive = entry.name
+        if not (name_to_index.has_key?(name_in_archive)) then die("illegal filename in archive, #{name_in_archive}") end
+        i = name_to_index[name_in_archive]
+        temp = temp_files[i]
+        entry.extract(temp) # read into temp file
+        content = entry.get_input_stream.read # read into memory
+        if i==0 then bw=content end
+        if i==1 then red=content end
+        if i==2 then data=JSON.parse(content) end
+      end
+    end
+    temp_files.each { |n| FileUtils.rm_f(n) }
+    if bw.nil or red.nil or data.nil then die("error reading #{filename}, didn't find all required parts") end
+    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'])
+  end
 end
+
+#---------- end of class Pat
 
 def char_to_pat(c,dir,font,dpi,script)
   bw,red,line_spacing,baseline,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
