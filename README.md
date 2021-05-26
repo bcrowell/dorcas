@@ -63,3 +63,21 @@ To edit a pattern:
 3. `zip -r a.pat bw.png`
 
 
+# Format of input file
+
+The input file is a JSON hash with the following keys.
+
+* image - A PNG file containing the text that we want to do OCR on.
+
+* seed_fonts - An array of arrays, each of which is of the form [font name,script name,(lowercase|uppercase|both)].
+          The script name is a string like latin, greek, or hebrew, and defaults to latin.
+          The case argument defaults to both.
+
+* spacing_multiple - Set to 2 if double-spaced. Default: 1. Setting this appropriately helps the software to guess the right scaling for the seed font.
+
+* threshold - The lowest correlation between seed font and image that we consider to be of interest. Defaults to something reasonable.
+
+* cluster_threshold -  The lowest correlation between two characters in the image that we take as meaning that they're the same.
+            Defaults to something reasonable.
+
+* adjust_size - An additional scaling factor to match the seed font to the image. Default: 1.

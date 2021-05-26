@@ -38,9 +38,9 @@ def main()
   print job
 
   text_file = job.image
-  spacing_multiple = job.spacing_multiple # set to 2 if double-spaced
-  threshold = job.threshold # lowest correlation between seed font and image that we consider to be of interest
-  cluster_threshold = job.cluster_threshold # lowest correlation between two characters in the image that we take as meaning that they're the same
+  spacing_multiple = job.spacing_multiple
+  threshold = job.threshold
+  cluster_threshold = job.cluster_threshold 
   fudge_size = job.adjust_size
 
   script = Script.new('greek')
