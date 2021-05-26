@@ -57,7 +57,7 @@ end
 
 def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold)
   print "Searching for character #{char} in text file #{text_file}\n"
-  pat = char_to_pat(char,temp_dir,f,dpi,script)
+  pat = char_to_pat(char,temp_dir,f,dpi,script,char)
   print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
   pat.bw.save('bw.png') # needed later to build svg
   pat.red.save('red.png')
@@ -66,8 +66,9 @@ def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,thresho
   matches_as_svg('a.svg',text_file,text,pat,hits)
   image = swatches(hits,text,pat,stats,char,cluster_threshold)
   if image.nil? then print "  no matches found for #{char}\n"; return end
-  image.save(dir_and_file_to_path(output_dir,char+".png"))
-  pat.save(dir_and_file_to_path(output_dir,char+".pat"))
+  name = char_to_short_name(char)
+  image.save(dir_and_file_to_path(output_dir,name+".png"))
+  pat.save(dir_and_file_to_path(output_dir,name+".pat"),char)
 end
 
 def analyze_text_image(text_file,script,spacing_multiple)

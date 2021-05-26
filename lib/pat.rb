@@ -1,13 +1,14 @@
 # coding: utf-8
 
 class Pat
-  def initialize(bw,red,line_spacing,baseline,bbox)
+  def initialize(bw,red,line_spacing,baseline,bbox,c)
     @bw,@red,@line_spacing,@bbox,@baseline = bw,red,line_spacing,bbox,baseline
     # bw and red are ChunkyPNG objects
     # The bbox is typically the one from the original seed font, but can be modified.
     # There is not much point in storing the bbox of the actual swatch, since that is probably unreliable and in any case can
     # be found from bw and red if we need it. The only part of the bbox that we normally care about
     # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
+    # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file.
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox
@@ -20,8 +21,10 @@ class Pat
     return bw.height
   end
 
-  def save(filename)
+  def save(filename,character)
     # My convention is that the filename has extension .pat.
+    data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>character,'unicode_name'=>char_to_name(character)}
+    # ...the call to char_to_name() is currently pretty slow
     temp_files = []
     write_as_name = ["bw.png","red.png","data.json"]
     n_pieces = write_as_name.length
@@ -32,7 +35,7 @@ class Pat
       n = temp_files[i]
       if i==0 then self.bw.save(n) end
       if i==1 then self.red.save(n) end
-      if i==2 then create_text_file(n,JSON.pretty_generate({'baseline'=>self.baseline,'bbox'=>self.bbox})) end
+      if i==2 then create_text_file(n,JSON.pretty_generate(data)) end
     }
     # rubyzip, https://github.com/rubyzip
     FileUtils.rm_f(filename)
@@ -78,10 +81,10 @@ end
 
 #---------- end of class Pat
 
-def char_to_pat(c,dir,font,dpi,script)
+def char_to_pat(c,dir,font,dpi,script,char)
   bw,red,line_spacing,baseline,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
   bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
-  return Pat.new(bw,red,line_spacing,baseline,bbox)
+  return Pat.new(bw,red,line_spacing,baseline,bbox,char)
 end
 
 def crop_pat(bw,red,line_spacing,bbox)
