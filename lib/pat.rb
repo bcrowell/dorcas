@@ -2,8 +2,12 @@
 
 class Pat
   def initialize(bw,red,line_spacing,baseline,bbox)
-    @bw,@red,@line_spacing,@bbox = bw,red,line_spacing,bbox
+    @bw,@red,@line_spacing,@bbox,@baseline = bw,red,line_spacing,bbox,baseline
     # bw and red are ChunkyPNG objects
+    # The bbox is typically the one from the original seed font, but can be modified.
+    # There is not much point in storing the bbox of the actual swatch, since that is probably unreliable and in any case can
+    # be found from bw and red if we need it. The only part of the bbox that we normally care about
+    # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox
@@ -14,6 +18,30 @@ class Pat
 
   def height()
     return bw.height
+  end
+
+  def save(filename)
+    # My convention is that the filename has extension .pat.
+    temp_files = []
+    write_as_name = ["bw.png","red.png","data.json"]
+    n_pieces = write_as_name.length
+    0.upto(n_pieces-1) { |i|
+      temp_files.push(temp_file_name())
+    }
+    0.upto(n_pieces-1) { |i|
+      n = temp_files[i]
+      if i==0 then self.bw.save(n) end
+      if i==1 then self.red.save(n) end
+      if i==2 then create_text_file(n,JSON.pretty_generate({'baseline'=>self.baseline,'bbox'=>self.bbox})) end
+    }
+    # rubyzip, https://github.com/rubyzip
+    FileUtils.rm_f(filename)
+    Zip::File.open(filename, Zip::File::CREATE) do |zipfile|
+      0.upto(n_pieces-1) { |i|
+        zipfile.add(write_as_name[i],temp_files[i])
+      }
+    end
+    temp_files.each { |n| FileUtils.rm(n) }
   end
 end
 
@@ -67,10 +95,7 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
     my_baseline = baseline # should be the same both times through the loop
     image.push(im)
     bboxes.push(bbox)
-    start = Time.now # qwe
     red.push(red_one_side(c,dir,font,side,image[side],dpi,script))
-    finish = Time.now # qwe
-    print "time=#{finish-start}\n" # qwe
   }
   #print "bounding boxes=#{bboxes}\n"
   box_w = bboxes[0][1]-bboxes[0][0]

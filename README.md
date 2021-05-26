@@ -31,7 +31,7 @@ ruby
 
 chapel
 
-debian packages: parallel r-cran-minpack.lm unicode libgd-perl
+debian packages: parallel r-cran-minpack.lm unicode libgd-perl ruby-zip
 
 ## Method of use
 

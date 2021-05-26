@@ -20,3 +20,9 @@ end
 def dir_and_file_to_path(dir,file)
   return dir+"/"+file # bug: won't work on windows
 end
+
+def create_text_file(filename,text)
+  File.open(filename,'w') { |f|
+    f.print text
+  }
+end

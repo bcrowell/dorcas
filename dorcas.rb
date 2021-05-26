@@ -4,6 +4,7 @@
 require 'oily_png'
   # ubuntu package ruby-oily-png
 require 'json'
+require 'zip'
 
 require_relative "lib/match"
 require_relative "lib/fft"
@@ -66,6 +67,7 @@ def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,thresho
   image = swatches(hits,text,pat,stats,char,cluster_threshold)
   if image.nil? then print "  no matches found for #{char}\n"; return end
   image.save(dir_and_file_to_path(output_dir,char+".png"))
+  pat.save(dir_and_file_to_path(output_dir,char+".pat"))
 end
 
 def analyze_text_image(text_file,script,spacing_multiple)
