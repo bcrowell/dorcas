@@ -49,3 +49,17 @@ then delete any swatches that look wrong, and possibly hand edit any glitches or
 
 3. Iteration: Continue the process. Any letter for which we already have a good-enough swatch is matched
 to the swatch, not to the seed font.
+
+### Editing data
+
+To delete a bad pattern, simply remove the .pat file.
+
+To edit a pattern:
+
+1. `unzip -jo a.pat bw.png`
+
+2. Use software such as GIMP to edit bw.png.
+
+3. `zip -r a.pat bw.png`
+
+
