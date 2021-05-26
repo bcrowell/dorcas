@@ -16,7 +16,8 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   labels = []
   bw_filename = {}
   count = 0
-  pats.each { |name,pat|
+  pats.keys.sort {|a,b| pats[a].c <=> pats[b].c}.each { |name|
+    pat = pats[name]
     c = pat.c
     print "character: #{name}\n"
     basic_png_filename = name+"_bw.png"

@@ -37,7 +37,7 @@ def char_to_short_name_helper(c)
 end
 
 def lc_underbar(s)
-  return s.downcase.gsub(/' '/,'_')
+  return s.downcase.gsub(/ /,'_')
 end
 
 def short_name_to_long_name(name)

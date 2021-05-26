@@ -91,13 +91,14 @@ def main()
   warn("usig first element of characters")
   chars.chars.each { |char|
     pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
-    pats.push(pat)
+    if not (pat.nil?) then pats.push(pat) end
   }
   patset_as_svg("b","b.svg",pats)
 
 end
 
 def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold)
+  # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
   pat = char_to_pat(char,temp_dir,f,dpi,script,char)
   print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n"
@@ -109,7 +110,7 @@ def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,thresho
   image = swatches(hits,text,pat,stats,char,cluster_threshold)
   if image.nil? then print "  no matches found for #{char}\n"; return end
   name = char_to_short_name(char)
-  image.save(dir_and_file_to_path(output_dir,name+".png"))
+  # image.save(dir_and_file_to_path(output_dir,name+".png"))
   pat.save(dir_and_file_to_path(output_dir,name+".pat"))
   return pat
 end
