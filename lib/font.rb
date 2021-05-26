@@ -7,8 +7,10 @@ class Font
     # If, e.g., you need italics, it's best to explicitly name a .ttf file that is a purely italic font.
     @serif,@italic,@bold,@size = serif,italic,bold,size
     # font_name is, e.g., "BosporosU" if the font is in BosporosU.ttf in one of the standard locations
+    # The following assumes we're on a Unix system and can invoke fontconfig's command-line interface, but
+    # should still work if that fails, provided an absolute path is suppled. See README under Portability.
     if (not font_name.nil?) and file_path.nil? then
-      file_path = `fc-match -f "%{file}" #{font_name}`
+      file_path = Font.name_to_path(font_name)
     end
     if not file_path.nil? then
       font_name = `fc-query -f "%{family}" #{file_path}`
@@ -18,6 +20,10 @@ class Font
   end
 
   attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
+
+  def Font.name_to_path(font_name)
+    return `fc-match -f "%{file}" #{font_name}`
+  end
 
   def to_s()
     if false then # not implemented

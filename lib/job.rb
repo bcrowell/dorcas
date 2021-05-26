@@ -42,4 +42,21 @@ class Job
     return Job.new(JSON.parse(slurp_file(filename)))
   end
 
+  def font_string_to_path(s)
+    if s=~/\.ttf$/ then # This is the behavior that the docs guarantee.
+      return s
+    else
+      return Font.name_to_path(s)
+    end
+  end
+
+  def all_font_files
+    hash = {}
+    @seed_fonts.each { |x|
+      s = x[0] # may be a font name or a ttf filename
+      hash[font_string_to_path(s)] = 1
+    }
+    return hash.keys
+  end
+
 end

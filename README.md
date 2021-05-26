@@ -67,9 +67,11 @@ To edit a pattern:
 
 The input file is a JSON hash with the following keys.
 
-* image - A PNG file containing the text that we want to do OCR on.
+* image - Name of a PNG file containing the text that we want to do OCR on.
 
 * seed_fonts - An array of arrays, each of which is of the form [font name,script name,(lowercase|uppercase|both)].
+          If the font name ends in .ttf, then it's taken to be an absolute path to a truetype font file; otherwise
+          it's translated into such a filename using the Unix fontconfig utility fc-match.
           The script name is a string like latin, greek, or hebrew, and defaults to latin.
           The case argument defaults to both.
 
@@ -81,3 +83,14 @@ The input file is a JSON hash with the following keys.
             Defaults to something reasonable.
 
 * adjust_size - An additional scaling factor to match the seed font to the image. Default: 1.
+
+# Portability
+
+The following is a list of the things that would require work if porting this software to a non-Unix system.
+
+We assume we can run the Unix fontconfig utilities fc-match and fc-query through a shell, but if that fails,
+then supplying an absolute pathname for the font should still work. (See class Font in the source code.)
+
+We assume we can invoke the Unix command-line utility "unicode" through a shell.
+(See lib/string_util.rb.)
+
