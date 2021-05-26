@@ -2,7 +2,7 @@
 
 class Pat
   def initialize(bw,red,line_spacing,baseline,bbox,c)
-    @bw,@red,@line_spacing,@bbox,@baseline = bw,red,line_spacing,bbox,baseline
+    @bw,@red,@line_spacing,@bbox,@baseline,@c = bw,red,line_spacing,bbox,baseline,c
     # bw and red are ChunkyPNG objects
     # The bbox is typically the one from the original seed font, but can be modified.
     # There is not much point in storing the bbox of the actual swatch, since that is probably unreliable and in any case can
@@ -11,7 +11,7 @@ class Pat
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file.
   end
 
-  attr_reader :bw,:red,:line_spacing,:baseline,:bbox
+  attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
 
   def width()
     return bw.width
@@ -21,9 +21,9 @@ class Pat
     return bw.height
   end
 
-  def save(filename,character)
+  def save(filename)
     # My convention is that the filename has extension .pat.
-    data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>character,'unicode_name'=>char_to_name(character)}
+    data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>self.c,'unicode_name'=>char_to_name(self.c)}
     # ...the call to char_to_name() is currently pretty slow
     temp_files = []
     write_as_name = ["bw.png","red.png","data.json"]

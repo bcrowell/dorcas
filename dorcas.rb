@@ -49,9 +49,13 @@ def main()
 
   #match_character('δ',text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
 
-  script.alphabet.chars.each { |char|
-    match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
+  pats = []
+  #script.alphabet.chars.each { |char|
+  "γδε".chars.each { |char|
+    pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
+    pats.push(pat)
   }
+  patterns_as_svg("b.svg",pats)
 
 end
 
@@ -68,7 +72,8 @@ def match_character(char,text,text_file,temp_dir,output_dir,f,dpi,script,thresho
   if image.nil? then print "  no matches found for #{char}\n"; return end
   name = char_to_short_name(char)
   image.save(dir_and_file_to_path(output_dir,name+".png"))
-  pat.save(dir_and_file_to_path(output_dir,name+".pat"),char)
+  pat.save(dir_and_file_to_path(output_dir,name+".pat"))
+  return pat
 end
 
 def analyze_text_image(text_file,script,spacing_multiple)
