@@ -12,6 +12,7 @@ require_relative "lib/fft"
 require_relative "lib/estimate_scale"
 require_relative "lib/image_util"
 require_relative "lib/font"
+require_relative "lib/fontconfig"
 require_relative "lib/script"
 require_relative "lib/pat"
 require_relative "lib/correl"
@@ -57,7 +58,7 @@ def main()
       print "  #{s}\n"
     else
       print "  #{s} -> #{file}\n"
-      round_trip = Font.path_to_name(file)
+      round_trip = Fontconfig.path_to_name(file)
       if round_trip!=s then
         warn("In #{job_file}, the font name '#{s}' does not match the name '#{round_trip}' of the file supplied by fontconfig.\n"+
                "This probably means either that you don't have the font on your system or that you gave the wrong name or a different form of the name.")

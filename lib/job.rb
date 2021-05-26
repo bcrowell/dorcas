@@ -68,7 +68,7 @@ class Job
     if Job.font_string_is_full_path(s) then 
       return s
     else
-      return Font.name_to_path(s)
+      return Fontconfig.name_to_path(s)
     end
   end
 

@@ -97,9 +97,20 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 The following is a list of the things that would require work if porting this software to a non-Unix system.
 
-We assume we can run the Unix fontconfig utilities fc-match and fc-query through a shell, but if that fails,
-then supplying an absolute pathname for the font should still work. (See class Font in the source code.)
+We assume we have a working fontconfig, but if that fails,
+then supplying an absolute pathname for the font should still work.
+Fontconfig is mainly a Unix thing, but does exist on windows.
+My current implementation uses fontconfig by shelling out to the
+Unix fontconfig utilities fc-match and fc-query, which won't work on windows.
+(See lib/fontconfig.rb.)
 
 We assume we can invoke the Unix command-line utility "unicode" through a shell.
 (See lib/string_util.rb.)
 
+For parallel processing, we use gnu parallel. (See lib/correl.rb.)
+
+For graphing, we shell out to the R language, although these functions are
+not needed for operation of the software. (See lib/other_interpreters.rb.)
+
+For rendering fonts, we shell out to a perl interpreter and use Perl's GD
+library. (See lib/other_interpreters.rb.)
