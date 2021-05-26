@@ -66,6 +66,13 @@ def main()
     if not (all_fonts.has_key?(s)) then all_fonts[s] = Font.new(file_path:file) end
   }
 
+  # Tell them what characters they requested.
+  print "Characters:\n"
+  job.characters.each { |x|
+    script,c,string = x # string has already been filled in by initializer, if necessary
+    print "  #{script} #{c} #{string}\n"
+  }
+
   script = Script.new('greek')
   warn("using greek rather than script given in job file")
 
@@ -79,11 +86,10 @@ def main()
   print "metrics for seed font: #{seed_font.metrics(dpi,script)}\n"
   print script,"\n"
 
-  #match_character('δ',text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
-
   pats = []
-  #script.alphabet.chars.each { |char|
-  "ε".chars.each { |char|
+  chars = job.characters[0][2]
+  warn("usig first element of characters")
+  chars.chars.each { |char|
     pat = match_character(char,text,text_file,temp_dir,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold)
     pats.push(pat)
   }

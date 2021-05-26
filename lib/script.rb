@@ -16,10 +16,28 @@ class Script
     return "script: #{self.name}"
   end
 
-  def alphabet()
+  def alphabet(c:"lowercase")
+    # c can be lowercase, uppercase, or both
+    # For scripts that don't have case, c is ignored.
+    if !(self.has_case) then return self.alphabet_helper(nil) end
+    if c=='both' then return self.alphabet(c:"lowercase")+self.alphabet(c:"uppercase") end
+    # If we fall through to here, then we're doing a single case of an alphabet that has two cases.
+    if c=='lowercase' then return self.alphabet_helper(true) end
+    if c=='uppercase' then return self.alphabet_helper(false).upcase end
+    die("illegal value of c=#{c}, must be both, lowercase, or uppercase")
+  end
+
+  def has_case
+    return !(@name=='hebrew')
+  end
+
+  def alphabet_helper(include_lc_only_chars)
     if self.name=='latin'  then return 'abcdefghijklmnopqrstuvwxyz' end
-    if self.name=='greek'  then return 'αβγδεζηθικλμνξοπρστυφχψως' end
-    # ... Word-final form of ς is at the end.
+    if self.name=='greek'  then 
+      result = 'αβγδεζηθικλμνξοπρστυφχψω'
+      if include_lc_only_chars then result = result+'ς' end
+      return result
+    end
     if self.name=='hebrew'  then return 'אבגדהוזחטילמנסעפצקרשתםןףץ' end
     # ... Word-final forms are all at the end.
     #     To edit the Hebrew list, use mg, not emacs. Emacs tries to be smart about RTL but freaks out and gets it wrong on a line that mixes RTL and LTR.

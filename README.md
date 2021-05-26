@@ -65,7 +65,7 @@ To edit a pattern:
 
 # Format of input file
 
-The input file is a JSON hash with the following keys.
+The input file is a JSON hash with keys and values described below. Comments are allowed using javascript syntax ("// ...").
 
 * image - Name of a PNG file containing the text that we want to do OCR on.
 
@@ -78,6 +78,11 @@ The input file is a JSON hash with the following keys.
           it's translated into such a filename using the Unix fontconfig utility fc-match.
           The script name is a string like latin, greek, or hebrew, and defaults to latin.
           The case argument defaults to both.
+
+* characters - An array of arrays, each of which is of the form [script name,(lowercase|uppercase|both),string].
+          If the third element is absent, then every character from this string is searched for in the text;
+          otherwise the string is taken as a list of characters to search for.
+          Default: [["latin","lowercase"]]
 
 * spacing_multiple - Set to 2 if double-spaced. Default: 1. Setting this appropriately helps the software to guess the right scaling for the seed font.
 
