@@ -9,7 +9,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   pats.each { |name,pat|
     heights.push(pat.bw.height)
   }
-  max_height = greatest(heights)
+  max_height = greatest(heights)[1]
   images = []
   bw_filename = {}
   count = 0
