@@ -69,6 +69,10 @@ The input file is a JSON hash with the following keys.
 
 * image - Name of a PNG file containing the text that we want to do OCR on.
 
+* prev - Name of a directory containing output from a previous run. Default: null.
+
+* output - Name of a directory in which to place accumulated results after this run. Default: "output".
+
 * seed_fonts - An array of arrays, each of which is of the form [font name,script name,(lowercase|uppercase|both)].
           If the font name ends in .ttf, then it's taken to be an absolute path to a truetype font file; otherwise
           it's translated into such a filename using the Unix fontconfig utility fc-match.
