@@ -43,10 +43,26 @@ def main()
   cluster_threshold = job.cluster_threshold 
   fudge_size = job.adjust_size
 
-  # Just check that we can actually access all the fonts they named.
-  job.all_font_files { |file|
+  # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
+  # fall back to something stupid.
+  all_fonts = {}
+  print "Fonts:\n"
+  job.seed_fonts.each { |x|
+    s = x[0] # may be a font name or a ttf filename
+    file = Job.font_string_to_path(s)
+    if Job.font_string_is_full_path(s) then
+      print "  #{s}\n"
+    else
+      print "  #{s} -> #{file}\n"
+      round_trip = Font.path_to_name(file)
+      if round_trip!=s then
+        warn("In #{job_file}, the font name '#{s}' does not match the name '#{round_trip}' of the file supplied by fontconfig.\n"+
+               "This probably means either that you don't have the font on your system or that you gave the wrong name or a different form of the name.")
+      end
+    end
     Font.new(file_path:file)
   }
+  exit(0)
 
   script = Script.new('greek')
   seed_font = Font.new(font_name:"GFSPorson")

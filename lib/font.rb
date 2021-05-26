@@ -13,7 +13,7 @@ class Font
       file_path = Font.name_to_path(font_name)
     end
     if not file_path.nil? then
-      font_name = `fc-query -f "%{family}" #{file_path}`
+      font_name = Font.path_to_name(file_path)
     end
     @font_name,@file_path = font_name,file_path
     @memoized_metrics = {}
@@ -22,7 +22,11 @@ class Font
   attr_reader :serif,:italic,:bold,:size,:font_name,:file_path
 
   def Font.name_to_path(font_name)
-    return `fc-match -f "%{file}" #{font_name}`
+    return `fc-match -f "%{file}" "#{font_name}"`
+  end
+
+  def Font.path_to_name(file_path)
+    return `fc-query -f "%{family}" #{file_path}`
   end
 
   def to_s()
