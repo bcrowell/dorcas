@@ -23,7 +23,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   labels = []
   bw_filename = {}
   count = 0
-  pats.keys.sort {|a,b| a[0] <=> b[0]}.each { |name|
+  pats.keys.sort {|a,b| pats[a][0] <=> pats[b][0]}.each { |name|
     c,matched,pat = pats[name]
     y = count*row_height
     if matched then
