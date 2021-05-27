@@ -28,15 +28,6 @@ def match(text,pat,stats,threshold)
   j_hi = ht-1+pat.bbox[3]
   i_lo = -lbox
   i_hi = wt-1-rbox
-  results = []
-  i_lo.upto(i_hi) { |i|
-    col = []
-    j_lo.upto(j_hi) { |j|
-      col.push(nil)
-    }
-    results.push(col)
-  }
-  highest_corr = 0.0
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
 
   hits = []
