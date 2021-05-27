@@ -45,6 +45,8 @@ def main()
 
   report_dir = dir_and_file_to_path(output_dir,"_reports")
   temp_dir,output_dir = create_directories(output_dir,report_dir)
+  create_text_file(dir_and_file_to_path(report_dir,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
+  copy_all_pat_files(job.prev,output_dir) # these may get overwritten later
 
   # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
   # fall back to something stupid. We try to detect that and warn them.
@@ -95,7 +97,8 @@ def main()
   patset_svg_dir = report_dir
   patset_svg_file = "patterns.svg"
   print "Writing a summary of swatches to #{dir_and_file_to_path(patset_svg_dir,patset_svg_file)}\n"
-  patset_as_svg(patset_svg_dir,patset_svg_file,pats)
+  err,message = patset_as_svg(patset_svg_dir,patset_svg_file,pats)
+  if err!=0 then warn(message) end
 
 end
 
@@ -164,6 +167,15 @@ def create_directories(output_dir,report_dir)
   if not File.exists?(output_dir) then Dir.mkdir(output_dir) end
   if not File.exists?(report_dir) then Dir.mkdir(report_dir) end
   return [temp_dir,output_dir]
+end
+
+def copy_all_pat_files(prev_dir,output_dir)
+  Dir[dir_and_file_to_path(prev_dir,"*.pat")].each { |filename|
+    name = File.basename(filename)
+    destination = dir_and_file_to_path(output_dir,name)
+    # print "copying #{filename} to #{destination}\n"
+    FileUtils.cp(filename,destination)
+  }
 end
 
 def die(message)

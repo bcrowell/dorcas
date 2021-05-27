@@ -38,11 +38,11 @@ class Pat
   end
 
   def visual
-    v = @red.clone
+    v = ChunkyPNG::Image.new(@red.width,@red.height) # default is to initialize it as transparent, which is what we want
     red_color = ChunkyPNG::Color::rgb(255,0,0)
     0.upto(v.width-1) { |i|
       0.upto(v.height-1) { |j|
-        if has_ink(v[i,j]) then v[i,j]=red_color end
+        if has_ink(@red[i,j]) then v[i,j]=red_color end
         if has_ink(@bw[i,j]) then v[i,j]=ChunkyPNG::Color::BLACK end
       }
     }

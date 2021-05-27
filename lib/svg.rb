@@ -1,4 +1,5 @@
 def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
+  return [1,"no patterns to write"]
   if not File.exists?(dir) then Dir.mkdir(dir) end
   svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
   pats = {}
@@ -39,6 +40,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   }
   svg = svg_code_patset(images,labels,300.0)
   File.open(svg_filename,'w') { |f| f.print svg }
+  return [0,nil]
 end
 
 def svg_code_patset(image_info,label_info,dpi)
@@ -75,11 +77,11 @@ def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits)
   images = []
   filename = dir_and_file_to_path(dir,"matches_#{char_name}.png")
   pat.visual.save(filename)
+  images.push([text_file,0,0,text.width,text.height,0.4])
   hits.each { |hit|
     c,i,j = hit
-    images.push([filename,i,j,pat.bw.width,pat.bw.height,1.0])
+    images.push([filename,i,j,pat.bw.width,pat.bw.height,0.8])
   }
-  images.push([text_file,0,0,text.width,text.height,0.25])
   svg = svg_code_matches(images,300.0)
   File.open(svg_filename,'w') { |f| f.print svg }
 end
