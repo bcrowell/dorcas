@@ -36,9 +36,9 @@ class Script
     if self.name=='greek'  then 
       result = 'αβγδεζηθικλμνξοπρστυφχψω'
       if include_lc_only_chars then result = result+'ς' end
-      return result
+      return result.unicode_normalize(:nfc)
     end
-    if self.name=='hebrew'  then return 'אבגדהוזחטילמנסעפצקרשתםןףץ' end
+    if self.name=='hebrew'  then return 'אבגדהוזחטילמנסעפצקרשתםןףץ'.unicode_normalize(:nfc) end
     # ... Word-final forms are all at the end.
     #     To edit the Hebrew list, use mg, not emacs. Emacs tries to be smart about RTL but freaks out and gets it wrong on a line that mixes RTL and LTR.
     die("no alphabet available for script #{self.name}")

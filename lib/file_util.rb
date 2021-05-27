@@ -10,6 +10,7 @@ def slurp_file_with_detailed_error_reporting(file)
     File.open(file,'r') { |f|
       t = f.gets(nil) # nil means read whole file
       if t.nil? then t='' end # gets returns nil at EOF, which means it returns nil if file is empty
+      t = t.unicode_normalize(:nfc) # e.g., the constructor Job.from_file() depends on this
       return [t,nil]
     }
   rescue

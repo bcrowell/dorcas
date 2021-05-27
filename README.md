@@ -99,6 +99,12 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 * guess_font_size - An initial estimate of the font size in points. Default: 12.
 
+* prefer_cluster - An array of arrays, each of which is of the form [character,n].
+        The idea here is that on the previous run, we found that a certain character, say ψ, from the seed font was matched with the wrong
+        cluster of swatches. We looked at the file matches_psi.svg, which showed the alternative clusters of swatches, and
+        we decided that rather than the 1st swatch, what we wanted was the 3rd. Therefore, we add this to our job file:
+        `"prefer_cluster":[["ψ",3]]`.
+
 # Portability
 
 The following is a list of the things that would require work if porting this software to a non-Unix system.

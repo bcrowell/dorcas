@@ -31,6 +31,7 @@ require_relative "lib/svg"
 require_relative "lib/ttf"
 
 def main()
+  start = Time.now
 
   job_file = ARGV[0]
   job = Job.from_file(job_file)
@@ -86,10 +87,12 @@ def main()
     print "  #{script_name} #{c} #{chars} #{font_name} #{dpi.round} dpi\n"
     print "  metrics: #{seed_font.metrics(dpi,script)}\n"
     chars.chars.each { |char|
+      force_cl = nil
+      if (not job.prefer_cluster.nil?) and job.prefer_cluster.has_key?(char) then force_cl=job.prefer_cluster[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
       pat,hits,composites = match_character(char,text,text_file,temp_dir,job.prev,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
-                                 report_dir,matches_svg_file,name)
+                                 report_dir,matches_svg_file,name,force_cl)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }
@@ -100,9 +103,12 @@ def main()
   err,message = patset_as_svg(patset_svg_dir,patset_svg_file,pats)
   if err!=0 then warn(message) end
 
+  finish = Time.now
+  print "Total time for this entire run = #{finish-start} seconds.\n"
 end
 
-def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,char_name)
+def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,
+         char_name,force_cl)
   verbosity = 2
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
@@ -110,6 +116,11 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
   if !(prev_dir.nil?) then
     prev_pat_filename = Pat.char_to_filename(prev_dir,char)
     pat_from_prev = File.exists?(prev_pat_filename)
+  end
+  if pat_from_prev and not force_cl.nil? then
+    warn("The pattern #{prev_pat_filename} exists for character #{char}, but prefer_cluster is set to #{force_cl+1}.\n"+
+         "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
+         "Normally the prefer_cluster feature is used with the seed font, not with a previously constructed pattern.\n")
   end
   if pat_from_prev then
     if verbosity>=2 then print "  Taking pattern from previous run, swatch in #{prev_pat_filename}\n" end
@@ -122,7 +133,15 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
 
   hits = match(text,pat,stats,threshold)
   composites = swatches(hits,text,pat,stats,char,cluster_threshold)
-  composite = composites[0]
+  if force_cl.nil? then
+    composite = composites[0]
+  else
+    if verbosity>=2 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
+    if force_cl<0 or force_cl>composites.length-1 then 
+      die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
+    end
+    composite = composites[force_cl]
+  end
   if composite.nil? then print "  no matches found for #{char}\n"; return end
   matches_as_svg(report_dir,matches_svg_file,char_name,text_file,text,pat,hits,composites)
   pat.transplant(composite)
