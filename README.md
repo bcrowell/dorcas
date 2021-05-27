@@ -116,7 +116,8 @@ We assume we can invoke the Unix command-line utility "unicode" through a shell.
 For parallel processing, we use gnu parallel. (See lib/correl.rb.)
 
 For graphing, we shell out to the R language, although these functions are
-not needed for operation of the software. (See lib/other_interpreters.rb.)
+not needed for operation of the software. R is also used for curve fitting.
+(See lib/other_interpreters.rb.)
 
 For rendering fonts, we shell out to a perl interpreter and use Perl's GD
 library. (See lib/other_interpreters.rb.)

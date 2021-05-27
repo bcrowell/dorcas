@@ -1,5 +1,5 @@
 default: chpl/correl lib/constants.rb
-	./dorcas job.json
+	./dorcas testing.job
 
 lib/constants.rb: lib/constants_pre_cpp.rb constants.h
 	cpp -P lib/constants_pre_cpp.rb -o lib/constants.rb
