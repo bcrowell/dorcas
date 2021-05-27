@@ -17,6 +17,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   pats.each { |name,x|
     if x[1] then heights.push(x[2].bw.height) end
   }
+  if heights.length==0 then return [2,"no matched patterns to write to #{basic_svg_filename}, file not written"] end
   max_height = greatest(heights)[1]
   row_height = max_height*1.3
   col_width = max_height*1.5

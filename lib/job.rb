@@ -14,6 +14,7 @@ class Job
     init_helper(data,'guess_dpi',300)
     init_helper(data,'guess_font_size',12)
     init_helper(data,'prefer_cluster',nil)
+    init_helper(data,'force_location',nil)
     if @image.nil? then die("no image specified") end
     if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
     characters_helper()
@@ -22,7 +23,7 @@ class Job
   end
 
   attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
-          :guess_dpi,:guess_font_size,:prefer_cluster
+          :guess_dpi,:guess_font_size,:prefer_cluster,:force_location
 
   def to_s
     return self.to_hash.to_s
@@ -56,6 +57,7 @@ class Job
     if key=='guess_dpi' then @guess_dpi = value.to_i; recognized=true end
     if key=='guess_font_size' then @guess_font_size = value.to_f; recognized=true end
     if key=='prefer_cluster' then @prefer_cluster = prefer_cluster_helper(value); recognized=true end
+    if key=='force_location' then @force_location = force_location_helper(value); recognized=true end
     if !recognized then die("illegal key #{key}") end # We normally don't even call this helper except on known keys. Bogus keys are checked elsewhere.
   end
 
@@ -77,6 +79,17 @@ class Job
     list.each { |pair|
       char,num = pair
       result[char] = num.to_i-1
+    }
+    return result
+  end
+
+  def force_location_helper(list)
+    # Convert the list of lists to a hash whose values are 2-element arrays (x,y).
+    if list.nil? then return nil end
+    result = {}
+    list.each { |a|
+      char,x,y = a
+      result[char] = [x.to_i,y.to_i]
     }
     return result
   end

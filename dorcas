@@ -89,10 +89,12 @@ def main()
     chars.chars.each { |char|
       force_cl = nil
       if (not job.prefer_cluster.nil?) and job.prefer_cluster.has_key?(char) then force_cl=job.prefer_cluster[char] end
+      force_loc = nil
+      if (not job.force_location.nil?) and job.force_location.has_key?(char) then force_loc=job.force_location[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
       pat,hits,composites = match_character(char,text,text_file,temp_dir,job.prev,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
-                                 report_dir,matches_svg_file,name,force_cl)
+                                 report_dir,matches_svg_file,name,force_cl,force_loc)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }
@@ -108,7 +110,7 @@ def main()
 end
 
 def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,
-         char_name,force_cl)
+         char_name,force_cl,force_loc)
   verbosity = 2
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
@@ -122,6 +124,11 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
          "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
          "Normally the prefer_cluster feature is used with the seed font, not with a previously constructed pattern.\n")
   end
+  if pat_from_prev and not force_loc.nil? then
+    warn("The pattern #{prev_pat_filename} exists for character #{char}, but force_loc is set to #{force_loc}.\n"+
+         "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
+         "Normally the force_location feature is used with the seed font, not with a previously constructed pattern.\n")
+  end
   if pat_from_prev then
     if verbosity>=2 then print "  Taking pattern from previous run, swatch in #{prev_pat_filename}\n" end
     pat = Pat.from_file(prev_pat_filename)
@@ -131,7 +138,7 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
-  hits = match(text,pat,stats,threshold)
+  hits = match(text,pat,stats,threshold,force_loc)
   composites = swatches(hits,text,pat,stats,char,cluster_threshold)
   if force_cl.nil? then
     composite = composites[0]

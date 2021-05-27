@@ -98,9 +98,9 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_mar
       dx_lo.upto(dx_hi) { |i|
         jj = j-this_dy_lo
         if jj<0 || jj>this_result.length-1 then die("jj=#{jj} is out of range, #{result.length}, cpu=#{cpu}, j=#{j}, offset=#{offset}, this_dy=#{this_dy_lo},#{this_dy_hi}, dy_lo=#{dy_lo}, this_result.length=#{this_result.length}") end
-        if i-dx_lo<0 || i>this_result[jj].length then die("i out of range, i=#{j}, dx_lo-#{dx_lo}") end
-        foo = this_result[jj][i]
-        result[j-dy_lo][i-dx_lo] = this_result[jj][i-dx_lo]/norm
+        ii = i-dx_lo
+        if ii<0 || ii>this_result[jj].length-1 then die("i out of range, ii=#{i}, len=#{this_result[jj].length}") end
+        result[j-dy_lo][i-dx_lo] = this_result[jj][ii]/norm
       }
     }
     cpu +=1

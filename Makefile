@@ -1,4 +1,7 @@
-default: chpl/correl lib/constants.rb
+default:
+	echo "There is no default"
+
+xdefault: chpl/correl lib/constants.rb
 	./dorcas testing.job
 
 lib/constants.rb: lib/constants_pre_cpp.rb constants.h

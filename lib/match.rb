@@ -1,11 +1,11 @@
 # coding: utf-8
-def match(text,pat,stats,threshold)
+def match(text,pat,stats,threshold,force_loc)
   # text is a ChunkyPNG object
   # pat is a Pat
   # stats is is a hash describing the text, the most important member being line_spacing
   # threshold is the lowest correlation that's of interest
 
-  verbosity=1
+  verbosity=2
 
   text_line_spacing = stats['line_spacing']  
   scale = text_line_spacing/pat.line_spacing
@@ -26,10 +26,24 @@ def match(text,pat,stats,threshold)
   sdp = pat_stats['sd']
   norm = sdt*sdp # normalization factor for correlations
   # i and j are horizontal and vertical offsets of pattern relative to text; non-black part of pat can stick out beyond edges
-  j_lo = pat.bbox[2]-pat.line_spacing
-  j_hi = ht-1+pat.bbox[3]
-  i_lo = -lbox
-  i_hi = wt-1-rbox
+  # Nominal region of text to consider:
+  if force_loc.nil? then
+    i0,j0,nom_di,nom_dj = [0,0,wt-1,ht-1]
+  else
+    if verbosity>=2 then print "  Forcing location to be near #{force_loc}.\n" end
+    fuzz_x = pat.line_spacing
+    fuzz_y = pat.line_spacing
+    i0,j0,nom_di,nom_dj = [force_loc[0]-fuzz_x,force_loc[1]-fuzz_y,2*fuzz_x,2*fuzz_y]
+    print [i0,j0,nom_di,nom_dj],"...\n" # qwe
+    if i0<0 then i0=0 end
+    if i0+nom_di>wt-1 then nom_di=wt-1-i0 end
+    if j0<0 then j0=0 end
+    if j0+nom_dj>ht-1 then nom_dj=ht-1-j0 end
+  end
+  j_lo = j0+pat.bbox[2]-pat.line_spacing
+  j_hi = j0+nom_dj+pat.bbox[3]
+  i_lo = i0-lbox
+  i_hi = i0+nom_di-rbox
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
 
   hits = []
