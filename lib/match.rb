@@ -72,6 +72,7 @@ def match(text,pat,stats,threshold)
 end
 
 def swatches(hits,text,pat,stats,char,cluster_threshold)
+  verbosity=2
   # Generates images for the best matches in the text for a particular pattern.
   # Analyzes them into clusters. Returns a composite image (ChunkyPNG object) for the best-matching cluster.
   nhits = hits.length
@@ -90,7 +91,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
     # and makes it look like an omicron.
     enhance_contrast(sw,stats['background'],stats['threshold'],stats['dark'])
     images.push(sw)
-    sw.save("swatch#{k}.png")
+    if verbosity>=3 then sw.save("swatch#{k}.png") end
   }
   c = correlate_swatches(images,char)
   clusters = find_clusters(c,cluster_threshold)
@@ -108,7 +109,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   }
   i = 0
   cl_averages.each { |cl_avg|
-    cl_avg.save("cl#{i}.png")
+    if verbosity>=3 then cl_avg.save("cl#{i}.png") end
     i += 1
   }
   return cl_averages[0]

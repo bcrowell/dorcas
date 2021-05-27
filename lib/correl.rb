@@ -1,14 +1,13 @@
-require 'fileutils'
-
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
+  extra_margin = (line_spacing*0.5).round
   start = Time.now
-  results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
+  results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
   finish = Time.now
   print "time for correl = #{finish-start} seconds\n"
   return results
 end
 
-def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
+def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
   verbosity=1
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
@@ -17,8 +16,9 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
   if rows_per_cpu*n_cpus<n_rows then rows_per_cpu += 1 end
   max_rows = constants()['correl_max_h']
   wt,ht = ink_array_dimensions(text)
-  print "n_cpus=#{n_cpus} rows_per_cpu=#{rows_per_cpu} max_rows=#{max_rows} doing rows #{dy_lo}-#{dy_hi} out of 0-#{ht-1}\n"
-  if rows_per_cpu>max_rows then die("rows_per_cpu=#{rows_per_cpu} is greater than CORREL_MAX_H") end
+  rows_per_cpu_fat = rows_per_cpu+2*extra_margin
+  print "n_cpus=#{n_cpus} rows_per_cpu=#{rows_per_cpu_fat} max_rows=#{max_rows} doing rows #{dy_lo}-#{dy_hi} out of 0-#{ht-1}\n"
+  if rows_per_cpu_fat>max_rows then die("rows_per_cpu=#{rows_per_cpu_fat} is greater than CORREL_MAX_H=#{max_rows}") end
 
 
   temp_file_base = temp_file_name()
@@ -37,7 +37,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
     files_to_remove.push(in_file)
     files_to_remove.push(out_file)
     out_files.push(out_file)
-    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,line_spacing)
+    offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,extra_margin)
     remember_slicing.push([this_dy_lo,this_dy_hi,offset])
     #print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
   }
@@ -81,15 +81,15 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spac
   return result
 end
 
-def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw,line_spacing)
+def prep_chapel_input(filename,text,pat,red,background,dx_lo,dx_hi,dy_lo_raw,dy_hi_raw,extra_margin)
   wp,hp = ink_array_dimensions(pat)
   wt,ht_raw = ink_array_dimensions(text)
   # Redefine array indices for the chapel code so it only knows about the rows we're providing.
   # The dy values can hang outside the actual physical bounds of the array a little, and that's ok.
   # Figure out the min and max row numbers that we're actually going to provide in the data passed to the chapel code.
-  min_y = dy_lo_raw-line_spacing
+  min_y = dy_lo_raw-extra_margin
   if min_y<0 then min_y = 0 end
-  max_y = dy_hi_raw+line_spacing
+  max_y = dy_hi_raw+extra_margin
   if max_y>ht_raw-1 then max_y=ht_raw-1  end
   ht = max_y-min_y+1
   offset = min_y
