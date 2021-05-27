@@ -49,7 +49,7 @@ alphabet. The software tries to find swatches from the image that match as many 
 of the alphabet in the seed font. The user can fiddle with cluster_threshold if desired. They
 then delete any swatches that look wrong, and possibly hand edit any glitches or flyspecks.
 If the wrong swatches are being matched to the seed font, this can be fixed on the next pass using prefer_cluster.
-If matches aren't being found at all, use force_location.
+If matches aren't being found at all, use force_location and/or adjust_size.
 
 3. Iteration: Continue the process. Any letter for which we already have a good-enough swatch is matched
 to the swatch, not to the seed font.
