@@ -43,7 +43,8 @@ def main()
   fudge_size = job.adjust_size
   output_dir = job.output
 
-  temp_dir,output_dir = create_directories(output_dir)
+  report_dir = dir_and_file_to_path(output_dir,"_reports")
+  temp_dir,output_dir = create_directories(output_dir,report_dir)
 
   # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
   # fall back to something stupid. We try to detect that and warn them.
@@ -88,10 +89,10 @@ def main()
     }
   }
 
-  patset_svg_dir = "b"
-  patset_svg_file = "b.svg"
+  patset_svg_dir = report_dir
+  patset_svg_file = "patterns.svg"
   print "Writing a summary of swatches to #{dir_and_file_to_path(patset_svg_dir,patset_svg_file)}\n"
-  patset_as_svg("b","b.svg",pats)
+  patset_as_svg(patset_svg_dir,patset_svg_file,pats)
 
 end
 
@@ -156,7 +157,7 @@ def match_seed_font_scale(font,stats,script,fudge_size)
   return dpi
 end
 
-def create_directories(output_dir)
+def create_directories(output_dir,report_dir)
   temp_dir = 'temp'
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   if not File.exists?(output_dir) then Dir.mkdir(output_dir) end
