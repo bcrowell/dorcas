@@ -10,6 +10,8 @@ class Job
     init_helper(data,'threshold',0.62)
     init_helper(data,'cluster_threshold',0.85)
     init_helper(data,'adjust_size',1.0)
+    init_helper(data,'guess_dpi',300)
+    init_helper(data,'guess_font_size',12)
     if @image.nil? then die("no image specified") end
     if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
     # Flesh out the input list of characters so that if they only specified an alphabet, we put in the whole alphabet.
@@ -22,7 +24,7 @@ class Job
     @characters = processed_chars
   end
 
-  attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters
+  attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,:guess_dpi,:guess_font_size
 
   def to_s
     return self.to_hash.to_s
@@ -53,6 +55,8 @@ class Job
     if key=='cluster_threshold' then @cluster_threshold = value.to_f; recognized=true end
     if key=='adjust_size' then @adjust_size = value.to_f; recognized=true end
     if key=='characters' then @characters = value; recognized=true end
+    if key=='guess_dpi' then @guess_dpi = value.to_i; recognized=true end
+    if key=='guess_font_size' then @guess_font_size = value.to_f; recognized=true end
     if !recognized then die("illegal key #{key}") end
   end
 

@@ -5,6 +5,8 @@ def match(text,pat,stats,threshold)
   # stats is is a hash describing the text, the most important member being line_spacing
   # threshold is the lowest correlation that's of interest
 
+  verbosity=1
+
   text_line_spacing = stats['line_spacing']  
   scale = text_line_spacing/pat.line_spacing
 
@@ -18,7 +20,7 @@ def match(text,pat,stats,threshold)
   bw_ink = image_to_ink_array(pat.bw)
   red_ink = image_to_ink_array(pat.red)
   pat_stats = ink_stats_pat(bw_ink,red_ink) # calculates mean and sd
-  print "pat_stats: #{stats_to_string(pat_stats)}\n"
+  if verbosity>=3 then print "  pat_stats: #{stats_to_string(pat_stats)}\n" end
 
   sdt = stats['sd_in_text']
   sdp = pat_stats['sd']

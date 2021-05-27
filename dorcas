@@ -80,7 +80,7 @@ def main()
   seed_font = all_fonts[all_fonts.keys[0]]
   warn("using first font listed")
 
-  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,script,spacing_multiple)
+  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,script,spacing_multiple,job.guess_dpi,job.guess_font_size)
   dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
 
   print seed_font
@@ -131,12 +131,12 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
   return pat
 end
 
-def analyze_text_image(text_file,script,spacing_multiple)
+def analyze_text_image(text_file,script,spacing_multiple,guess_dpi,guess_font_size)
   text = ChunkyPNG::Image.from_file(text_file)
   print "Input file is #{text_file}\n"
   stats = ink_stats_1(text)
   peak_to_bg = stats['dark']/stats['submedian']
-  text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple)
+  text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size)
   stats['line_spacing'] = text_line_spacing
   stats['x_height'] = x_height
   stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)

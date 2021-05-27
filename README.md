@@ -38,7 +38,9 @@ debian packages: parallel r-cran-minpack.lm unicode libgd-perl ruby-zip
 A series of passes, each with the possible need for human tweaking.
 
 1. Trial fit: Run the software on an image, which can be small if desired for speed, but should include at least
-five or six lines of text. The software tries to find a particular character chosen by the user, say "e."
+five or six lines of text. The software estimates the line spacing, which the user should check; if it's
+way off, put in a different value for guess_dpi or guess_font_size.
+The software tries to find a particular character chosen by the user, say "e."
 The user evaluates whether the seed font is a good match; fine-tunes spacing_multiple and fudge_size;
 and fiddles with the threshold for matching.
 
@@ -92,6 +94,10 @@ The input file is a JSON hash with keys and values described below. Comments are
             Defaults to something reasonable.
 
 * adjust_size - An additional scaling factor to match the seed font to the image. Default: 1.
+
+* guess_dpi - An initial estimate of the resolution in dots per inch. Default: 300.
+
+* guess_font_size - An initial estimate of the font size in points. Default: 12.
 
 # Portability
 

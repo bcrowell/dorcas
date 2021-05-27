@@ -1,9 +1,39 @@
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
+  # A whole page is typically too much for correl_many_one_pass() to do at once.
+  verbosity=2
+  start = Time.now
   extra_margin = (line_spacing*0.5).round
+  max_rows_per_slice = constants()['correl_max_h']-2*extra_margin
+  if max_rows_per_slice<200 then die("misconfiguration or resolution is too high, max_rows_per_slice=#{max_rows_per_slice} is very small") end
+  n_rows = dy_hi-dy_lo+1
+  n_cols = dx_hi-dx_lo+1
+  n_slices=n_rows/max_rows_per_slice
+  if n_slices*max_rows_per_slice<n_rows then n_slices+=1 end
+  rows_per_slice=n_rows/n_slices
+  if n_slices*rows_per_slice<n_rows then rows_per_slice+=1 end
+  results = [] # list of arrays
+  0.upto(n_slices) { |slice|
+    this_dy_lo = dy_lo+slice*rows_per_slice
+    this_dy_hi = this_dy_lo+rows_per_slice-1
+    if this_dy_hi>dy_hi then this_dy_hi=dy_hi end
+    if this_dy_hi>=this_dy_lo then
+      result = correl_many_one_pass(text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,extra_margin,norm)
+      # returns a list of rows
+      results.concat(result)
+    end
+  }
+  finish = Time.now
+  if verbosity>=2 then print "  time for correl = #{finish-start} seconds\n" end
+  return results
+end
+
+def correl_many_one_pass(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
+  verbosity=1
+  # Set up jobs to be done by all CPUs at once.
   start = Time.now
   results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
   finish = Time.now
-  print "time for correl = #{finish-start} seconds\n"
+  if verbosity>=2 then print "    time for this pass of correl = #{finish-start} seconds\n" end
   return results
 end
 
@@ -17,9 +47,9 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_mar
   max_rows = constants()['correl_max_h']
   wt,ht = ink_array_dimensions(text)
   rows_per_cpu_fat = rows_per_cpu+2*extra_margin
-  print "n_cpus=#{n_cpus} rows_per_cpu=#{rows_per_cpu_fat} max_rows=#{max_rows} doing rows #{dy_lo}-#{dy_hi} out of 0-#{ht-1}\n"
+  print "    n_cpus=#{n_cpus} rows_per_cpu=#{rows_per_cpu_fat} max_rows=#{max_rows} doing rows #{dy_lo}-#{dy_hi} out of 0-#{ht-1}\n"
   if rows_per_cpu_fat>max_rows then die("rows_per_cpu=#{rows_per_cpu_fat} is greater than CORREL_MAX_H=#{max_rows}") end
-
+  if dy_hi<dy_lo then die("fails sanity check, dy_hi<dy_lo") end
 
   temp_file_base = temp_file_name()
   files_to_remove = []
@@ -38,14 +68,17 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_mar
     files_to_remove.push(out_file)
     out_files.push(out_file)
     offset = prep_chapel_input(in_file,text,pat,red,background,dx_lo,dx_hi,this_dy_lo,this_dy_hi,extra_margin)
+    if not File.exists?(in_file) then die("in_file not created?") end
     remember_slicing.push([this_dy_lo,this_dy_hi,offset])
     #print "cpu #{cpu} will do dy=#{this_dy_lo}-#{this_dy_hi}\n"
   }
 
   if verbosity>=2 then v="--verbose" else v="" end
   cmd = "ls #{temp_file_base}*.in | taskset --cpu-list 0-#{n_cpus-1} parallel #{v} #{exe} \"<\"{} \">\"{.}.out"
-  #print cmd,"\n"
+  if verbosity>=3 then print cmd,"\n" end
   system(cmd)
+  if $?!=0 then die("error executing shell command `cmd`") end
+  if verbosity>=3 then print "got back from taskset command, temp_file_base=#{temp_file_base}\n" end
   #print "Done with processing correlations.\n"
 
   # Initialize the array of results with zeroes:
@@ -75,7 +108,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_mar
   #print "Retrieved chapel output.\n"
 
   files_to_remove.each { |filename|
-    FileUtils.rm(filename)
+    FileUtils.rm_f(filename)
   }
 
   return result

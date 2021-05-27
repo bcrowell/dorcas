@@ -60,7 +60,7 @@ class Pat
         zipfile.add(write_as_name[i],temp_files[i])
       }
     end
-    temp_files.each { |n| FileUtils.rm(n) }
+    temp_files.each { |n| FileUtils.rm_f(n) }
   end
 
   def Pat.from_file(filename)
@@ -237,7 +237,7 @@ def string_to_image(s,dir,font,side,dpi,script)
   baseline,left,right,top,bottom = ttf_render_string(s,temp_file,ttf_file_path,dpi,point_size,hpheight,descent,margin,em)
   if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
   image = ChunkyPNG::Image.from_file(temp_file)
-  FileUtils.rm(temp_file)
+  FileUtils.rm_f(temp_file)
 
   if side==1 then
     # Because GD doesn't support drawing right-aligned text, we have to scooch it over.

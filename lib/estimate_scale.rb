@@ -133,10 +133,10 @@ def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spac
   # 12 lines were 57.5 mm. Calculation is then (57.5 mm)(1/12)(1/11)(1/25.4 mm). For the Giles Odyssey book, in the archive.org scan, this
   # produces a guessed period of about 100 pixels, whereas the actual period is about 70 pixels. This seems kind of reasonable, since
   # that book seems to have been in a tiny pocketbook format and a fairly small font. The Cheng+cepstrum algorithm seems quite robust,
-  # so it's not even a big deal if this estimate is off by a factor of 2 or something.
+  # may still work even if this estimate is off by a factor of 2 or something.
 
   if verbosity>=3 then print "guess_period=#{guess_period}\n" end
-  cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,verbosity)
+  cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,1.4,verbosity)
   if verbosity>=3 then print "cheng_period=#{cheng_period}\n" end
 
   # Now refine the estimate using the cepstrum technique.
@@ -156,7 +156,7 @@ def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spac
   return period
 end
 
-def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,verbosity)
+def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,period_slop,verbosity)
   # Differentiate and square.
   n = proj.length
   y = []
@@ -168,13 +168,14 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,v
 
   if verbosity>=3 then make_graph("sq_diff.pdf",nil,y,"row","y'^2") end
 
-  period_lo = (guess_period*0.3).round
-  period_hi = (guess_period*3.0).round
+  period_lo = (guess_period/period_slop).round
+  period_hi = (guess_period*period_slop).round
   if period_lo<2 then period_lo=2 end
   # Convolve with a bank of 3-tooth comb filter and look for max energy. This is an algorithm that apparently gives pretty
   # robust results when detecting tempo of music:
   # Kileen Cheng et al., "Beat This, A Beat Synchronization Project"
   # https://www.clear.rice.edu/elec301/Projects01/beat_sync/beatalgo.html
+  # In some cases it gives double the actual period.
   # My implementation is a little slow, could be sped up using fft for convolution.
   n_teeth = 3
   tooth_width = (guess_period*0.05).round
