@@ -49,6 +49,7 @@ alphabet. The software tries to find swatches from the image that match as many 
 of the alphabet in the seed font. The user can fiddle with cluster_threshold if desired. They
 then delete any swatches that look wrong, and possibly hand edit any glitches or flyspecks.
 If the wrong swatches are being matched to the seed font, this can be fixed on the next pass using prefer_cluster.
+If matches aren't being found at all, use force_location.
 
 3. Iteration: Continue the process. Any letter for which we already have a good-enough swatch is matched
 to the swatch, not to the seed font.
@@ -108,7 +109,9 @@ The input file is a JSON hash with keys and values described below. Comments are
         since this feature is normally used when matching to a seed font.
 
 * force_location - This is similar to prefer_cluster, but for example `"force_location":[["ψ",123,456]]` would
-        force the software to match the character close to pixel coordinates (123,456).
+        force the software to match the character close to pixel coordinates (123,456). This is useful when the
+        seed font has a particular character that is a very poor match to the image's font. Normally in such a
+        case you will need to set the threshold to a very low value as well.
 
 # Portability
 

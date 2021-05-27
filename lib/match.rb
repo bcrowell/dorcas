@@ -1,5 +1,5 @@
 # coding: utf-8
-def match(text,pat,stats,threshold,force_loc)
+def match(text,pat,stats,threshold,force_loc,max_hits)
   # text is a ChunkyPNG object
   # pat is a Pat
   # stats is is a hash describing the text, the most important member being line_spacing
@@ -31,8 +31,9 @@ def match(text,pat,stats,threshold,force_loc)
     i0,j0,nom_di,nom_dj = [0,0,wt-1,ht-1]
   else
     if verbosity>=2 then print "  Forcing location to be near #{force_loc}.\n" end
-    fuzz_x = pat.line_spacing
-    fuzz_y = pat.line_spacing
+    fuzz = (1.0*pat.line_spacing).round
+    fuzz_x = fuzz
+    fuzz_y = fuzz
     i0,j0,nom_di,nom_dj = [force_loc[0]-fuzz_x,force_loc[1]-fuzz_y,2*fuzz_x,2*fuzz_y]
     print [i0,j0,nom_di,nom_dj],"...\n" # qwe
     if i0<0 then i0=0 end
@@ -46,6 +47,12 @@ def match(text,pat,stats,threshold,force_loc)
   i_hi = i0+nom_di-rbox
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
 
+  # The following is pretty slow when there is a large number of hits, and we don't know
+  # in advance how many hits there will be, hence the need for the max_hits parameter. 
+  # When looking for patterns to match a seed font, max_hits can be set pretty low,
+  # and a large number of hits is basically a symptom that the threshold has been set too low.
+  # Performance will be more of a problem when actually OCRing a full page of text.
+  # One way to speed things up would be to avoid looking at candidates that aren't on a baseline of text.
   hits = []
   xr = ((pat.bbox[1]-pat.bbox[0])*0.8).round
   yr = ((pat.bbox[3]-pat.bbox[2])*0.8).round
@@ -56,16 +63,19 @@ def match(text,pat,stats,threshold,force_loc)
         local_max = true
         (-xr).upto(xr) { |di|
           (-yr).upto(yr) { |dj|
-            if results[j+dj-j_lo][i+di-i_lo]>c then local_max=false end
+            if results[j+dj-j_lo][i+di-i_lo]>c then local_max=false; break end
           }
+          if !local_max then break end
         }
         if local_max then
           ci = (i+wp/2).round
           cj = (j+hp/2).round
           hits.push([c,i,j])
+          if hits.length>=max_hits then break end
         end
       end
     }
+    if hits.length>=max_hits then break end
   }
   hits.sort! {|a,b| b[0] <=> a[0]} # sort in descending order by score
   print "hits:\n"

@@ -88,6 +88,7 @@ class Job
     if list.nil? then return nil end
     result = {}
     list.each { |a|
+      if a.length!=3 then die("illegal value in force_location, #{list}, should have 3 elements") end
       char,x,y = a
       result[char] = [x.to_i,y.to_i]
     }
