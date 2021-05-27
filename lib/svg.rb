@@ -73,8 +73,8 @@ end
 def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits)
   print "Writing svg file #{svg_filename}\n"
   images = []
-  filename = dir_and_file_to_path(dir,"matches_#{char_name}_bw.png")
-  pat.bw.save(filename)
+  filename = dir_and_file_to_path(dir,"matches_#{char_name}.png")
+  pat.visual.save(filename)
   hits.each { |hit|
     c,i,j = hit
     images.push([filename,i,j,pat.bw.width,pat.bw.height,1.0])

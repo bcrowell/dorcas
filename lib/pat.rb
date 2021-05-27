@@ -37,6 +37,18 @@ class Pat
     return dir_and_file_to_path(dir,name+".pat")
   end
 
+  def visual
+    v = @red.clone
+    red_color = ChunkyPNG::Color::rgb(255,0,0) 
+    0.upto(v.width-1) { |i|
+      0.upto(v.height-1) { |j|
+        if has_ink(v[i,j]) then v[i,j]=red_color end
+        if has_ink(@bw[i,j]) then v[i,j]=ChunkyPNG::Color::BLACK end
+      }
+    }
+    return v
+  end
+
   def save(filename)
     # My convention is that the filename has extension .pat.
     data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>self.c,'unicode_name'=>char_to_name(self.c),'line_spacing'=>self.line_spacing}
