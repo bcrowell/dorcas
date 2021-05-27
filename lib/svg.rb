@@ -27,7 +27,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     c,matched,pat = pats[name]
     y = count*row_height
     if matched then
-      basic_png_filename = "patterns_"+name+"_bw.png"
+      basic_png_filename = "patterns_"+name+"_bw.png" # the prefix is because we share a directory with other svg files and their images
       bw_filename[name] = basic_png_filename
       pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
       images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
@@ -70,12 +70,14 @@ svg =
 SVG
 end
 
-def matches_as_svg(svg_filename,text_file,text,pat,hits)
+def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits)
   print "Writing svg file #{svg_filename}\n"
   images = []
+  filename = dir_and_file_to_path(dir,"matches_#{char_name}_bw.png")
+  pat.bw.save(filename)
   hits.each { |hit|
     c,i,j = hit
-    images.push(["bw.png",i,j,pat.bw.width,pat.bw.height,1.0])
+    images.push([filename,i,j,pat.bw.width,pat.bw.height,1.0])
   }
   images.push([text_file,0,0,text.width,text.height,0.25])
   svg = svg_code_matches(images,300.0)
