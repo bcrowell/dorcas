@@ -39,7 +39,7 @@ class Pat
 
   def visual
     v = @red.clone
-    red_color = ChunkyPNG::Color::rgb(255,0,0) 
+    red_color = ChunkyPNG::Color::rgb(255,0,0)
     0.upto(v.width-1) { |i|
       0.upto(v.height-1) { |j|
         if has_ink(v[i,j]) then v[i,j]=red_color end

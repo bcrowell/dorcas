@@ -67,7 +67,7 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,
   }
 
   # Make a copy of proj that's folded like an accordion pleat, so that we have a single average projection of a line of text.
-  verbosity=3
+  verbosity=2
   # The center goes at array index c.
   if verbosity>=4 then print "  half_period=#{half_period}\n" end
   c = (half_period).round
