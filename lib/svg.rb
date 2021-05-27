@@ -88,6 +88,7 @@ end
 
 def svg_code_matches(char_name,dir,image_info,dpi,composites)
   images = []
+  labels = []
   scale = 25.4/dpi # to convert from pixels to mm
   y_bottom_list = []
   image_info.each { |i|
@@ -101,11 +102,16 @@ def svg_code_matches(char_name,dir,image_info,dpi,composites)
     filename = dir_and_file_to_path(dir,"matches_#{char_name}_composite_#{count}.png")
     image.save(filename)
     count += 1
-    y = highest_y+60*count
+    y = highest_y+75*count # shouldn't be hardcoded
     images.push(svg_image(filename,0,y*scale,image.width*scale,image.height*scale,1.0))
+    font_size = 16 # mm
+    text = "cluster #{count}"
+    x = image.width*2
+    labels.push(svg_text(text,x*scale,(y+image.height*0.7)*scale,font_size*scale))
   }
   images_svg = images.join("\n")
-  svg = "#{svg_header()}  #{images_svg} </svg>"
+  text_svg = labels.join("\n")
+  svg = "#{svg_header()}  #{images_svg} #{text_svg} </svg>"
   return svg
 end
 
