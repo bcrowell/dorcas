@@ -1,5 +1,5 @@
 def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
-  return [1,"no patterns to write"]
+  if unsorted_pats.length==0 then return [1,"no patterns to write to #{basic_svg_filename}, file not written"] end
   if not File.exists?(dir) then Dir.mkdir(dir) end
   svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
   pats = {}
@@ -72,7 +72,7 @@ svg =
 SVG
 end
 
-def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits)
+def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits,composites)
   print "Writing svg file #{svg_filename}\n"
   images = []
   filename = dir_and_file_to_path(dir,"matches_#{char_name}.png")
@@ -82,16 +82,27 @@ def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits)
     c,i,j = hit
     images.push([filename,i,j,pat.bw.width,pat.bw.height,0.8])
   }
-  svg = svg_code_matches(images,300.0)
+  svg = svg_code_matches(char_name,dir,images,300.0,composites)
   File.open(svg_filename,'w') { |f| f.print svg }
 end
 
-def svg_code_matches(image_info,dpi)
+def svg_code_matches(char_name,dir,image_info,dpi,composites)
   images = []
   scale = 25.4/dpi # to convert from pixels to mm
+  y_bottom_list = []
   image_info.each { |i|
     filename,x,y,w,h,opacity = i
+    y_bottom_list.push(y+h)
     images.push(svg_image(filename,x*scale,y*scale,w*scale,h*scale,opacity))
+  }
+  highest_y = greatest(y_list)[1]
+  count = 0
+  composites.each { |image|
+    filename = dir_and_file_to_path(dir,"matches_#{char_name}_composite_#{count}.png")
+    image.save(filename)
+    count += 1
+    y = highest_y+60*count
+    images.push(svg_image(filename,0,y*scale,image.width*scale,image.height*scale,1.0))
   }
   images_svg = images.join("\n")
   svg = "#{svg_header()}  #{images_svg} </svg>"

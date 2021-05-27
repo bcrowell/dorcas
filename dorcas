@@ -46,7 +46,7 @@ def main()
   report_dir = dir_and_file_to_path(output_dir,"_reports")
   temp_dir,output_dir = create_directories(output_dir,report_dir)
   create_text_file(dir_and_file_to_path(report_dir,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
-  copy_all_pat_files(job.prev,output_dir) # these may get overwritten later
+  if job.prev!=nil then copy_all_pat_files(job.prev,output_dir) end # copy over pat files from previous run; these may get overwritten later
 
   # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
   # fall back to something stupid. We try to detect that and warn them.
@@ -88,7 +88,7 @@ def main()
     chars.chars.each { |char|
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
-      pat,hits = match_character(char,text,text_file,temp_dir,job.prev,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
+      pat,hits,composites = match_character(char,text,text_file,temp_dir,job.prev,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
                                  report_dir,matches_svg_file,name)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
@@ -121,12 +121,13 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
   hits = match(text,pat,stats,threshold)
-  matches_as_svg(report_dir,matches_svg_file,char_name,text_file,text,pat,hits)
-  composite = swatches(hits,text,pat,stats,char,cluster_threshold)
+  composites = swatches(hits,text,pat,stats,char,cluster_threshold)
+  composite = composites[0]
   if composite.nil? then print "  no matches found for #{char}\n"; return end
+  matches_as_svg(report_dir,matches_svg_file,char_name,text_file,text,pat,hits,composites)
   pat.transplant(composite)
   pat.save(Pat.char_to_filename(output_dir,char))
-  return [pat,hits]
+  return [pat,hits,composites]
 end
 
 def analyze_text_image(text_file,spacing_multiple,guess_dpi,guess_font_size)

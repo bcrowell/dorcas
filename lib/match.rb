@@ -105,7 +105,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
     if verbosity>=3 then cl_avg.save("cl#{i}.png") end
     i += 1
   }
-  return cl_averages[0]
+  return cl_averages
 end
 
 def correlate_swatches(images,char)
