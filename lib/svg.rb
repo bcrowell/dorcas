@@ -95,7 +95,7 @@ def svg_code_matches(char_name,dir,image_info,dpi,composites)
     y_bottom_list.push(y+h)
     images.push(svg_image(filename,x*scale,y*scale,w*scale,h*scale,opacity))
   }
-  highest_y = greatest(y_list)[1]
+  highest_y = greatest(y_bottom_list)[1]
   count = 0
   composites.each { |image|
     filename = dir_and_file_to_path(dir,"matches_#{char_name}_composite_#{count}.png")
