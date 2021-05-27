@@ -48,6 +48,7 @@ and fiddles with the threshold for matching.
 alphabet. The software tries to find swatches from the image that match as many as possible of the letters
 of the alphabet in the seed font. The user can fiddle with cluster_threshold if desired. They
 then delete any swatches that look wrong, and possibly hand edit any glitches or flyspecks.
+If the wrong swatches are being matched to the seed font, this can be fixed on the next pass using prefer_cluster.
 
 3. Iteration: Continue the process. Any letter for which we already have a good-enough swatch is matched
 to the swatch, not to the seed font.
@@ -103,7 +104,11 @@ The input file is a JSON hash with keys and values described below. Comments are
         The idea here is that on the previous run, we found that a certain character, say ψ, from the seed font was matched with the wrong
         cluster of swatches. We looked at the file matches_psi.svg, which showed the alternative clusters of swatches, and
         we decided that rather than the 1st swatch, what we wanted was the 3rd. Therefore, we add this to our job file:
-        `"prefer_cluster":[["ψ",3]]`.
+        `"prefer_cluster":[["ψ",3]]`. Normally you would want to delete the incorrect pattern from the previous pass,
+        since this feature is normally used when matching to a seed font.
+
+* force_location - This is similar to prefer_cluster, but for example `"force_location":[["ψ",123,456]]` would
+        force the software to match the character close to pixel coordinates (123,456).
 
 # Portability
 

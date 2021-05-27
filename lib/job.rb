@@ -16,14 +16,9 @@ class Job
     init_helper(data,'prefer_cluster',nil)
     if @image.nil? then die("no image specified") end
     if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
-    # Flesh out the input list of characters so that if they only specified an alphabet, we put in the whole alphabet.
-    processed_chars = []
-    @characters.each { |x|
-      script,c,string = x # if x has 2 elements then string is nil
-      if string.nil? then string=Script.new(script).alphabet(c:c) end
-      processed_chars.push([script,c,string])
-    }
-    @characters = processed_chars
+    characters_helper()
+    bogus_keys = data.keys-@keys
+    if bogus_keys.length>0 then die("bogus keys: #{bogus_keys}") end
   end
 
   attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
@@ -61,7 +56,18 @@ class Job
     if key=='guess_dpi' then @guess_dpi = value.to_i; recognized=true end
     if key=='guess_font_size' then @guess_font_size = value.to_f; recognized=true end
     if key=='prefer_cluster' then @prefer_cluster = prefer_cluster_helper(value); recognized=true end
-    if !recognized then die("illegal key #{key}") end
+    if !recognized then die("illegal key #{key}") end # We normally don't even call this helper except on known keys. Bogus keys are checked elsewhere.
+  end
+
+  def characters_helper()
+    # Flesh out the input list of characters so that if they only specified an alphabet, we put in the whole alphabet.
+    processed_chars = []
+    @characters.each { |x|
+      script,c,string = x # if x has 2 elements then string is nil
+      if string.nil? then string=Script.new(script).alphabet(c:c) end
+      processed_chars.push([script,c,string])
+    }
+    @characters = processed_chars
   end
 
   def prefer_cluster_helper(list)

@@ -190,6 +190,14 @@ def create_directories(output_dir,report_dir)
 end
 
 def copy_all_pat_files(prev_dir,output_dir)
+  # First look for files that exist in the output directory but not the input directory.
+  # Silently allowing this could lead to very confusing stuff happening.
+  Dir[dir_and_file_to_path(output_dir,"*.pat")].each { |filename|
+    name = File.basename(filename)
+    prev_version = dir_and_file_to_path(prev_dir,name)
+    if not File.exists?(prev_version) then File.rm_f(filename) end
+  }
+  # Now copy from input to output.
   Dir[dir_and_file_to_path(prev_dir,"*.pat")].each { |filename|
     name = File.basename(filename)
     destination = dir_and_file_to_path(output_dir,name)
