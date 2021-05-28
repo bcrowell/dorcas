@@ -13,6 +13,7 @@ def char_to_name(c)
   #   LATIN SMALL LETTER A
   #   GREEK SMALL LETTER BETA
   #   HEBREW LETTER ALEF
+  # The official name of lambda is spelled LAMDA, so that's what we return.
   return char_unicode_property(c,'name').upcase
 end
 
@@ -20,6 +21,7 @@ def char_to_short_name(c)
   # This mapping is meant to be one-to-one. The short name is supposed to be pure ascii, easy to type, and will not contain any spaces,
   # so it's appropriate for a filename.
   # Examples of returned values: a, A, alpha, Alpha, alef
+  # Since this is meant to be human-readable, we change the spelling of lamda to lambda.
   name = char_to_short_name_helper(c)
   if short_name_to_long_name(name)==char_to_name(c) then return name end # Make sure it works reversibly.
   return name # Fallback if we can't make the round trip reliably.
@@ -27,7 +29,7 @@ end
 
 def char_to_short_name_helper(c)
   # Don't call this directly. Call char_to_short_name(), which follows up by verifying that we can reverse the mapping.
-  long = char_to_name(c)
+  long = char_to_name(c).gsub(/LAMDA/,'LAMBDA')
   if long=~/LATIN SMALL LETTER (.)/ then return $1.downcase end
   if long=~/LATIN CAPITAL LETTER (.)/ then return $1.upcase end
   if long=~/GREEK SMALL LETTER (.*)/ then return lc_underbar($1) end
@@ -45,10 +47,11 @@ def short_name_to_long_name(name)
   if name=~/_/ then return name.gsub(/_/,' ').upcase end
   if is_name_of_hebrew_letter(name) then return "HEBREW LETTER #{name}".upcase end
   if is_name_of_greek_letter(name) then
+    nn = name.upcase.gsub(/LAMBDA/,'LAMDA') # accept either lamda or lambda as the spelling, but convert to the spelling used in the standard
     if name==name.downcase then
-      return "GREEK SMALL LETTER #{name}".upcase
+      return "GREEK SMALL LETTER #{nn}"
     else
-      return "GREEK CAPITAL LETTER #{name}".upcase
+      return "GREEK CAPITAL LETTER #{nn}"
     end
   end
   return nil
