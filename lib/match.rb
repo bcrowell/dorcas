@@ -31,9 +31,11 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
     i0,j0,nom_di,nom_dj = [0,0,wt-1,ht-1]
   else
     if verbosity>=2 then print "  Forcing location to be near #{force_loc}.\n" end
-    fuzz = (1.0*pat.line_spacing).round
-    fuzz_x = fuzz
-    fuzz_y = fuzz
+    # Don't make fuzz too small. This radius later has a certain radius subtracted off of it when we look for local maxima (see code with xr,yr below).
+    # If that makes the effective region extremely small or nonexistent, we generate a warning below.
+    fuzz = 1.0*pat.line_spacing
+    fuzz_x = (3.0*fuzz).round
+    fuzz_y = (1.5*fuzz).round
     i0,j0,nom_di,nom_dj = [force_loc[0]-fuzz_x,force_loc[1]-fuzz_y,2*fuzz_x,2*fuzz_y]
     print [i0,j0,nom_di,nom_dj],"...\n" # qwe
     if i0<0 then i0=0 end
@@ -54,10 +56,15 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
   # Performance will be more of a problem when actually OCRing a full page of text.
   # One way to speed things up would be to avoid looking at candidates that aren't on a baseline of text.
   hits = []
+  # Set a radius within which we look for the greatest value.
   xr = ((pat.bbox[1]-pat.bbox[0])*0.8).round
   yr = ((pat.bbox[3]-pat.bbox[2])*0.8).round
-  (j_lo+yr).upto(j_hi-yr) { |j|
-    (i_lo+xr).upto(i_hi-xr) { |i|
+  j0,j1,i0,i1 = [j_lo+yr,j_hi-yr,i_lo+xr,i_hi-xr]
+  if j1<j0 or i1<i0 then warn("window in match() contains no pixels, no results returned"); return end
+  if j1-j0<yr or i1-i0<xr then warn("window in match() is only #{i1-i0+1}x#{j1-j0+1}, probably no results will be returned") end
+  if verbosity>=4 then print "  results near #{[j0,j1,i0,i1]}:\n",array_to_string(extract_subarray(results,i0,i1,j0,j1),2,"%5.2f"),"\n" end
+  j0.upto(j1) { |j|
+    i0.upto(i1) { |i|
       c = results[j-j_lo][i-i_lo]
       if c>threshold then
         local_max = true

@@ -65,6 +65,7 @@ class Job
     # Flesh out the input list of characters so that if they only specified an alphabet, we put in the whole alphabet.
     processed_chars = []
     @characters.each { |x|
+      if x.length!=3 then die("illegal value in characters, #{x}, should have 3 elements") end
       script,c,string = x # if x has 2 elements then string is nil
       if string.nil? then string=Script.new(script).alphabet(c:c) end
       processed_chars.push([script,c,string])

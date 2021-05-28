@@ -1,3 +1,8 @@
+def extract_subarray(a,i_lo,i_hi,j_lo,j_hi)
+  w,h = [i_hi-i_lo+1,j_hi-j_lo+1]
+  return generate_array(w,h,lambda {|i,j| a[i][j]})
+end
+
 def generate_array(w,h,fn,symm:false)
   a = []
   if symm and w!=h then die("symm is true, but w and h are unequal, w=#{w}, h=#{h}") end
@@ -27,7 +32,7 @@ end
 def array_to_string(a,indentation,format,fn:lambda {|x| x})
   lines = []
   0.upto(a.length-1) { |i|
-    print "  ",(a[i].map {|x| sprintf(format,fn.call(x)) }).join(" "),"\n"
+    print "  ",(a[i].map {|x| if x.nil? then return "nil" else return  sprintf(format,fn.call(x)) end }).join(" "),"\n"
   }  
   return lines.join("\n")
 end
