@@ -146,11 +146,14 @@ def crop_pat(bw,red,line_spacing,bbox)
     red.save("debug2.png")
     die("left or right is nil, left=#{left}, right=#{right}; bw written to debug1.png, red written to debug2.png")
   end
+  if bbox[0]-left<0 then left=bbox[0] end
+  # ... Happens with Nimbus Sans, j. Make sure that after subtracting, left will still be >=0.
+  #     Since bbox[1]>bbox[0], this should automatically keep bbox[1] from being negative either.
   bw2  = bw.crop(left,0,right-left+1,h)
   red2 = red.crop(left,0,right-left+1,h)
   bbox[0] -= left
   bbox[1] -= left
-  if bbox[0]<0 or bbox[1]<0 then die("bbox=#{bbox} contains negative values") end
+  if bbox[0]<0 then die("bbox=#{bbox} contains negative values") end
   return [bw2,red2,line_spacing,bbox]
 end
 
