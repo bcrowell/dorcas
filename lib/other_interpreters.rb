@@ -1,3 +1,7 @@
+def shell_out(code)
+  return run_interpreted_code(code,'shell')
+end
+
 def run_r_code(code)
   return run_interpreted_code(code,'r')
 end
@@ -14,19 +18,28 @@ def run_interpreted_code(code,language)
   }
   #print "file is #{file}\n"
   recognized = false
+  if language=='shell' then
+    cmd1 = "sh"
+    human_lang = 'sh'
+    recognized = true
+  end
   if language=='r' then
-    output = `R --quiet --slave --no-save --no-restore-data <#{file}`
+    cmd1 = "R --quiet --slave --no-save --no-restore-data"
     human_lang = 'R'
     recognized = true
   end
   if language=='perl' then
-    output = `perl <#{file}`
+    cmd1 = "perl"
     human_lang = 'perl'
     recognized = true
   end
-  if !recognized then die("unrecognized interpreterL #{language}") end
-  if $?!=0 then die("error running #{human_lang} code in file #{file} -- file has been preserved") end
-  FileUtils.remove_dir(file)
+  if !recognized then die("unrecognized interpreter #{language}") end
+  cmd = "#{cmd1} <#{file}"
+  output = `#{cmd}`
+  # ... In many cases, an error wold cause this to die with an exception. I could try to catch that, but actually in most cases that
+  #     exception causes output that is what I need to see anyway. Should clean up temp file in that case, though.
+  if $?!=0 then die("error running #{human_lang} code in file #{file}, using command #{cmd1} -- file has been preserved") end
+  FileUtils.rm_f(file)
   output =~ /__output__(.*)/
   #print "output=#{output}=, 1=#{$1}=\n"
   return $1

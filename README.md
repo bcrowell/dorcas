@@ -31,7 +31,9 @@ ruby
 
 chapel
 
-debian packages: parallel r-cran-minpack.lm unicode libgd-perl ruby-zip
+debian packages: parallel r-cran-minpack.lm unicode libgd-perl ruby-zip 
+
+optional debian packages: imagemagick qpdf
 
 ## Method of use
 
@@ -71,7 +73,9 @@ To edit a pattern:
 
 The input file is a JSON hash with keys and values described below. Comments are allowed using javascript syntax ("// ...").
 
-* image - Name of a PNG file containing the text that we want to do OCR on.
+* image - Name of a PNG file containing the text that we want to do OCR on. As a convenience feature, if this is
+          specified in the form "foo.pdf[37]", then page q37 of the pdf file will be rendered at 500 dpi, converted to grayscale, saved
+          in the current working directory as foo_037.png, and used as the input. (This feature requires imagemagick and qpdf.)
 
 * prev - Name of a directory containing output from a previous run. Default: null.
 
@@ -135,3 +139,5 @@ not needed for operation of the software. R is also used for curve fitting.
 
 For rendering fonts, we shell out to a perl interpreter and use Perl's GD
 library. (See lib/other_interpreters.rb.)
+
+For pdf input, we need imagemagick and qpdf.

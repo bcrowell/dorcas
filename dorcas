@@ -28,6 +28,7 @@ require_relative "lib/string_util"
 require_relative "lib/array_util"
 require_relative "lib/reports"
 require_relative "lib/svg"
+require_relative "lib/pdf"
 require_relative "lib/ttf"
 
 def main()
@@ -48,6 +49,9 @@ def main()
   temp_dir,output_dir = create_directories(output_dir,report_dir)
   create_text_file(dir_and_file_to_path(output_dir,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
   if job.prev!=nil then copy_all_pat_files(job.prev,output_dir) end # copy over pat files from previous run; these may get overwritten later
+
+  if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image(text_file) end
+  # ... 500 dpi is the documented behavior
 
   # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
   # fall back to something stupid. We try to detect that and warn them.
