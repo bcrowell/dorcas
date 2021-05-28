@@ -50,7 +50,7 @@ def main()
   create_text_file(dir_and_file_to_path(output_dir,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
   if job.prev!=nil then copy_all_pat_files(job.prev,output_dir) end # copy over pat files from previous run; these may get overwritten later
 
-  if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image(text_file) end
+  if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image=text_file end
   # ... 500 dpi is the documented behavior
 
   # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
