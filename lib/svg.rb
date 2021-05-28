@@ -66,7 +66,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     end
     rough_font_size = max_height*0.27
     labels.push([c,   col_width,  y,rough_font_size])
-    labels.push([name,col_width*2,y,rough_font_size])
+    labels.push([name,col_width*2,y,rough_font_size]) if name!=c
     count += 1
   }
   svg = svg_code_patset(images,labels,300.0)

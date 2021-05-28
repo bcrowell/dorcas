@@ -79,6 +79,7 @@ class Job
     result = {}
     list.each { |pair|
       char,num = pair
+      if num.nil? then die("prefer_cluster should consist of a list of pairs") end
       result[char] = num.to_i-1
     }
     return result

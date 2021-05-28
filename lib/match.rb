@@ -35,13 +35,13 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
     # If that makes the effective region extremely small or nonexistent, we generate a warning below.
     fuzz = 1.0*pat.line_spacing
     fuzz_x = (3.0*fuzz).round
-    fuzz_y = (1.5*fuzz).round
+    fuzz_y = (1.0*fuzz).round
     i0,j0,nom_di,nom_dj = [force_loc[0]-fuzz_x,force_loc[1]-fuzz_y,2*fuzz_x,2*fuzz_y]
-    print [i0,j0,nom_di,nom_dj],"...\n" # qwe
     if i0<0 then i0=0 end
     if i0+nom_di>wt-1 then nom_di=wt-1-i0 end
     if j0<0 then j0=0 end
     if j0+nom_dj>ht-1 then nom_dj=ht-1-j0 end
+    if verbosity>=3 then print "  i0,j0,nom_di,nom_dj=#{[i0,j0,nom_di,nom_dj]}\n" end
   end
   j_lo = j0+pat.bbox[2]-pat.line_spacing
   j_hi = j0+nom_dj+pat.bbox[3]
@@ -157,6 +157,6 @@ def correlate_swatches(images,char)
       return (u-mean[i]*mean[j])/(sd[i]*sd[j])
   },symm:true)
   print "correlation matrix for character '#{char}' swatches 0-#{n-1}:\n"
-  print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round})
+  print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round}),"\n"
   return c
 end
