@@ -1,7 +1,10 @@
 def extract_pdf_page(text_file,dpi)
-  if not text_file=~/((.*)\.pdf)\[(\d+)\]$/ then die("error parsing input pdf filename #{text_file}") end
-  pdf,base,page = $1,$2,$3
-  png = "#{base}_#{sprintf("%03d",page)}.png"
+  if not text_file=~/(.*\.pdf)\[(\d+)\]$/ then die("error parsing input pdf filename #{text_file}") end
+  pdf,page = $1,$2
+  base = File.basename(pdf)
+  base =~ /(.*)\.pdf/
+  stem = $1
+  png = "#{stem}_#{sprintf("%03d",page)}.png"
   if File.exists?(png) then return png end
   print "Extracting page #{page} from #{pdf} to #{png}\n"
   temp_file = temp_file_name()
