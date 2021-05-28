@@ -272,7 +272,12 @@ def fit_gaussian_to_peak(data,lo,hi,guesses)
     model <- nlsLM(yvalues ~ height*exp(-0.5*(xvalues-mu)^2/sigma^2),start = list(mu=#{mu},sigma=#{sigma},height=#{height}))
     cat("__output__",coef(summary(model))["mu","Estimate"],"\n")
   R_CODE
-  return run_r_code(r).to_f
+  result = run_r_code(r).to_f
+  if result<lo or result>hi then 
+    result=0.5*(lo+hi)
+    warn("Result failed sanity check in fit_gaussian_to_peak(). Falling back to a reasonable default value.")
+  end
+  return result
 end
 
 def graph_fft(fourier,max_freq,nn)
