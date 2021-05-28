@@ -15,6 +15,7 @@ class Job
     init_helper(data,'guess_font_size',12)
     init_helper(data,'prefer_cluster',nil)
     init_helper(data,'force_location',nil)
+    init_helper(data,'no_matching',false)
     if @image.nil? then die("no image specified") end
     if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
     characters_helper()
@@ -23,7 +24,7 @@ class Job
   end
 
   attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
-          :guess_dpi,:guess_font_size,:prefer_cluster,:force_location
+          :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching
 
   def to_s
     return self.to_hash.to_s
@@ -58,6 +59,7 @@ class Job
     if key=='guess_font_size' then @guess_font_size = value.to_f; recognized=true end
     if key=='prefer_cluster' then @prefer_cluster = prefer_cluster_helper(value); recognized=true end
     if key=='force_location' then @force_location = force_location_helper(value); recognized=true end
+    if key=='no_matching' then @no_matching = value.to_s.downcase=="true"; recognized=true end
     if !recognized then die("illegal key #{key}") end # We normally don't even call this helper except on known keys. Bogus keys are checked elsewhere.
   end
 
