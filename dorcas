@@ -99,11 +99,7 @@ def main()
     }
   }
 
-  patset_svg_dir = report_dir
-  patset_svg_file = "patterns.svg"
-  print "Writing a summary of swatches to #{dir_and_file_to_path(patset_svg_dir,patset_svg_file)}\n"
-  err,message = patset_as_svg(patset_svg_dir,patset_svg_file,pats)
-  if err!=0 then warn(message) end
+  write_svg_reports(job,output_dir,report_dir,pats)
 
   finish = Time.now
   print "Total time for this entire run = #{finish-start} seconds.\n"

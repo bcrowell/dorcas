@@ -1,5 +1,35 @@
+def write_svg_reports(job,output_dir,dir,pats)
+  write_svg_reports_helper(dir,output_dir,"swatches.svg","Writing a summary of new swatches to %s\n",pats)
+
+  job.characters.each { |x|
+    script_name,c,chars = x
+    file_base = "#{script_name}_#{c}.svg"
+    chars = Script.new(script_name).alphabet(c:c) # do all characters, not just the ones worked on in this job
+    write_svg_reports_helper(dir,output_dir,file_base,"Writing a summary of #{script_name} #{c} to %s\n",chars)
+  }
+end
+
+def write_svg_reports_helper(dir,output_dir,file_base,info,data)
+  if data.class==String then
+    pats = []
+    data.chars.each { |c|
+      filename = Pat.char_to_filename(output_dir,c)
+      if File.exists?(filename) then
+        pats.push([true,Pat.from_file(filename)])
+      else
+        pats.push([false,c])
+      end
+    }
+  else
+    pats = data
+  end
+  err,message,filename = patset_as_svg(dir,file_base,pats)
+  print sprintf(info,filename)
+  if err!=0 then warn(message) end
+end
+
 def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
-  if unsorted_pats.length==0 then return [1,"no patterns to write to #{basic_svg_filename}, file not written"] end
+  if unsorted_pats.length==0 then return [1,"no patterns to write to #{basic_svg_filename}, file not written",nil] end
   if not File.exists?(dir) then Dir.mkdir(dir) end
   svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
   pats = {}
@@ -17,7 +47,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   pats.each { |name,x|
     if x[1] then heights.push(x[2].bw.height) end
   }
-  if heights.length==0 then return [2,"no matched patterns to write to #{basic_svg_filename}, file not written"] end
+  if heights.length==0 then return [2,"no matched patterns to write to #{basic_svg_filename}, file not written",nil] end
   max_height = greatest(heights)[1]
   row_height = max_height*1.3
   col_width = max_height*1.5
@@ -41,7 +71,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
   }
   svg = svg_code_patset(images,labels,300.0)
   File.open(svg_filename,'w') { |f| f.print svg }
-  return [0,nil]
+  return [0,nil,svg_filename]
 end
 
 def svg_code_patset(image_info,label_info,dpi)
