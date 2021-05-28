@@ -7,6 +7,6 @@ def extract_pdf_page(text_file,dpi)
   temp_file = temp_file_name()
   shell_out("qpdf \"#{pdf}\" --pages . #{page} -- #{temp_file}")
   shell_out("convert -density #{dpi} #{temp_file} -set colorspace Gray -separate -average #{png}")
-  File.rm_f(temp_file)
+  FileUtils.rm_f(temp_file)
   return png
 end

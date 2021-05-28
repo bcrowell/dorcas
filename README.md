@@ -80,6 +80,7 @@ The input file is a JSON hash with keys and values described below. Comments are
 * prev - Name of a directory containing output from a previous run. Default: null.
 
 * output - Name of a directory in which to place accumulated results after this run. Default: "output".
+            If this directory already exists, it is removed and recreated.
 
 * seed_fonts - An array of arrays, each of which is of the form [font name,script name,(lowercase|uppercase|both)].
           If the font name ends in .ttf, then it's taken to be an absolute path to a truetype font file; otherwise

@@ -191,6 +191,7 @@ end
 
 def create_directories(output_dir,report_dir)
   temp_dir = 'temp'
+  if File.exists?(output_dir) then FileUtils.rm_rf(output_dir) end # has safety features, https://stackoverflow.com/a/12335711
   if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   if not File.exists?(output_dir) then Dir.mkdir(output_dir) end
   if not File.exists?(report_dir) then Dir.mkdir(report_dir) end
