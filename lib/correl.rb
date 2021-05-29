@@ -1,6 +1,6 @@
 def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1)
-  # Returns a list of hits in the format defined by filter_hits(), which is [... [c,i,j] ...], sorted in descending order
-  # high-level convenience function
+  # Returns a list of hits in the format [... [c,i,j,jb] ...], sorted in descending order by correlation score c.
+  # (i,j) is the upper left corner where the swatch would be placed, while jb is the coordinate of the baseline.
   i_lo,i_hi,j_lo,j_hi = box.to_a
   bw_ink = image_to_ink_array(pat.bw)
   red_ink = image_to_ink_array(pat.red)
@@ -12,6 +12,8 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   scale = text_line_spacing/pat.line_spacing
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
   hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
+  db = pat.baseline-pat.bbox[2]
+  hits = hits.map {|x| [x[0],x[1],x[2],x[2]+db]}
   return hits
 end
 
