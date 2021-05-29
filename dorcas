@@ -7,6 +7,7 @@ require 'zip'
 
 require_relative "lib/job"
 require_relative "lib/match"
+require_relative "lib/shotgun"
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
 require_relative "lib/image_util"
@@ -14,6 +15,7 @@ require_relative "lib/font"
 require_relative "lib/fontconfig"
 require_relative "lib/script"
 require_relative "lib/pat"
+require_relative "lib/fset"
 require_relative "lib/correl"
 require_relative "lib/clustering"
 require_relative "lib/tempfile"
@@ -54,17 +56,28 @@ def main()
   # ... 500 dpi is the documented behavior
   text,stats,peak_to_bg,dpi = analyze_text_image(text_file,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
+  if job.characters.nil? then
+    shotgun(job,text,stats,output_dir,report_dir)
+  else
+    pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
+               text,stats,peak_to_bg,dpi)
+    write_svg_reports(job,output_dir,report_dir,pats)
+  end
+
+
+  finish = Time.now
+  print "Total time for this entire run = #{finish-start} seconds.\n"
+end
+
+def create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
+               text,stats,peak_to_bg,dpi)
   if job.no_matching then
     pats = create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_multiple)
   else
     pats = match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
   end
-
-  write_svg_reports(job,output_dir,report_dir,pats)
-
-  finish = Time.now
-  print "Total time for this entire run = #{finish-start} seconds.\n"
+  return pats
 end
 
 def create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_multiple)
@@ -78,7 +91,7 @@ def create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_mu
     seed_font = all_fonts[font_name]
     script = Script.new(script_name)
     dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
-    print "  #{script_name} #{c} #{chars} #{font_name} #{dpi.round} dpi\n"
+    print "  #{script_name} #{c} #{chars} #{font_name} #{dpi.round} dpi, #{job.guess_font_size} pt\n"
     print "  metrics: #{seed_font.metrics(dpi,script)}\n"
     chars.chars.each { |char|
       print "    Rendering #{char}.\n"

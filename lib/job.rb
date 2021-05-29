@@ -5,7 +5,7 @@ class Job
     init_helper(data,'image',nil)
     init_helper(data,'prev',nil)
     init_helper(data,'output',"output")
-    init_helper(data,'characters',[['latin','lowercase']])
+    init_helper(data,'characters',nil)
     init_helper(data,'seed_fonts',[["Times"]])
     init_helper(data,'spacing_multiple',1.0)
     init_helper(data,'threshold',0.62)
@@ -16,15 +16,16 @@ class Job
     init_helper(data,'prefer_cluster',nil)
     init_helper(data,'force_location',nil)
     init_helper(data,'no_matching',false)
+    init_helper(data,'set',nil)
     if @image.nil? then die("no image specified") end
     if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
-    characters_helper()
+    if not @characters.nil? then characters_helper() end
     bogus_keys = data.keys-@keys
     if bogus_keys.length>0 then die("bogus keys: #{bogus_keys}") end
   end
 
   attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
-          :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching
+          :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching,:set
 
   def to_s
     return self.to_hash.to_s
@@ -60,6 +61,7 @@ class Job
     if key=='prefer_cluster' then @prefer_cluster = prefer_cluster_helper(value); recognized=true end
     if key=='force_location' then @force_location = force_location_helper(value); recognized=true end
     if key=='no_matching' then @no_matching = value.to_s.downcase=="true"; recognized=true end
+    if key=='set' then @set = value; recognized=true end
     if !recognized then die("illegal key #{key}") end # We normally don't even call this helper except on known keys. Bogus keys are checked elsewhere.
   end
 

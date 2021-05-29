@@ -9,5 +9,9 @@
 #define CORREL_MAX_PAT_W 256
 #define CORREL_MAX_PAT_H 256
 
+#define SHOTGUN_MAX_W 4096
+#define SHOTGUN_MAX_H 8192
+
+
 
 

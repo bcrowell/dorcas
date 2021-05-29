@@ -62,7 +62,7 @@ To delete a bad pattern, simply remove the .pat file.
 
 To edit a pattern:
 
-1. `unzip -jo a.pat bw.png`
+1. `unzip -jo a.pat bw.png` (unzips the file into the current working directory)
 
 2. Use software such as GIMP to edit bw.png.
 
@@ -122,6 +122,14 @@ The input file is a JSON hash with keys and values described below. Comments are
         the seed font, not by looking for matches to the seed font in an actual image of text. This can be used if
         you simply can't find an example of a certain character in your text. An input image must still be provided
         in order to fix the size of the font.
+
+# Pattern sets
+
+Create data.json that looks like this: `{"size":12,"dpi":300}`
+
+`zip -j giles46.set pass46/* -i \*.pat \*_data.json` (backslashes necessary on unix, not on windows)
+
+`zipinfo giles46.set`
 
 # Portability
 
