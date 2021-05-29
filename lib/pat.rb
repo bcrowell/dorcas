@@ -8,7 +8,8 @@ class Pat
     # There is not much point in storing the bbox of the actual swatch, since that is probably unreliable and in any case can
     # be found from bw and red if we need it. The only part of the bbox that we normally care about
     # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
-    # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file.
+    # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
+    # and is also used in the actual OCR'ing process.
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c

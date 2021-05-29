@@ -7,9 +7,14 @@ class Fset
     @max_w = @pats.map {|p| p.width}.max
     @max_h = @pats.map {|p| p.height}.max
     @data = data
+    @index = Hash[  @pats.map { |p| [p.c,p]}  ]
   end
 
   attr_reader :pats,:max_w,:max_h
+
+  def set(char)
+    return @index[char]
+  end
 
   def dpi
     return data['dpi'] # resolution in dots per inch
