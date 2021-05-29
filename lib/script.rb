@@ -31,6 +31,24 @@ class Script
     return !(@name=='hebrew')
   end
 
+  def all_letters()
+    if self.has_case then return self.alphabet(c:"lowercase")+self.alphabet(c:"uppercase") else return self.alphabet end
+  end
+
+  def Script.generate_table_for_char_to_short_name()
+    h = {}
+    ['latin','greek','hebrew'].each { |n|
+      print "#{n}\n"
+      script = Script.new(n)
+      script.all_letters().chars.each { |c|
+        nn = char_to_short_name_slow(c)
+        #print "  #{c} --> #{nn}\n"
+        h[c] = nn
+      }
+    }
+    print JSON.generate(h)
+  end
+
   def alphabet_helper(include_lc_only_chars)
     if self.name=='latin'  then return 'abcdefghijklmnopqrstuvwxyz' end
     if self.name=='greek'  then 

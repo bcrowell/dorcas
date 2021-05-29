@@ -8,12 +8,17 @@ class Fset
     @max_h = @pats.map {|p| p.height}.max
     @data = data
     @index = Hash[  @pats.map { |p| [p.c,p]}  ]
+    print "trying\n" # qwe
+    @index2 = Hash[  @pats.map { |p| [char_to_short_name(p.c),p]}  ]
+    print "survived\n" # qwe
   end
 
   attr_reader :pats,:max_w,:max_h
 
   def pat(char)
-    return @index[char]
+    # char can be either the unicode character or its short name
+    if @index.has_key?(char) then return @index[char] end
+    return @index2[char] # assume it's a short name
   end
 
   def dpi

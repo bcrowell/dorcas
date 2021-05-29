@@ -6,7 +6,7 @@ def verbing(argv)
   if !recognized then die("unrecognized verb #{verb}") end
 end
 
-verb_extract(args)
+def verb_extract(args)
   set_file,raw_char_name,part_name,output = args
   print "set_file,raw_char_name,part_name,output=#{[set_file,raw_char_name,part_name,output]}\n"
   if not File.exists?(set_file) then die("input file #{set_file} does not exist") end
@@ -17,6 +17,7 @@ verb_extract(args)
   expected_name_in_archive = ["bw.png","red.png","data.json"][part]
   set = Fset.from_file(set_file)
   pat = set.pat(char_name)
+  if pat.nil? then die("didn't find character #{char_name} in #{set_file}") end
   temp_file = temp_file_name()
   temp_file2 = temp_file_name()
   pat.save(temp_file)
