@@ -118,6 +118,11 @@ The input file is a JSON hash with keys and values described below. Comments are
         seed font has a particular character that is a very poor match to the image's font. Normally in such a
         case you will need to set the threshold to a very low value as well.
 
+* no_matching - Doing `"no_matching":true` means that the necessary patterns will be created simply be rendering
+        the seed font, not by looking for matches to the seed font in an actual image of text. This can be used if
+        you simply can't find an example of a certain character in your text. An input image must still be provided
+        in order to fix the size of the font.
+
 # Portability
 
 The following is a list of the things that would require work if porting this software to a non-Unix system.
