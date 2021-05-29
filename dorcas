@@ -59,7 +59,7 @@ def main()
 
   if job.characters.nil? then
     # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
-    shotgun(job,text,stats,output_dir,report_dir,0.9)
+    shotgun(job,text,stats,output_dir,report_dir)
   else
     pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)

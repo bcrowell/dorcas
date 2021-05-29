@@ -42,13 +42,13 @@ class Pat
     return dir_and_file_to_path(dir,name+".pat")
   end
 
-  def visual
+  def visual(black_color:ChunkyPNG::Color::rgb(0,0,0),red_color:ChunkyPNG::Color::rgb(255,0,0))
+    # Either color can be nil.
     v = ChunkyPNG::Image.new(@red.width,@red.height) # default is to initialize it as transparent, which is what we want
-    red_color = ChunkyPNG::Color::rgb(255,0,0)
     0.upto(v.width-1) { |i|
       0.upto(v.height-1) { |j|
-        if has_ink(@red[i,j]) then v[i,j]=red_color end
-        if has_ink(@bw[i,j]) then v[i,j]=ChunkyPNG::Color::BLACK end
+        if (not red_color.nil?) and has_ink(@red[i,j]) then v[i,j]=red_color end
+        if (not black_color.nil?) and has_ink(@bw[i,j]) then v[i,j]=black_color end
       }
     }
     return v
