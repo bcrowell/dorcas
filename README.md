@@ -125,11 +125,23 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 # Pattern sets
 
+Treating them as zip files:
+
 Create data.json that looks like this: `{"size":12,"dpi":300}`
 
 `zip -j giles46.set pass46/* -i \*.pat \*_data.json` (backslashes necessary on unix, not on windows)
 
 `zipinfo giles46.set`
+
+Utilities for making this easier:
+
+dorcas extract old.set ρ bw.png
+
+... edit bw.png
+
+dorcas insert old.set ρ bw.png new.set
+
+For a reminder of usage on these utilities, do "dorcase insert help", etc.
 
 # Portability
 

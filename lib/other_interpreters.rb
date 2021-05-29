@@ -1,4 +1,5 @@
-def shell_out(code)
+def shell_out(code,echo:false)
+  if echo then print code,"\n" end
   return run_interpreted_code(code,'shell')
 end
 
