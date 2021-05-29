@@ -1,6 +1,6 @@
 class Fset
   # Encapsulates a set of character-matching patterns. Is similar to a font, but contains
-  # different info such as masking, and is used for pattern-matching, not drawing.
+  # different info such as the red mask, and is used for pattern-matching, not drawing.
 
   def initialize(pats,data)
     @pats = pats # ... an array of Pat objects
@@ -12,16 +12,16 @@ class Fset
 
   attr_reader :pats,:max_w,:max_h
 
-  def set(char)
+  def pat(char)
     return @index[char]
   end
 
   def dpi
-    return data['dpi'] # resolution in dots per inch
+    return @data['dpi'] # resolution in dots per inch
   end
 
   def size
-    return data['size'] # font's size in points
+    return @data['size'] # font's size in points
   end
 
   def Fset.from_file(filename)

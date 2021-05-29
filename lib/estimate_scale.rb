@@ -128,12 +128,7 @@ def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spac
   # The projection looks pretty much like a square wave, the main deviation from a square wave shape being that the top has a deep indentation
   # near its middle.
 
-  guess_period = 0.0171*guess_dpi*guess_font_size*spacing_multiple
-  # The constant in front is derived from real-world data: took one of my books (output from LaTeX) and found that with an 11-point font,
-  # 12 lines were 57.5 mm. Calculation is then (57.5 mm)(1/12)(1/11)(1/25.4 mm). For the Giles Odyssey book, in the archive.org scan, this
-  # produces a guessed period of about 100 pixels, whereas the actual period is about 70 pixels. This seems kind of reasonable, since
-  # that book seems to have been in a tiny pocketbook format and a fairly small font. The Cheng+cepstrum algorithm seems quite robust,
-  # may still work even if this estimate is off by a factor of 2 or something.
+  guess_period = metrics_to_estimated_line_spacing(guess_dpi,guess_font_size,spacing_multiple:spacing_multiple)
 
   if verbosity>=3 then print "guess_period=#{guess_period}\n" end
   cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,1.4,verbosity)
@@ -154,6 +149,15 @@ def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spac
   if verbosity>=2 then print "Line spacing is estimated to have period #{period}.\n" end
 
   return period
+end
+
+def metrics_to_estimated_line_spacing(dpi,font_size,spacing_multiple:1)
+  return 0.0171*dpi*font_size*spacing_multiple
+  # The constant in front is derived from real-world data: took one of my books (output from LaTeX) and found that with an 11-point font,
+  # 12 lines were 57.5 mm. Calculation is then (57.5 mm)(1/12)(1/11)(1/25.4 mm). For the Giles Odyssey book, in the archive.org scan, this
+  # produces a guessed period of about 100 pixels, whereas the actual period is about 70 pixels. This seems kind of reasonable, since
+  # that book seems to have been in a tiny pocketbook format and a fairly small font. The Cheng+cepstrum algorithm seems quite robust,
+  # may still work even if this estimate is off by a factor of 2 or something.
 end
 
 def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,period_slop,verbosity)

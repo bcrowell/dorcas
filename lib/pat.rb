@@ -4,7 +4,7 @@ class Pat
   def initialize(bw,red,line_spacing,baseline,bbox,c)
     @bw,@red,@line_spacing,@bbox,@baseline,@c = bw,red,line_spacing,bbox,baseline,c
     # bw and red are ChunkyPNG objects
-    # The bbox is typically the one from the original seed font, but can be modified.
+    # The bbox is typically the one from the original seed font, but can be modified. This is a raw array. To get a Box object, use bboxo().
     # There is not much point in storing the bbox of the actual swatch, since that is probably unreliable and in any case can
     # be found from bw and red if we need it. The only part of the bbox that we normally care about
     # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
@@ -20,6 +20,10 @@ class Pat
 
   def height()
     return bw.height
+  end
+
+  def bboxo()
+    return Box.from_a(bbox)
   end
 
   def transplant_from_file(filename)

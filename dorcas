@@ -28,6 +28,7 @@ require_relative "lib/stat"
 require_relative "lib/other_interpreters"
 require_relative "lib/string_util"
 require_relative "lib/array_util"
+require_relative "lib/box"
 require_relative "lib/reports"
 require_relative "lib/svg"
 require_relative "lib/pdf"
@@ -57,7 +58,8 @@ def main()
   text,stats,peak_to_bg,dpi = analyze_text_image(text_file,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
-    shotgun(job,text,stats,output_dir,report_dir)
+    # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
+    shotgun(job,text,stats,output_dir,report_dir,0.9)
   else
     pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)

@@ -8,7 +8,6 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
   verbosity=2
 
   text_line_spacing = stats['line_spacing']  
-  scale = text_line_spacing/pat.line_spacing
 
   wt,ht = text.width,text.height
   wp,hp = pat.bw.width,pat.bw.height
@@ -49,16 +48,35 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
   i_hi = i0+nom_di-rbox
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
 
+  hits = filter_hits(results,Box.from_a(pat.bbox),Box.new(i_lo,i_hi,j_lo,j_hi),threshold,max_hits,verbosity:verbosity)
+
+  print "hits:\n"
+  count = 0
+  hits.each { |hit|
+    print sprintf("  %2d corr=%4.2f x=%4d y=%4d\n",count,hit[0],hit[1],hit[2])
+    count += 1
+    if count>10 then print "  ...plus more hits for a total of #{hits.length}\n"; break end
+  }
+  return hits
+end
+
+def filter_hits(results,pat_bbox,region,threshold,max_hits,verbosity:1)
+  # pat_bbox and region should be Box objects.
+  # Returns an array whose elements are of the form [c,i,j], where c is the correlation score,
+  # and i and j are the location. This will be sorted in decreasing order by score.
+  # We look for correlation scores that are local maxima and are above threshold.
   # The following is pretty slow when there is a large number of hits, and we don't know
   # in advance how many hits there will be, hence the need for the max_hits parameter. 
   # When looking for patterns to match a seed font, max_hits can be set pretty low,
   # and a large number of hits is basically a symptom that the threshold has been set too low.
   # Performance will be more of a problem when actually OCRing a full page of text.
   # One way to speed things up would be to avoid looking at candidates that aren't on a baseline of text.
+  bbox = pat_bbox.to_a
+  i_lo,i_hi,j_lo,j_hi = region.to_a
   hits = []
   # Set a radius within which we look for the greatest value.
-  xr = ((pat.bbox[1]-pat.bbox[0])*0.8).round
-  yr = ((pat.bbox[3]-pat.bbox[2])*0.8).round
+  xr = ((bbox[1]-bbox[0])*0.8).round
+  yr = ((bbox[3]-bbox[2])*0.8).round
   j0,j1,i0,i1 = [j_lo+yr,j_hi-yr,i_lo+xr,i_hi-xr]
   if j1<j0 or i1<i0 then warn("window in match() contains no pixels, no results returned"); return end
   if j1-j0<yr or i1-i0<xr then warn("window in match() is only #{i1-i0+1}x#{j1-j0+1}, probably no results will be returned") end
@@ -75,8 +93,6 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
           if !local_max then break end
         }
         if local_max then
-          ci = (i+wp/2).round
-          cj = (j+hp/2).round
           hits.push([c,i,j])
           if hits.length>=max_hits then break end
         end
@@ -85,13 +101,6 @@ def match(text,pat,stats,threshold,force_loc,max_hits)
     if hits.length>=max_hits then break end
   }
   hits.sort! {|a,b| b[0] <=> a[0]} # sort in descending order by score
-  print "hits:\n"
-  count = 0
-  hits.each { |hit|
-    print sprintf("  %2d corr=%4.2f x=%4d y=%4d\n",count,hit[0],hit[1],hit[2])
-    count += 1
-    if count>10 then print "  ...plus more hits for a total of #{hits.length}\n"; break end
-  }
   return hits
 end
 

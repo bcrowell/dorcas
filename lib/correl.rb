@@ -1,3 +1,20 @@
+def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1)
+  # Returns a list of hits in the format defined by filter_hits(), which is [... [c,i,j] ...], sorted in descending order
+  # high-level convenience function
+  i_lo,i_hi,j_lo,j_hi = box.to_a
+  bw_ink = image_to_ink_array(pat.bw)
+  red_ink = image_to_ink_array(pat.red)
+  pat_stats = ink_stats_pat(bw_ink,red_ink) # calculates mean and sd
+  sdt = stats['sd_in_text']
+  sdp = pat_stats['sd']
+  norm = sdt*sdp # normalization factor for correlations
+  text_line_spacing = stats['line_spacing']  
+  scale = text_line_spacing/pat.line_spacing
+  results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
+  hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
+  return hits
+end
+
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   # A whole page is typically too much for correl_many_one_pass() to do at once.
   verbosity=2
