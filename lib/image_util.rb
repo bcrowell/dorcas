@@ -41,6 +41,13 @@ def ink_to_color(ink) # inverse of color_to_ink
   return ChunkyPNG::Color.rgb(gray,gray,gray)
 end
 
+def compose_safe(a,b,i,j)
+  # ChunkyPNG crashes if b hangs outside of a. In that situation, just silently fail.
+  # Some of the ! functions like compose! seem to crash, so don't use them.
+  if i+b.width>a.width-1 or j+b.height>a.height-1 then return a end
+  return a.compose(b,i,j)
+end
+
 def erase_inside_box(image,bbox)
   w,h = image.width,image.height
   bbox[0].upto(bbox[1]) { |i|

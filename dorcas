@@ -6,6 +6,7 @@ require 'json' # ubuntu package ruby-zip
 require 'zip'
 
 require_relative "lib/job"
+require_relative "lib/verbing"
 require_relative "lib/match"
 require_relative "lib/shotgun"
 require_relative "lib/fft"
@@ -36,6 +37,11 @@ require_relative "lib/ttf"
 
 def main()
   start = Time.now
+
+  if ARGV.length>1 then
+    verbing(ARGV)
+    exit(0)
+  end
 
   job_file = ARGV[0]
   job = Job.from_file(job_file)
