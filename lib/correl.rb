@@ -1,4 +1,4 @@
-def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1,give_details:false)
+def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1,give_details:false,implementation:'chapel')
   # Returns a list of hits in the format [... [c,i,j,jb] ...], sorted in descending order by correlation score c.
   # (i,j) is the upper left corner where the swatch would be placed, while jb is the coordinate of the baseline.
   i_lo,i_hi,j_lo,j_hi = box.to_a
@@ -10,7 +10,7 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   norm = sdt*sdp # normalization factor for correlations
   text_line_spacing = stats['line_spacing']  
   scale = text_line_spacing/pat.line_spacing
-  results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm)
+  results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm,implementation:implementation)
   hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
   db = pat.baseline-pat.bbox[2]
   hits = hits.map {|x| [x[0],x[1],x[2],x[2]+db]}
@@ -19,7 +19,13 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   return [hits,details]
 end
 
-def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
+def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm,implementation:'chapel')
+  if implementation=='chapel' then return correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm) end
+  if implementation=='ruby' then return correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm) end
+  die ("unrecognized value of implementation: #{implementation}")
+end
+
+def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   # A whole page is typically too much for correl_many_one_pass() to do at once.
   verbosity=2
   start = Time.now
@@ -191,7 +197,7 @@ def ink_to_int(ink)
   return (ink*256).to_i # if changing this, also change the conversion factor inside retrieve_chapel_output
 end
 
-def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
+def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)
   # returns results in [j][i] index order
   c = []
   dy_lo.upto(dy_hi) { |dy|
@@ -199,7 +205,7 @@ def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi)
     if dy%30==0 then print "\n" end
     row = []
     dx_lo.upto(dx_hi) { |dx|
-      row.push(correl(text,pat,red,background,dx,dy))
+      row.push(correl(text,pat,red,background,dx,dy)/norm)
     }
     c.push(row)
   }

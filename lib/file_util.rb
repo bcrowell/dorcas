@@ -18,6 +18,13 @@ def slurp_file_with_detailed_error_reporting(file)
   end
 end
 
+def json_from_file_or_die(file)
+  # automatically does unicode_normalize(:nfc)
+  json,err = slurp_file_with_detailed_error_reporting(file)
+  if !(err.nil?) then die(err) end
+  return JSON.parse(json)
+end
+
 def dir_and_file_to_path(dir,file)
   return dir+"/"+file # bug: won't work on windows
 end

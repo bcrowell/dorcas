@@ -102,7 +102,7 @@ class Job
   end
 
   def Job.from_file(filename)
-    return Job.new(JSON.parse(slurp_file(filename))) # slurp_file automatically does unicode_normalize(:nfc)
+    return Job.new(json_from_file_or_die(filename)) # automatically does unicode_normalize(:nfc)
   end
 
   def Job.font_string_is_full_path(s)

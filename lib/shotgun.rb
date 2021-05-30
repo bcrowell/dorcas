@@ -20,7 +20,9 @@ def shotgun(job,text,stats,output_dir,report_dir,threshold:0.60,verbosity:2)
     print "  scanning for #{c}\n"
     pat = set.pat(c)
     max_hits = 1000
-    hits,details = correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:verbosity,give_details:true)
+    hits,details = correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:verbosity,give_details:true,
+                 implementation:'ruby'
+    )
     # Returns a list of hits in the format [... [c,i,j,jb] ...], sorted in descending order by correlation score c.
 
     heat = details['heat']
