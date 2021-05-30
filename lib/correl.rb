@@ -205,7 +205,7 @@ def correl_many_pure_ruby(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_s
     if dy%30==0 then print "\n" end
     row = []
     dx_lo.upto(dx_hi) { |dx|
-      row.push(correl(text,pat,red,background,dx,dy)/norm)
+      row.push(correl(text,pat,red,background,dx,dy,norm))
     }
     c.push(row)
   }
@@ -216,6 +216,54 @@ def correl(text,pat,red,background,dx,dy,norm)
   # dx,dy are offsets of pat within text
   wp,hp = ink_array_dimensions(pat)
   wt,ht = ink_array_dimensions(text)
+
+  n = 0
+  sum_p = 0.0
+  sum_t = 0.0
+  sum_pt = 0.0
+  0.upto(wp-1) { |i|
+    it = i+dx
+    0.upto(hp-1) { |j|
+      jt = j+dy
+      if red[i][j]>0.0 then next end
+      p = pat[i][j]
+      if it<0 or it>wt-1 or jt<0 or jt>ht-1 then
+        t = background
+      else
+        t = text[it][jt]
+      end
+      n += 1
+      sum_p += p
+      sum_t += t
+      sum_pt += p*t
+    }
+  }
+  p_mean = sum_p/n
+  t_mean = sum_t/n
+  return (sum_pt/n-p_mean*t_mean)/norm
+end
+
+def mean_product_simple_list_of_floats(a,b)
+  if a.length!=b.length then die("unequal lengths") end
+  norm = a.length.to_f
+  sum = 0.0
+  0.upto(a.length-1) { |i|
+    sum += a[i]*b[i]
+  }
+  return sum/norm
+end
+
+def squirrel(text,pat,red,dx,dy,norm,stats)
+  # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
+  # text, pat, and red are ink arrays
+  # dx,dy are offsets of pat within text
+  # norm is the product of the standard deviations of the text and the pat
+  # stats should include the keys background, dark, and threshold, which refer to text
+  wp,hp = ink_array_dimensions(pat)
+  wt,ht = ink_array_dimensions(text)
+
+  background,threshold,dark = stats['background'],stats['threshold'],stats['dark']
+  if background.nil? or threshold.nil? or dark.nil? then die("nil provided in stats as one of background,threshold,dark={[background,threshold,dark]}") end
 
   norm = 0
   sum_p = 0.0
@@ -241,14 +289,4 @@ def correl(text,pat,red,background,dx,dy,norm)
   p_mean = sum_p/norm
   t_mean = sum_t/norm
   return (sum_pt/norm-p_mean*t_mean)/norm
-end
-
-def mean_product_simple_list_of_floats(a,b)
-  if a.length!=b.length then die("unequal lengths") end
-  norm = a.length.to_f
-  sum = 0.0
-  0.upto(a.length-1) { |i|
-    sum += a[i]*b[i]
-  }
-  return sum/norm
 end
