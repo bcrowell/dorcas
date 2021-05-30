@@ -75,8 +75,18 @@ def filter_hits(results,pat_bbox,region,threshold,max_hits,verbosity:1)
   i_lo,i_hi,j_lo,j_hi = region.to_a
   hits = []
   # Set a radius within which we look for the greatest value.
-  xr = ((bbox[1]-bbox[0])*0.8).round
-  yr = ((bbox[3]-bbox[2])*0.8).round
+  r_frac = 0.1
+  # ... Making this >=1 would prevent matching a double letter like the mm in "common." Even slightly smaller values could cause the
+  #     software to refuse to find a character in a certain spot because it was convinced that another character was nearby.
+  #     Large values also make the algorithm extremely slow.
+  #     Making the value too small will tend to give more bogus and overlapping hits.
+  #     Looking at heat maps of correlations, the real hits are spikes that are pretty tall and have a radius of about 0.1 in these units.
+  #     On a sample of text, it seemed to make little difference in the results whether this was set to 0.1 or 0.8, provided that the
+  #     threshold was set to roughly the right value to make the best distinction between good and false matches. When setting the
+  #     threshold lower, the value of r_frac will matter a lot more, and if the intention is to get lots of matches and winnow them
+  #     later, then a small r_frac may still be the right choice.
+  xr = ((bbox[1]-bbox[0])*r_frac).round
+  yr = ((bbox[3]-bbox[2])*r_frac).round
   j0,j1,i0,i1 = [j_lo+yr,j_hi-yr,i_lo+xr,i_hi-xr]
   if j1<j0 or i1<i0 then warn("window in match() contains no pixels, no results returned"); return end
   if j1-j0<yr or i1-i0<xr then warn("window in match() is only #{i1-i0+1}x#{j1-j0+1}, probably no results will be returned") end
