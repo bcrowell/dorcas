@@ -1,4 +1,4 @@
-def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1)
+def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1,give_details:false)
   # Returns a list of hits in the format [... [c,i,j,jb] ...], sorted in descending order by correlation score c.
   # (i,j) is the upper left corner where the swatch would be placed, while jb is the coordinate of the baseline.
   i_lo,i_hi,j_lo,j_hi = box.to_a
@@ -14,7 +14,9 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
   db = pat.baseline-pat.bbox[2]
   hits = hits.map {|x| [x[0],x[1],x[2],x[2]+db]}
-  return hits
+  details = {}
+  if give_details then details['heat']=results end
+  return [hits,details]
 end
 
 def correl_many(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,line_spacing,norm)

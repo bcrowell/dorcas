@@ -1,9 +1,15 @@
-def ink_array_to_image(ink)
+def ink_array_to_image(ink,transpose:false)
+  # Input should consist of ink values, i.e., 0 to 1.
   w,h = ink_array_dimensions(ink)
-  im = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
-  0.upto(w-1) { |i|
-    0.upto(h-1) { |j|
-      im[i,j] = ink_to_color(ink[i][j])
+  if transpose then w2,h2=h,w else w2,h2=w,h end
+  im = ChunkyPNG::Image.new(w2,h2,ChunkyPNG::Color::WHITE)
+  0.upto(w2-1) { |i|
+    0.upto(h2-1) { |j|
+      if transpose then
+        im[i,j] = ink_to_color(ink[j][i])
+      else
+        im[i,j] = ink_to_color(ink[i][j])
+      end
     }
   }
   return im

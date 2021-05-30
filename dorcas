@@ -57,7 +57,10 @@ def main()
   report_dir = dir_and_file_to_path(output_dir,"_reports")
   temp_dir,output_dir = create_directories(output_dir,report_dir)
   create_text_file(dir_and_file_to_path(output_dir,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
-  if job.prev!=nil then copy_all_pat_files(job.prev,output_dir) end # copy over pat files from previous run; these may get overwritten later
+  if job.prev!=nil then
+    prev_set = Fset.from_file_or_directory(job.prev)
+    copy_all_pat_files(prev_set,output_dir) # copy over pat files from previous run; these may get overwritten later
+  end
 
   if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image=text_file end
   # ... 500 dpi is the documented behavior
@@ -67,7 +70,7 @@ def main()
     # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
     shotgun(job,text,stats,output_dir,report_dir)
   else
-    pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
+    pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
     write_svg_reports(job,output_dir,report_dir,pats)
   end
@@ -77,12 +80,12 @@ def main()
   print "Total time for this entire run = #{finish-start} seconds.\n"
 end
 
-def create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
+def create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
   if job.no_matching then
     pats = create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_multiple)
   else
-    pats = match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
+    pats = match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
   end
   return pats
@@ -115,7 +118,7 @@ def create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_mu
   return pats
 end
 
-def  match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,output_dir,report_dir,temp_dir,
+def  match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
               text,stats,peak_to_bg,dpi)
 
   all_fonts,script_and_case_to_font_name = load_fonts(job)
@@ -137,7 +140,7 @@ def  match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_
       if (not job.force_location.nil?) and job.force_location.has_key?(char) then force_loc=job.force_location[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
-      pat,hits,composites = match_character(char,text,text_file,temp_dir,job.prev,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
+      pat,hits,composites = match_character(char,text,text_file,temp_dir,prev_set,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
                                  report_dir,matches_svg_file,name,force_cl,force_loc)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
@@ -175,16 +178,13 @@ def load_fonts(job)
   return [all_fonts,script_and_case_to_font_name]
 end
 
-def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,
+def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,
          char_name,force_cl,force_loc)
   verbosity = 2
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
   pat_from_prev = false
-  if !(prev_dir.nil?) then
-    prev_pat_filename = Pat.char_to_filename(prev_dir,char)
-    pat_from_prev = File.exists?(prev_pat_filename)
-  end
+  if !(prev_set.nil?) then pat_from_prev=prev_set.pat(char) end
   if pat_from_prev and not force_cl.nil? then
     warn("The pattern #{prev_pat_filename} exists for character #{char}, but prefer_cluster is set to #{force_cl+1}.\n"+
          "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
@@ -196,8 +196,8 @@ def match_character(char,text,text_file,temp_dir,prev_dir,output_dir,f,dpi,scrip
          "Normally the force_location feature is used with the seed font, not with a previously constructed pattern.\n")
   end
   if pat_from_prev then
-    if verbosity>=2 then print "  Taking pattern from previous run, swatch in #{prev_pat_filename}\n" end
-    pat = Pat.from_file(prev_pat_filename)
+    if verbosity>=2 then print "  Taking pattern from previous run\n" end
+    pat = prev_set.pat(char)
   else
     if verbosity>=2 then print "  Generating new character from seed font.\n" end
     pat = char_to_pat(char,temp_dir,f,dpi,script,char)
@@ -264,20 +264,20 @@ def create_directories(output_dir,report_dir)
   return [temp_dir,output_dir]
 end
 
-def copy_all_pat_files(prev_dir,output_dir)
-  # First look for files that exist in the output directory but not the input directory.
+def copy_all_pat_files(set,output_dir)
+  # First look for files that exist in the output directory but not the input.
   # Silently allowing this could lead to very confusing stuff happening.
   Dir[dir_and_file_to_path(output_dir,"*.pat")].each { |filename|
     name = File.basename(filename)
-    prev_version = dir_and_file_to_path(prev_dir,name)
-    if not File.exists?(prev_version) then File.rm_f(filename) end
+    name =~ /(.*)\.pat$/
+    short_char_name = $1
+    if not set.has_pat?(short_char_name) then File.rm_f(filename) end
   }
   # Now copy from input to output.
-  Dir[dir_and_file_to_path(prev_dir,"*.pat")].each { |filename|
-    name = File.basename(filename)
+  set.all_char_names.each { |char_name|
+    name = char_name+".pat"
     destination = dir_and_file_to_path(output_dir,name)
-    # print "copying #{filename} to #{destination}\n"
-    FileUtils.cp(filename,destination)
+    set.pat(char_name).save(destination)
   }
 end
 

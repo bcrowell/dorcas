@@ -3,6 +3,18 @@ def extract_subarray(a,i_lo,i_hi,j_lo,j_hi)
   return generate_array(w,h,lambda {|i,j| a[i][j]})
 end
 
+def transform_array_elements_linearly!(x,a,b,min,max)
+  0.upto(x.length-1) { |i|
+    0.upto(x[i].length-1) { |j|
+      z = x[i][j]
+      z = a*z+b
+      if z<min then z=min end
+      if z>max then z=max end
+      x[i][j] = z
+    }
+  }
+end
+
 def generate_array(w,h,fn,symm:false)
   a = []
   if symm and w!=h then die("symm is true, but w and h are unequal, w=#{w}, h=#{h}") end

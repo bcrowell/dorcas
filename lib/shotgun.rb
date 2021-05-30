@@ -1,7 +1,7 @@
-def shotgun(job,text,stats,output_dir,report_dir,threshold:0.70,verbosity:2)
+def shotgun(job,text,stats,output_dir,report_dir,threshold:0.60,verbosity:2)
   
   if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
-  set = Fset.from_file(job.set)
+  set = Fset.from_file_or_directory(job.set)
 
   dpi = job.guess_dpi
   line_spacing = metrics_to_estimated_line_spacing(dpi,set.size,spacing_multiple:1)
@@ -15,12 +15,19 @@ def shotgun(job,text,stats,output_dir,report_dir,threshold:0.70,verbosity:2)
   print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
 
-  Script.new('greek').alphabet(c:"lowercase").chars.each { |c|
+  #Script.new('greek').alphabet(c:"lowercase").chars.each { |c|
+  'ρ'.chars.each { |c|
     print "  scanning for #{c}\n"
     pat = set.pat(c)
     max_hits = 1000
-    hits = correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:verbosity)
+    hits,details = correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:verbosity,give_details:true)
     # Returns a list of hits in the format [... [c,i,j,jb] ...], sorted in descending order by correlation score c.
+
+    heat = details['heat']
+    a,b=1.0,0.0
+    transform_array_elements_linearly!(heat,a,b,0.0,1.0)
+    image = ink_array_to_image(heat,transpose:true)
+    image.save("heat.png")
     
     v = pat.visual(black_color:ChunkyPNG::Color::rgba(0,0,255,100),red_color:nil) # semitransparent blue
     hits.each { |x|

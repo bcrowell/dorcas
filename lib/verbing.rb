@@ -18,7 +18,7 @@ def verb_insert(args)
   if short_name_to_long_name(char_name).nil? then die("not the short name of any character: #{char_name}") end
   legal_names = ["bw.png","red.png","data.json"]
   unless legal_names.include?(widget) then die("#{widget} is not one of the legal names: #{legal_names.join(' ')}") end
-  set = Fset.from_file(set_file)
+  set = Fset.from_file_or_directory(set_file)
   pat = set.pat(char_name)
   if pat.nil? then die("didn't find character #{char_name} in #{set_file}") end
   temp_file = temp_file_name()+".zip" # zip doesn't work right if the filename doesn't end in .zip
@@ -53,7 +53,7 @@ def verb_extract(args)
   unless legal_names.include?(output) then die("#{output} is not one of the legal names: #{legal_names.join(' ')}") end
   part = {"bw.png"=>0,"red.png"=>1,"data.json"=>2}[output]
   expected_name_in_archive = output
-  set = Fset.from_file(set_file)
+  set = Fset.from_file_or_directory(set_file)
   pat = set.pat(char_name)
   if pat.nil? then die("didn't find character #{char_name} in #{set_file}") end
   temp_file = temp_file_name()

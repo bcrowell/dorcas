@@ -66,7 +66,7 @@ To edit a pattern:
 
 2. Use software such as GIMP to edit bw.png.
 
-3. `zip -r a.pat bw.png`
+3. `zip a.pat bw.png` ... no, fails because a.pat doesn't have the magic .zip extension
 
 
 # Format of input file
@@ -77,7 +77,7 @@ The input file is a JSON hash with keys and values described below. Comments are
           specified in the form "foo.pdf[37]", then page q37 of the pdf file will be rendered at 500 dpi, converted to grayscale, saved
           in the current working directory as foo_037.png, and used as the input. (This feature requires imagemagick and qpdf.)
 
-* prev - Name of a directory containing output from a previous run. Default: null.
+* prev - Name of a directory or .set file containing output from a previous run. Default: null.
 
 * output - Name of a directory in which to place accumulated results after this run. Default: "output".
             If this directory already exists, it is removed and recreated.
@@ -116,7 +116,9 @@ The input file is a JSON hash with keys and values described below. Comments are
 * force_location - This is similar to prefer_cluster, but for example `"force_location":[["ψ",123,456]]` would
         force the software to match the character close to pixel coordinates (123,456). This is useful when the
         seed font has a particular character that is a very poor match to the image's font. Normally in such a
-        case you will need to set the threshold to a very low value as well.
+        case you will need to set the threshold to a very low value as well. The need to do these things may
+        actually indicate a problem with a red mask that is not close enough to the character, i.e., the kerning
+        in the real document is tighter than estimated by the software.
 
 * no_matching - Doing `"no_matching":true` means that the necessary patterns will be created simply be rendering
         the seed font, not by looking for matches to the seed font in an actual image of text. This can be used if
