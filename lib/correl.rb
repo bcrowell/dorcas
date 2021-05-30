@@ -13,8 +13,7 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   scale = text_line_spacing/pat.line_spacing
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm,implementation:implementation)
   hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
-  threshold2 = 0.7
-  warn("using hardcoded value of threshold2=#{threshold2}")
+  threshold2 = threshold # I tuned up scores inside squirrel() so this would work about right.
   hits = improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold2)
   baseline = pat.baseline
   db = baseline-pat.bbox[2]
@@ -282,11 +281,17 @@ def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold)
   hits.each { |x|
     c,i,j = x
     s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
-    s = 1.23*(s-mean)/(1.0-mean) # The 1.23 is to make good matches stay about the same as with the basic correlation algorithm.
+    s = (s-mean)/(1.0-mean) # formalize so that a perfect match is 1 and a real-world uncorrelated result is about 0
+    s = s*1.23-0.08 
+    # ... Adjust so that  we can use the same threshold as with the basic correlation algorithm.
+    #     The multiplicative constant is derived by making good matches be about the same. We then apply the -0.08 so that
+    #     an optimal threshold is about the same.
     next if s<threshold
     print sprintf("    squirrel: i,j=%4d,%4d  c=%5.2f   s=%5.2f    %s\n",i,j,c,s,info['image'])
     cooked.push([s,i,j])
   }
+
+  cooked.sort! {|a,b| b[0] <=> a[0]} # sort in descending order by score
 
   return cooked
 end

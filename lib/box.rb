@@ -9,6 +9,10 @@ class Box
     return [@left,@right,@top,@bottom]
   end
 
+  def to_s
+    return "LRTB = #{[@left,@right,@top,@bottom]}"
+  end
+
   def width
     return @right-@left+1
   end

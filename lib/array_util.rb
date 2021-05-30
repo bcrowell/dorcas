@@ -8,7 +8,16 @@ def extract_subarray_with_padding(a,box,pad_value)
   # pads with nil if necessary
   dx = box.left
   dy = box.top
-  return generate_array(box.width,box.height,lambda {|i,j| z=a[i+dx][j+dy]; if z.nil? then pad_value else z end})
+  return generate_array(box.width,box.height,lambda {|i,j| array_sub(a,i+dx,j+dy,pad_value) })
+end
+
+def array_sub(a,i,j,default)
+  # won't croak if i or j is out of bounds, will return default instead
+  col = a[i]
+  if col.nil? then return default end
+  z = col[j]
+  if z.nil? then return default end
+  return z
 end
 
 def array_elements_threshold(a,threshold)

@@ -15,8 +15,8 @@ def shotgun(job,text,stats,output_dir,report_dir,threshold:0.60,verbosity:2)
   print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
 
-  #Script.new('greek').alphabet(c:"lowercase").chars.each { |c|
-  'ρ'.chars.each { |c|
+  Script.new('greek').alphabet(c:"lowercase").chars.each { |c|
+  #'ρ'.chars.each { |c|
     print "  scanning for #{c}\n"
     pat = set.pat(c)
     max_hits = 1000
@@ -32,10 +32,10 @@ def shotgun(job,text,stats,output_dir,report_dir,threshold:0.60,verbosity:2)
     image = ink_array_to_image(heat,transpose:true)
     image.save("heat.png")
     
-    v = pat.visual(black_color:ChunkyPNG::Color::rgba(0,0,255,100),red_color:nil) # semitransparent blue
+    v = pat.visual(black_color:ChunkyPNG::Color::rgba(255,0,0,130),red_color:nil) # semitransparent red
     hits.each { |x|
       c,i,j,jb = x
-      print "    ",x,"\n"
+      if verbosity>=2 then print "    ",x,"\n" end
       monitor_image = compose_safe(monitor_image,v,i,j)
       monitor_image.save(monitor_file)
     }
