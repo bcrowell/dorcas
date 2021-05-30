@@ -13,7 +13,9 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   scale = text_line_spacing/pat.line_spacing
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm,implementation:implementation)
   hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
-  hits = improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats)
+  threshold2 = 0.7
+  warn("using hardcoded value of threshold2=#{threshold2}")
+  hits = improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold2)
   baseline = pat.baseline
   db = baseline-pat.bbox[2]
   hits = hits.map {|x| [x[0],x[1],x[2],x[2]+db]}
@@ -263,14 +265,29 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
-def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats)
+def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold)
+  controls = []
+  w,h = ink_array_dimensions(text_ink)
+  wp,hp = ink_array_dimensions(bw_ink)  
+  1.upto(100) { |i|
+    i = wp+rand(w-2*wp)
+    j = hp+rand(h-2*hp)
+    s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
+    #print sprintf("    squirrel: i,j=%4d,%4d       s=%5.2f    control\n",i,j,s)
+    controls.push(s)
+  }
+  mean,sd = find_mean_sd(controls)
+
   cooked = []
   hits.each { |x|
     c,i,j = x
     s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
+    s = 1.23*(s-mean)/(1.0-mean) # The 1.23 is to make good matches stay about the same as with the basic correlation algorithm.
+    next if s<threshold
     print sprintf("    squirrel: i,j=%4d,%4d  c=%5.2f   s=%5.2f    %s\n",i,j,c,s,info['image'])
     cooked.push([s,i,j])
   }
+
   return cooked
 end
 
@@ -291,7 +308,7 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats)
   red = array_elements_threshold(red_raw,0.5)
 
   filename = sprintf("squirrel%04d_%04d.png",dx,dy)
-  ink_array_to_image(text_gray).save(filename)
+  #ink_array_to_image(text_gray).save(filename)
 
   norm = 0.0
   total = 0.0
