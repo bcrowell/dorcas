@@ -70,13 +70,13 @@ def correl_many_one_pass(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_m
   verbosity=1
   # Set up jobs to be done by all CPUs at once.
   start = Time.now
-  results = correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
+  results = correl_many_chapel_helper(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
   finish = Time.now
   if verbosity>=2 then print "    time for this pass of correl = #{finish-start} seconds\n" end
   return results
 end
 
-def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
+def correl_many_chapel_helper(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_margin,norm)
   verbosity=1
   exe = 'chpl/correl'
   n_rows = dy_hi-dy_lo+1
@@ -87,7 +87,7 @@ def correl_many_chapel(text,pat,red,background,dx_lo,dx_hi,dy_lo,dy_hi,extra_mar
   wt,ht = ink_array_dimensions(text)
   rows_per_cpu_fat = rows_per_cpu+2*extra_margin
   print "    n_cpus=#{n_cpus} rows_per_cpu=#{rows_per_cpu_fat} max_rows=#{max_rows} doing rows #{dy_lo}-#{dy_hi} out of 0-#{ht-1}\n"
-  if rows_per_cpu_fat>max_rows then die("rows_per_cpu=#{rows_per_cpu_fat} is greater than CORREL_MAX_H=#{max_rows}") end
+  if rows_per_cpu_fat>max_rows then die("rows_per_cpu=#{rows_per_cpu_fat} is greater than CORREL_MAX_H=#{max_rows}, extra_margin=#{extra_margin}") end
   if dy_hi<dy_lo then die("fails sanity check, dy_hi<dy_lo") end
 
   temp_file_base = temp_file_name()
