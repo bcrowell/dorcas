@@ -9,6 +9,14 @@ class Box
     return [@left,@right,@top,@bottom]
   end
 
+  def width
+    return @right-@left+1
+  end
+
+  def height
+    return @bottom-@top+1
+  end
+
   def Box.from_image(image)
     return Box.new(0,image.width-1,0,image.height-1)
   end

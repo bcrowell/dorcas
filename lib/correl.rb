@@ -1,6 +1,7 @@
-def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1,give_details:false,implementation:'chapel')
+def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,verbosity:1,give_details:false,implementation:'chapel',heat:false)
   # Returns a list of hits in the format [... [c,i,j,jb] ...], sorted in descending order by correlation score c.
   # (i,j) is the upper left corner where the swatch would be placed, while jb is the coordinate of the baseline.
+  # If heat is true, return a heat map as part of the details.
   i_lo,i_hi,j_lo,j_hi = box.to_a
   bw_ink = image_to_ink_array(pat.bw)
   red_ink = image_to_ink_array(pat.red)
@@ -12,10 +13,19 @@ def correl_convenience(text_ink,pat,stats,box,line_spacing,threshold,max_hits,ve
   scale = text_line_spacing/pat.line_spacing
   results = correl_many(text_ink,bw_ink,red_ink,stats['background'],i_lo,i_hi,j_lo,j_hi,text_line_spacing.to_i,norm,implementation:implementation)
   hits = filter_hits(results,pat.bboxo,box,threshold,max_hits,verbosity:verbosity)
-  db = pat.baseline-pat.bbox[2]
+  hits = improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats)
+  baseline = pat.baseline
+  db = baseline-pat.bbox[2]
   hits = hits.map {|x| [x[0],x[1],x[2],x[2]+db]}
   details = {}
-  if give_details then details['heat']=results end
+  if give_details then
+    if !(heat.nil?) then
+      # We may not actually have font metrics, but supplying estimates of them helps to get a reasonable alignment of map with image.
+      dx = pat.bbox[1]-pat.bbox[0]
+      dy = baseline*0.8
+      details['heat']=scoot_array(results,dy,dx,-1.0) # order is dy,dx because this will get transposed later
+    end
+  end
   return [hits,details]
 end
 
@@ -253,40 +263,51 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
-def squirrel(text,pat,red,dx,dy,norm,stats)
+def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats)
+  cooked = []
+  hits.each { |x|
+    c,i,j = x
+    s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
+    print sprintf("    squirrel: i,j=%4d,%4d  c=%5.2f   s=%5.2f    %s\n",i,j,c,s,info['image'])
+    cooked.push([s,i,j])
+  }
+  return cooked
+end
+
+def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats)
   # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
-  # text, pat, and red are ink arrays
+  # text_raw, pat_raw, and red_raw are ink arrays
   # dx,dy are offsets of pat within text
-  # norm is the product of the standard deviations of the text and the pat
   # stats should include the keys background, dark, and threshold, which refer to text
-  wp,hp = ink_array_dimensions(pat)
-  wt,ht = ink_array_dimensions(text)
+  w,h = ink_array_dimensions(pat_raw)
 
   background,threshold,dark = stats['background'],stats['threshold'],stats['dark']
   if background.nil? or threshold.nil? or dark.nil? then die("nil provided in stats as one of background,threshold,dark={[background,threshold,dark]}") end
 
-  norm = 0
-  sum_p = 0.0
-  sum_t = 0.0
-  sum_pt = 0.0
-  0.upto(wp-1) { |i|
-    it = i+dx
-    0.upto(hp-1) { |j|
-      jt = j+dy
-      if red[i][j]>0.0 then next end
+  text_gray = extract_subarray_with_padding(text_raw,Box.new(dx,dx+w-1,dy,dy+h-1),background)
+  # Make convenient arrays text, pat, and red that are full of the values 0 and 1 and are all the same size.
+  text = array_elements_threshold(text_gray,threshold)
+  pat = array_elements_threshold(pat_raw,0.5)
+  red = array_elements_threshold(red_raw,0.5)
+
+  filename = sprintf("squirrel%04d_%04d.png",dx,dy)
+  ink_array_to_image(text_gray).save(filename)
+
+  norm = 0.0
+  total = 0.0
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      if red[i][j]==1 then next end
       p = pat[i][j]
-      if it<0 or it>wt-1 or jt<0 or jt>ht-1 then
-        t = background
-      else
-        t = text[it][jt]
-      end
-      norm += 1
-      sum_p += p
-      sum_t += t
-      sum_pt += p*t
+      t = text[i][j]
+      wt = 1
+      pp,tt = (p==1),(t==1) # boolean versions
+      if (!pp) and (!tt) then wt=0.0; score=0.0 end # we don't care if they're both whitespace
+      if (pp!=tt) then wt=1.0; score= -3.0 end      # we care a lot if one has ink and the other doesn't
+      if pp and tt then wt=1.0; score= 1.0 end      # they both have ink in the same place
+      norm += wt
+      total += wt*score
     }
   }
-  p_mean = sum_p/norm
-  t_mean = sum_t/norm
-  return (sum_pt/norm-p_mean*t_mean)/norm
+  return [total/norm,{"image"=>filename}]
 end

@@ -1,6 +1,20 @@
 def extract_subarray(a,i_lo,i_hi,j_lo,j_hi)
+  # pads with nil if necessary
   w,h = [i_hi-i_lo+1,j_hi-j_lo+1]
   return generate_array(w,h,lambda {|i,j| a[i][j]})
+end
+
+def extract_subarray_with_padding(a,box,pad_value)
+  # pads with nil if necessary
+  dx = box.left
+  dy = box.top
+  return generate_array(box.width,box.height,lambda {|i,j| z=a[i+dx][j+dy]; if z.nil? then pad_value else z end})
+end
+
+def array_elements_threshold(a,threshold)
+  # returns an array filled with the values 0 and 1
+  w,h = array_dimensions(a)
+  return generate_array(w,h,lambda {|i,j| if a[i][j]>threshold then 1 else 0 end})
 end
 
 def transform_array_elements_linearly!(x,a,b,min,max)
@@ -13,6 +27,24 @@ def transform_array_elements_linearly!(x,a,b,min,max)
       x[i][j] = z
     }
   }
+end
+
+def array_dimensions(b)
+  # returns [width,height]
+  return [b.length,b[0].length]
+end
+
+def scoot_array(b,dx,dy,value_for_padding)
+  w,h = array_dimensions(b)
+  a = generate_array(w,h,lambda {|i,j| value_for_padding})
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      ii = i+dx
+      jj = j+dy
+      if ii>=0 and ii<=w-1 and jj>=0 and jj<=h-1 then a[ii][jj]=b[i][j] end
+    }
+  }
+  return a
 end
 
 def generate_array(w,h,fn,symm:false)
