@@ -40,8 +40,8 @@ def main():
   print(f'__output__{max}')
 
 def convolve(signal_file,kernel_file,result_file,if_invert_kernel,norm2,high_pass_x,high_pass_y):
-  signal,w,h = read_image('half.png')
-  kernel,w2,h2 = read_image('kernel.png')
+  signal,w,h = read_image(signal_file,False)
+  kernel,w2,h2 = read_image(kernel_file,True)
 
   if if_invert_kernel:
     max = numpy.max(kernel)
@@ -81,9 +81,11 @@ def write_image(image,filename):
   # When values are out of range, the behavior of these methods seems to be that they pin the meter (which is good) rather than wrapping around.
   to_grayscale(Image.fromarray(image)).save(filename)
 
-def read_image(filename):
+def read_image(filename,rotate):
   # Returns a numpy array.
   im = to_grayscale(Image.open(filename))
+  if rotate:
+    im = im.rotate(180)
   z = numpy.array(im)
   shape = numpy.shape(z)
   w = shape[1]

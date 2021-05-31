@@ -7,8 +7,9 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   # They don't need to have matched sizes, nor do their sizes need to be powers of 2. The image is automatically padded enough to prevent
   # the kernel from wrapping around when we get to the right and bottom edges. If from files, then
   # the inputs must be grayscale PNG files, 8 bits/pixel.
-  # At the end, the result is automatically cropped back to the original size of the image. It is returned as [ink,output_filename],
-  # where by default the output file has been deleted already and output_filename is nil.
+  # At the end, the result is automatically cropped back to the original size of the image. 
+  # The results are returned as [max,ink,output_filename], where max is the greatest value in the output and
+  # by default the output file has been deleted already and output_filename is nil.
   # an ink array or as a file, or both, depending on the options preserve_file and no_return_ink. The default is
   # to return only an ink array.
   # The factor norm is a division factor.
@@ -37,7 +38,7 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   image_padded.save(image_file)
   kernel_padded.save(kernel_file)
   if verbosity>=3 then print "convolving\n" end
-  convolve_png_files(image_file,kernel_file,output_file,1,norm,high_pass_x,high_pass_y)
+  max = convolve_png_files(image_file,kernel_file,output_file,1,norm,high_pass_x,high_pass_y)
   FileUtils.rm_f(image_file)
   FileUtils.rm_f(kernel_file)
   if verbosity>=3 then print "reading in output\n" end
@@ -45,7 +46,7 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   ink = nil
   if !no_return_ink then ink=image_to_ink_array(im) end
   if !preserve_file then FileUtils.rm_f(output_file); output_file=nil end
-  return [ink,output_file]
+  return [max,ink,output_file]
 end
 
 def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
@@ -57,7 +58,7 @@ def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm
   # norm2 is a division factor
   # high_pass_x,high_pass_y are periods
   # See the python source for more details.
-  max = shell_out("python3 py/convolve.py \"#{signal_file}\" \"#{kernel_file}\" \"#{output_file}\" #{if_invert_kernel} -1.0 #{high_pass_x} #{high_pass_y}").to_i
+  max = shell_out("python3 py/convolve.py \"#{signal_file}\" \"#{kernel_file}\" \"#{output_file}\" #{if_invert_kernel} #{-1.0*norm2} #{high_pass_x} #{high_pass_y}").to_i
   return max
 end
 
