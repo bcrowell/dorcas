@@ -1,9 +1,11 @@
+# coding: utf-8
 def verbing(argv)
   verb = argv[0]
   argv.shift # remove 1st element
   recognized = false
   if verb=='extract' then verb_extract(argv); recognized=true end
   if verb=='insert' then verb_insert(argv); recognized=true end
+  if verb=='test' then verb_test(); recognized=true end
   if !recognized then die("unrecognized verb #{verb}") end
 end
 

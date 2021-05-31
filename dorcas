@@ -34,6 +34,7 @@ require_relative "lib/reports"
 require_relative "lib/svg"
 require_relative "lib/pdf"
 require_relative "lib/ttf"
+require_relative "lib/test"
 
 def main()
   if false then
@@ -45,7 +46,7 @@ def main()
 
   if ARGV.length==0 then die("see README for usage") end
 
-  if ARGV.length>1 then
+  if ARGV.length>1 or !(ARGV[0]=~/\.job$/)then
     verbing(ARGV)
     exit(0)
   end

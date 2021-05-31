@@ -1,6 +1,9 @@
 default:
 	echo "There is no default"
 
+test:
+	dorcas test
+
 chapel: chpl/correl chpl/shotgun lib/constants.rb
 	echo "..."
 

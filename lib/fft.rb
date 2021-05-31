@@ -11,6 +11,33 @@ def windowing_and_padding(y,window,desired_length,value_for_padding)
   return y2
 end
 
+def convolution_convenience_function()
+end
+
+def boost_for_no_large_prime_factors(n)
+  # Returns an integer that is >=n but as small as possible (or almost so) while having no prime factors greater than 7.
+  # Fftw3 will be fastest on sizes that are outputs of this function.
+  # This function has tests in test.rb.
+  if n<1 then die("illegal n=#{n} in boost_for_no_large_prime_factors") end
+  if n<=3 then return n end
+  lazy = 65536
+  if n>lazy then return 1024*boost_for_no_large_prime_factors((n/1024.0).ceil) end
+  # If we fall through to here, then n is betwen 11 and lazy. The following could in principle
+  # take many recursions, but in reality, acceptable results are fairly dense in this region.
+  n.upto(lazy) { |k|
+    if has_no_large_prime_factors(k) then return k end
+  }
+end
+
+def has_no_large_prime_factors(n)
+  # returns true if n has prime a factor equal to 11 or more
+  if n<=3 then return true end
+  [2,3,5,7].each { |k|
+    if n%k==0 then return has_no_large_prime_factors(n/k) end
+  }
+  return false
+end
+
 def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
   # Example: python3 convolve.py signal.png kernel.png output.png 1 -1.0 70 150
   # Returns the highest value in the output (integer).
