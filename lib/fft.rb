@@ -26,9 +26,9 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   h = boost_for_no_large_prime_factors(image.height+kernel.height)
   image_padded  = pad_image(image,w,h,background)
   kernel_padded = pad_image(kernel,w,h,0.0)
-  image_file = temp_file_name()
-  kernel_file = temp_file_name()
-  output_file = temp_file_name()
+  image_file = temp_file_name()+".png"
+  kernel_file = temp_file_name()+".png"
+  output_file = temp_file_name()+".png"
   image_padded.save(image_file)
   kernel_padded.save(kernel_file)
   convolve_png_files(image_file,kernel_file,output_file,1,norm,high_pass_x,high_pass_y)
