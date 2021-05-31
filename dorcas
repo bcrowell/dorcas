@@ -37,9 +37,10 @@ require_relative "lib/ttf"
 require_relative "lib/test"
 
 def main()
-  if true then
+  if false then
     # print convolve_png_files("half.png","kernel.png","a.png",1,-1.0,100,100)
-    convolution_convenience_function("half.png","kernel.png",0.2)
+    ink,outfile = convolution_convenience_function("half.png","kernel.png",0.2,options:{'preserve_file'=>true})
+    print "outfile= #{outfile}\n"
     exit(0)
   end
 

@@ -16,14 +16,19 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   # The image and kernel are taken to be dark images on a light background. The kernel's background should be pure white.
   # The image's background is input as the parameter background, in ink units; this is used only for padding, since other than that,
   # any background in the image gets filtered out by the fft.
+  # This is somewhat slow, mainly because it takes time to read in all the png files to ChunkyPNG and then writing them
+  # back out to disk. However, we need to do this in order to pad them to the necessary sizes.
+  verbosity = 3
   no_return_ink = (options['no_return_ink']==true)
   preserve_file = (options['preserve_file']==true)
   # Get inputs as ChunkyPNG, converting or reading if necessary:
+  if verbosity>=3 then print "reading inputs\n" end
   image  = image_any_type_to_chunky(image_raw)
   kernel = image_any_type_to_chunky(kernel_raw)
   # The sums in the following are to prevent the kernel from wrapping around.
   w = boost_for_no_large_prime_factors(image.width+kernel.width)
   h = boost_for_no_large_prime_factors(image.height+kernel.height)
+  if verbosity>=3 then print "padding\n" end
   image_padded  = pad_image(image,w,h,background)
   kernel_padded = pad_image(kernel,w,h,0.0)
   image_file = temp_file_name()+".png"
@@ -31,9 +36,11 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   output_file = temp_file_name()+".png"
   image_padded.save(image_file)
   kernel_padded.save(kernel_file)
+  if verbosity>=3 then print "convolving\n" end
   convolve_png_files(image_file,kernel_file,output_file,1,norm,high_pass_x,high_pass_y)
   FileUtils.rm_f(image_file)
   FileUtils.rm_f(kernel_file)
+  if verbosity>=3 then print "reading in output\n" end
   im = image_from_file_to_grayscale(output_file).crop(0,0,image.width-1,image.height-1) # ChunkyPNG object, cropped back to original size
   ink = nil
   if !no_return_ink then ink=image_to_ink_array(im) end
