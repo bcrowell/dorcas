@@ -1,18 +1,51 @@
-def windowing_and_padding(y,window,desired_length,value_for_padding)
-  n = y.length
-  y2 = y.clone
-  while (y2.length<desired_length) do y2.push(value_for_padding) end
-  0.upto(y2.length-1) { |j|
-    x = 2.0*Math::PI*j.to_f/y.length
-    if window=='none' then w = 1.0 end
-    if window=='hann' then w = 0.5*(1-Math::cos(x)) end
-    y2[j] *= w
-  }
-  return y2
+#-------------------------------------------------------------------------
+#    2-dimensional fft
+#-------------------------------------------------------------------------
+
+def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,high_pass_x:150,high_pass_y:200,options:{})
+  # The inputs image and kernel can be ink arrays, ChunkyPNG images, or filenames of png files, and will be autodetected by the variables' types.
+  # They don't need to have matched sizes, nor do their sizes need to be powers of 2. The image is automatically padded enough to prevent
+  # the kernel from wrapping around when we get to the right and bottom edges.
+  # At the end, the result is automatically cropped back to the original size of the image.
+  # The factor norm is a division factor.
+  # The defaults for the following flags are false.
+  # The image and kernel are taken to be dark images on a light background. The kernel's background should be pure white.
+  # The image's background is input as the parameter background, in ink units; this is used only for padding, since other than that,
+  # any background in the image gets filtered out by the fft.
+  no_return_ink = (options['no_return_ink']==true)
+  preserve_file = (options['preserve_file']==true)
+  no_force_grayscale = (options['no_force_grayscale']==true)
+  # Get inputs as ChunkyPNG, converting or reading if necessary:
+  image  = image_any_type_to_chunky(image_raw, grayscale:!no_force_grayscale)
+  kernel = image_any_type_to_chunky(kernel_raw,grayscale:!no_force_grayscale)
+  # The sums in the following are to prevent the kernel from wrapping around.
+  w = boost_for_no_large_prime_factors(image.width+kernel.width)
+  h = boost_for_no_large_prime_factors(image.height+kernel.height)
+  image_padded  = pad_image(image,w,h,background)
+  kernel_padded = pad_image(kernel,w,h,0.0)
+  image_file = temp_file_name()
+  kernel_file = temp_file_name()
+  image_padded.save(image_file)
+  kernel_padded.save(kernel_file)
+  convolve_png_files(image_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
 end
 
-def convolution_convenience_function()
+def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
+  # Example: python3 convolve.py signal.png kernel.png output.png 1 -1.0 70 150
+  # Returns the highest value in the output (integer).
+  # Doesn't care at all whether input sizes are a power of 2, but will be slow if they have large prime factors,
+  # and kernel must be as big as the image.
+  # if_invert_kernel is 0 or 1
+  # norm2 is a division factor
+  # high_pass_x,high_pass_y are periods
+  # See the python source for more details.
+  max = shell_out("python3 py/convolve.py \"#{signal_file}\" \"#{kernel_file}\" \"#{output_file}\" #{if_invert_kernel} -1.0 #{high_pass_x} #{high_pass_y}").to_i
+  return max
 end
+
+#-------------------------------------------------------------------------
+#    low-level arithmetic
+#-------------------------------------------------------------------------
 
 def boost_for_no_large_prime_factors(n)
   # Returns an integer that is >=n but as small as possible (or almost so) while having no prime factors greater than 7.
@@ -38,18 +71,22 @@ def has_no_large_prime_factors(n)
   return false
 end
 
-def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
-  # Example: python3 convolve.py signal.png kernel.png output.png 1 -1.0 70 150
-  # Returns the highest value in the output (integer).
-  # Doesn't care at all whether input sizes are a power of 2, but will be slow if they have large prime factors,
-  # and kernel must be as big as the image.
-  # if_invert_kernel is 0 or 1
-  # norm2 is a division factor
-  # high_pass_x,high_pass_y are periods
-  # See the python source for more details.
-  max = shell_out("python3 py/convolve.py \"#{signal_file}\" \"#{kernel_file}\" \"#{output_file}\" #{if_invert_kernel} -1.0 #{high_pass_x} #{high_pass_y}").to_i
-  return max
+#-------------------------------------------------------------------------
+#    one-dimensional fft
+#-------------------------------------------------------------------------
+def windowing_and_padding(y,window,desired_length,value_for_padding)
+  n = y.length
+  y2 = y.clone
+  while (y2.length<desired_length) do y2.push(value_for_padding) end
+  0.upto(y2.length-1) { |j|
+    x = 2.0*Math::PI*j.to_f/y.length
+    if window=='none' then w = 1.0 end
+    if window=='hann' then w = 0.5*(1-Math::cos(x)) end
+    y2[j] *= w
+  }
+  return y2
 end
+
 
 # Code by Greg Johnson, http://www.gregfjohnson.com/fftruby/
 #

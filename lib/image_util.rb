@@ -1,11 +1,23 @@
+def image_any_type_to_chunky(x,grayscale:true)
+  # Input x can be a ChunkyPNG object, the filename of a png file, or an ink array, and will be autodetected by x's type.
+  # Returns a ChunkyPNG object.
+  if x.class == String then return image_from_file_to_grayscale(x) end
+  if x.class == Array then return ink_array_to_image(x,grayscale:true) end
+end
+
 def image_from_file_to_grayscale(filename)
   return ChunkyPNG::Image.from_file(filename).grayscale
   # ... Conversion to grayscale can in principle be complicated. E.g., simply adding
   #     r+b+g is very inaccurate. However, we don't really care for our application.
 end
 
+def pad_image(image,w,h,background)
+  # Given a ChunkyPNG object, returns a new copy that has been padded to the indicated size, using a background color given in ink units.
+  return ChunkyPNG::Image.new(w,h,bg_color=ink_to_color(background)).replace(image,offset_x=0,offset_y=0)
+end
+
 def ink_array_to_image(ink,transpose:false,grayscale:true)
-  # Input should consist of ink values, i.e., 0 to 1.
+  # Input should consist of ink values, i.e., 0 to 1.0 and should be stored in [col][row] order.
   # Returns a grayscale object by default.
   w,h = ink_array_dimensions(ink)
   if transpose then w2,h2=h,w else w2,h2=w,h end
