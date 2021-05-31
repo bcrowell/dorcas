@@ -5,8 +5,12 @@
 def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,high_pass_x:150,high_pass_y:200,options:{})
   # The inputs image and kernel can be ink arrays, ChunkyPNG images, or filenames of png files, and will be autodetected by the variables' types.
   # They don't need to have matched sizes, nor do their sizes need to be powers of 2. The image is automatically padded enough to prevent
-  # the kernel from wrapping around when we get to the right and bottom edges.
-  # At the end, the result is automatically cropped back to the original size of the image.
+  # the kernel from wrapping around when we get to the right and bottom edges. If from files, then
+  # the inputs must be grayscale PNG files, 8 bits/pixel.
+  # At the end, the result is automatically cropped back to the original size of the image. It is returned as [ink,output_filename],
+  # where by default the output file has been deleted already and output_filename is nil.
+  # an ink array or as a file, or both, depending on the options preserve_file and no_return_ink. The default is
+  # to return only an ink array.
   # The factor norm is a division factor.
   # The defaults for the following flags are false.
   # The image and kernel are taken to be dark images on a light background. The kernel's background should be pure white.
@@ -14,10 +18,9 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   # any background in the image gets filtered out by the fft.
   no_return_ink = (options['no_return_ink']==true)
   preserve_file = (options['preserve_file']==true)
-  no_force_grayscale = (options['no_force_grayscale']==true)
   # Get inputs as ChunkyPNG, converting or reading if necessary:
-  image  = image_any_type_to_chunky(image_raw, grayscale:!no_force_grayscale)
-  kernel = image_any_type_to_chunky(kernel_raw,grayscale:!no_force_grayscale)
+  image  = image_any_type_to_chunky(image_raw)
+  kernel = image_any_type_to_chunky(kernel_raw)
   # The sums in the following are to prevent the kernel from wrapping around.
   w = boost_for_no_large_prime_factors(image.width+kernel.width)
   h = boost_for_no_large_prime_factors(image.height+kernel.height)
@@ -25,9 +28,17 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   kernel_padded = pad_image(kernel,w,h,0.0)
   image_file = temp_file_name()
   kernel_file = temp_file_name()
+  output_file = temp_file_name()
   image_padded.save(image_file)
   kernel_padded.save(kernel_file)
-  convolve_png_files(image_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
+  convolve_png_files(image_file,kernel_file,output_file,1,norm,high_pass_x,high_pass_y)
+  FileUtils.rm_f(image_file)
+  FileUtils.rm_f(kernel_file)
+  im = image_from_file_to_grayscale(output_file).crop(0,0,image.width-1,image.height-1) # ChunkyPNG object, cropped back to original size
+  ink = nil
+  if !no_return_ink then ink=image_to_ink_array(im) end
+  if !preserve_file then FileUtils.rm_f(output_file); output_file=nil end
+  return [ink,output_file]
 end
 
 def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)

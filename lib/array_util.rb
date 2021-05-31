@@ -1,5 +1,5 @@
 def extract_subarray(a,i_lo,i_hi,j_lo,j_hi)
-  # pads with nil if necessary
+  # crops, then pads with nil if necessary
   w,h = [i_hi-i_lo+1,j_hi-j_lo+1]
   return generate_array(w,h,lambda {|i,j| a[i][j]})
 end
