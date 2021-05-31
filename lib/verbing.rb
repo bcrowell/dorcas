@@ -68,7 +68,7 @@ def verb_extract(args)
       found = true
       entry.extract(temp_file2)
       if part==0 or part==1 then
-        content = ChunkyPNG::Image.from_file(temp_file2)
+        content = image_from_file_to_grayscale(temp_file2)
       else
         content = JSON.parse(entry.get_input_stream.read)
       end

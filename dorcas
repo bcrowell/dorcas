@@ -36,7 +36,14 @@ require_relative "lib/pdf"
 require_relative "lib/ttf"
 
 def main()
+  if false then
+    print convolve_png_files("half.png","kernel.png","a.png",1,-1.0,100,100)
+    exit(0)
+  end
+
   start = Time.now
+
+  if ARGV.length==0 then die("see README for usage") end
 
   if ARGV.length>1 then
     verbing(ARGV)
@@ -191,7 +198,7 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
          "Normally the prefer_cluster feature is used with the seed font, not with a previously constructed pattern.\n")
   end
   if pat_from_prev and not force_loc.nil? then
-    warn("The pattern #{prev_pat_filename} exists for character #{char}, but force_loc is set to #{force_loc}.\n"+
+    warn("A pattern exists in the input pattern set for character #{char}, but force_loc is set to #{force_loc}.\n"+
          "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
          "Normally the force_location feature is used with the seed font, not with a previously constructed pattern.\n")
   end
@@ -224,7 +231,7 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
 end
 
 def analyze_text_image(text_file,spacing_multiple,guess_dpi,guess_font_size)
-  text = ChunkyPNG::Image.from_file(text_file)
+  text = image_from_file_to_grayscale(text_file)
   print "Input file is #{text_file}\n"
   stats = ink_stats_1(text)
   peak_to_bg = stats['dark']/stats['submedian']

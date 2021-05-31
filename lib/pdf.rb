@@ -10,6 +10,7 @@ def extract_pdf_page(text_file,dpi)
   temp_file = temp_file_name()
   shell_out("qpdf \"#{pdf}\" --pages . #{page} -- #{temp_file}")
   shell_out("convert -density #{dpi} #{temp_file} -set colorspace Gray -separate -average #{png}")
+  # ... checked that output has no alpha channel; will be 8-bit or 16-bit, depending on the input file
   FileUtils.rm_f(temp_file)
   return png
 end

@@ -1,5 +1,12 @@
-def ink_array_to_image(ink,transpose:false)
+def image_from_file_to_grayscale(filename)
+  return ChunkyPNG::Image.from_file(filename).grayscale
+  # ... Conversion to grayscale can in principle be complicated. E.g., simply adding
+  #     r+b+g is very inaccurate. However, we don't really care for our application.
+end
+
+def ink_array_to_image(ink,transpose:false,grayscale:true)
   # Input should consist of ink values, i.e., 0 to 1.
+  # Returns a grayscale object by default.
   w,h = ink_array_dimensions(ink)
   if transpose then w2,h2=h,w else w2,h2=w,h end
   im = ChunkyPNG::Image.new(w2,h2,ChunkyPNG::Color::WHITE)
@@ -12,6 +19,7 @@ def ink_array_to_image(ink,transpose:false)
       end
     }
   }
+  if grayscale then im=im.grayscale end
   return im
 end
 

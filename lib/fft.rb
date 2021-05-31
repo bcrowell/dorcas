@@ -11,6 +11,19 @@ def windowing_and_padding(y,window,desired_length,value_for_padding)
   return y2
 end
 
+def convolve_png_files(signal_file,kernel_file,output_file,if_invert_kernel,norm2,high_pass_x,high_pass_y)
+  # Example: python3 convolve.py signal.png kernel.png output.png 1 -1.0 70 150
+  # Returns the highest value in the output (integer).
+  # Doesn't care at all whether input sizes are a power of 2, but will be slow if they have large prime factors,
+  # and kernel must be as big as the image.
+  # if_invert_kernel is 0 or 1
+  # norm2 is a division factor
+  # high_pass_x,high_pass_y are periods
+  # See the python source for more details.
+  max = shell_out("python3 py/convolve.py \"#{signal_file}\" \"#{kernel_file}\" \"#{output_file}\" #{if_invert_kernel} -1.0 #{high_pass_x} #{high_pass_y}").to_i
+  return max
+end
+
 # Code by Greg Johnson, http://www.gregfjohnson.com/fftruby/
 #
 # Solve "vec = fft_matrix * beta" for beta (modulo a constant.)

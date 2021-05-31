@@ -44,6 +44,7 @@ class Pat
 
   def visual(black_color:ChunkyPNG::Color::rgb(0,0,0),red_color:ChunkyPNG::Color::rgb(255,0,0))
     # Either color can be nil.
+    # Unlike most of our routines that return PNG images, this one returns a color image.
     v = ChunkyPNG::Image.new(@red.width,@red.height) # default is to initialize it as transparent, which is what we want
     0.upto(v.width-1) { |i|
       0.upto(v.height-1) { |j|
@@ -101,7 +102,7 @@ class Pat
         temp = temp_files[i]
         entry.extract(temp) # read into temp file
         if i==0 or i==1 then
-          content = ChunkyPNG::Image.from_file(temp)
+          content = image_from_file_to_grayscale(temp)
         else
           content = JSON.parse(entry.get_input_stream.read)
         end

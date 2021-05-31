@@ -35,7 +35,7 @@ def shotgun(job,text,stats,output_dir,report_dir,threshold:0.60,verbosity:2)
     v = pat.visual(black_color:ChunkyPNG::Color::rgba(255,0,0,130),red_color:nil) # semitransparent red
     hits.each { |x|
       c,i,j,jb = x
-      if verbosity>=2 then print "    ",x,"\n" end
+      if verbosity>=3 then print "    ",x,"\n" end
       monitor_image = compose_safe(monitor_image,v,i,j)
       monitor_image.save(monitor_file)
     }
