@@ -274,7 +274,7 @@ def copy_all_pat_files(set,output_dir)
     name = File.basename(filename)
     name =~ /(.*)\.pat$/
     short_char_name = $1
-    if not set.has_pat?(short_char_name) then File.rm_f(filename) end
+    if not set.has_pat?(short_char_name) then FileUtils.rm_f(filename) end
   }
   # Now copy from input to output.
   set.all_char_names.each { |char_name|

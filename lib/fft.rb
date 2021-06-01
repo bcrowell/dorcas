@@ -2,11 +2,24 @@
 #    2-dimensional fft
 #-------------------------------------------------------------------------
 
+def convolve2(code,commas:true,to_int:true)
+  if commas then code = code.gsub(/,/,"\n") end # For convenience in testing, commas are replaced with newlines.
+  temp = temp_file_name()
+  create_text_file(temp,code)
+  result = shell_out("python3 py/convolve2.py <#{temp}",output_marker:false)
+  FileUtils.rm_f(temp)
+  if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
+  return result
+end
+
 def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,high_pass_x:150,high_pass_y:200,options:{})
   # The inputs image and kernel can be ink arrays, ChunkyPNG images, or filenames of png files, and will be autodetected by the variables' types.
   # They don't need to have matched sizes, nor do their sizes need to be powers of 2. The image is automatically padded enough to prevent
   # the kernel from wrapping around when we get to the right and bottom edges. If from files, then
   # the inputs must be grayscale PNG files, 8 bits/pixel.
+  # The result is the convolution of image(x,y) with kernel(-x',-y'), which is a measure of overlap of the kernel with the image as a template.
+  # If there is a common feature at x or y coordinate a in the image and b in the template, then we get something
+  # in the output at coordinate a-b. (I think this is correct for 0-based indexing, which is what I'm using.)
   # At the end, the result is automatically cropped back to the original size of the image. 
   # The results are returned as [max,ink,output_filename], where max is the greatest value in the output and
   # by default the output file has been deleted already and output_filename is nil.

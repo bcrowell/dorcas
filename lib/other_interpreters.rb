@@ -1,6 +1,6 @@
-def shell_out(code,echo:false)
+def shell_out(code,echo:false,output_marker:true)
   if echo then print code,"\n" end
-  return run_interpreted_code(code,'shell')
+  return run_interpreted_code(code,'shell',output_marker:output_marker)
 end
 
 def run_r_code(code)
@@ -11,7 +11,7 @@ def run_perl_code(code)
   return run_interpreted_code(code,'perl')
 end
 
-def run_interpreted_code(code,language)
+def run_interpreted_code(code,language,output_marker:true)
   # If there is a line in the output containing the text __output__ followed by more stuff, then that stuff is returned.
   file = temp_file_name()
   File.open(file,'w') { |f|
@@ -41,8 +41,11 @@ def run_interpreted_code(code,language)
   #     exception causes output that is what I need to see anyway. Should clean up temp file in that case, though.
   if $?!=0 then die("error running #{human_lang} code in file #{file}, using command #{cmd1} -- file has been preserved") end
   FileUtils.rm_f(file)
-  output =~ /__output__(.*)/
-  #print "output=#{output}=, 1=#{$1}=\n"
-  return $1
+  if output_marker then
+    output =~ /__output__(.*)/
+    return $1
+  else
+    return output
+  end
 end
 
