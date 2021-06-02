@@ -65,15 +65,42 @@ def verb_test()
     f -1,s *,f 255,s +,              #   pixel -> 255-pixel
     u fft,                           #   fft
     r f1,                            # bring back signal's spectrum
-    a *,u ifft,f 1.0e-8,s *,         # multiply the signal and template in frequency domain, then reverse fourier and renormalize
+    a *,                             # multiply the signal and template in frequency domain
+    u ifft,f 1.0e-8,s *,             # do an inverse fourier transform and renormalize
     noneg,
     f 3.4e3,s *,
     i 134,i 62,index,o,              # extract one pixel for testing purposes and write to output
-    exit,
+    #exit,
     c b.png,write
   CODE
-  print code
   assert_equal(convolve2(code,to_int:false).to_f,201.0,tol:1.0)
+  # Fiddle with gaussian cross peak detection.
+  code = <<-"CODE"
+    i 500,d w,                       # semi-arbitrary dimensiona to bloat everything to
+    i 300,d h,                       #   ...
+    c test/sample_tiny.png,read,     # signal...
+    f -1,s *,f 205.0,s +,            #   pixel -> 205-pixel, i.e., invert grayscale (background is 205)
+    r w,r h,f 0,bloat,               #   bloat
+    u fft,                           #   fft
+    i 1,i 1,high_pass,               #   filter out low-frequency background
+    d f1,                            #   save
+    c test/epsilon.png,read_rot,     # template...(read with rotation because that's how the convolution theorem works)
+    f -1,s *,f 255,s +,              #   pixel -> 255-pixel
+    r w,r h,f 0,bloat,               #   bloat with a white background color
+    u fft,                           #   fft
+    r f1,                            # bring back signal's spectrum
+    a *,                             # multiply the signal and template in frequency domain
+    i 10,f 3,gaussian_cross_kernel,  # generate a peak-detection kernel with the given a and sigma
+    r w,r h,f 0.0,bloat,             #    bloat it to the same size as everything else
+    u fft,                           #    fft
+    a *,                             #    convolve with that too
+    u ifft,                          # do an inverse fourier transform
+    noneg,
+    dup,u max,s /,f 255,s *,         # renormalize
+    #exit,
+    c c.png,write
+  CODE
+  convolve2(code)
   #----------------------------------------------------------------------------------------------
   print "Passed all tests.\n"
 end

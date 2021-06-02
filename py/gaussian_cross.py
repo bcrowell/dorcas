@@ -11,35 +11,14 @@ import math,numpy
 # to the data by convoluting with a kernel of the form
 #   K(x,y) = k0 f0 + k1 f1 + k2 f2 + k3 f3
 # where f0, ... f3 are the functions defined above that look like exp[...].
+# Did some basic testing using gaussian_cross_test(), seemed to work.
 # This is not yet integrated into the rest of the code, is just a stand-alone
 # demo program for now.
-# Should test this with fake data before I throw away my scratch paper.
-
-def main():
-  gaussian_cross_test()
-
-def gaussian_cross_test():
-  # Put in each of the four fitting components and test that I get back the right answer.
-  # This is approximate because of discretization, but basically when I put in f0 I should
-  # get C0=1, and when I put in fm for m!=0, I should get C0=0.
-  a = 20
-  sigma = 3.0
-  ker = gaussian_cross_kernel(a,sigma)
-  print(ker)
-  n = 2*a+1
-  for m in range(4):
-    conv = 0.0
-    for i in range(n):
-      for j in range(n):
-        x = i-a
-        y = j-a
-        conv = conv +ker[i,j]*gaussian_cross_kernel_f(m,sigma,x,y)
-    print(f"f{m} convoluted with kernel gives C{m}={conv}")
 
 def gaussian_cross_kernel(a,sigma):
   # a should be an integer
+  # Returns a numpy array.
   k = gaussian_cross_kernel_coefficients(a,sigma)
-  print(f"k={k}\n")
   n = 2*a+1
   ker = numpy.zeros((n,n))
   for i in range(n):
@@ -98,5 +77,21 @@ def gaussian_feature_overlap_helper3(i):
   # Convert to indices p and q, which are 0 or 1, from a single, more convenient index.
   return {0:(1,1),1:(1,0),2:(0,1),3:(0,0)}[i]
   
-main()
-
+def gaussian_cross_test():
+  # This can be run directly from a main() function.
+  # Put in each of the four fitting components and test that I get back the right answer.
+  # This is approximate because of discretization, but basically when I put in f0 I should
+  # get C0=1, and when I put in fm for m!=0, I should get C0=0.
+  a = 20
+  sigma = 3.0
+  ker = gaussian_cross_kernel(a,sigma)
+  print(ker)
+  n = 2*a+1
+  for m in range(4):
+    conv = 0.0
+    for i in range(n):
+      for j in range(n):
+        x = i-a
+        y = j-a
+        conv = conv +ker[i,j]*gaussian_cross_kernel_f(m,sigma,x,y)
+    print(f"f{m} convoluted with kernel gives C{m}={conv}")

@@ -4,6 +4,8 @@ from PIL import Image
 # PIL library python3-pil ; is actually the fork called Pillow, https://en.wikipedia.org/wiki/Python_Imaging_Library
 import numpy
 
+from gaussian_cross import * # just defines a bunch of pure functions
+
 '''
 Defines an functional RPN language for doing convolutions and associated operations on images.
 Because there are no side-effects, it is possible to parallelize the expensive operations, but
@@ -30,8 +32,11 @@ opcodes:
 i,f,c -- integer, float, or character string; push the literal value onto the stack
 d,r -- define and refer to symbols (includes a pop or a push, respectively)
 b,s,a -- binary operation on atomic types, scalar with array, or array with array
-u -- unary operation on array: fft, ifft, max, sum_sq
+u -- unary operation on array: fft, ifft, max, sum_sq; these all eat the array
 o -- output the atomic-type object on the top of the stack to stdout
+dup -- duplicate the value on the top of the stack
+gaussian_cross_kernel -- calculates a numpy array for a peak-detection kernel; see description in comments at top of gaussian_cross.py;
+         pops the parameters a and sigma for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
 bloat -- increase size of array
 index -- pops x and y, then looks at pixel position (x,y) on the image on the top of the stack
          and pushes real part of the pixel's value; image is left alone
@@ -40,7 +45,6 @@ noneg -- sets all negative pixel values to zero in the image on the top of the s
 read -- pop stack to get filename; read image file and push
 read_rot -- like read but rotates input by 180 degrees
 write -- pop stack to get image and filename; range has to 0-255 or output will be goofy; can use noneg to avoid negative values
-dup -- duplicate the value on the top of the stack
 rpn -- print the rpn, for debugging purposes
 stack -- print the stack, for debugging purposes
 print_stderr -- pop stack and write object to stderr
@@ -76,7 +80,7 @@ def parse(key,data):
       return (key,data)
     else:
       die(f"unrecognized unary operator: {data}")
-  if key in ('o','read','read_rot','write','rpn','stack','bloat','exit','print_stderr','index','high_pass','noneg','dup'):
+  if key in ('o','read','read_rot','write','rpn','stack','bloat','exit','print_stderr','index','high_pass','noneg','dup','gaussian_cross_kernel'):
     return (key,None)
   die(f"unrecognized key: {key}")
 
@@ -129,6 +133,13 @@ def execute(rpn):
       z = write_op(im,filename)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
+    if key=='gaussian_cross_kernel':
+      sigma = stack.pop()
+      a = stack.pop()
+      z = do_gaussian_cross_kernel(a,sigma)
+      if z[0]!=0:
+        die(f"error: {z[1]}, line={line}")
+      stack.append(z[1])
     if key=='exit':
       sys.exit(0)
     if key=='print_stderr':
@@ -213,6 +224,12 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
+def do_gaussian_cross_kernel(a,sigma):
+  if not (isinstance(a,int)):
+    return (1,f"a={a} should be an integer")
+  ker = gaussian_cross_kernel(a,sigma)
+  return (0,ker)
+
 def unary_array(key,op,x):
   if not is_array(x):
     return(1,f"object {x} is not a numpy array")
@@ -282,7 +299,7 @@ def binary_atomic(op,x,y):
   t = type(x)
   if (t is int) or (t is float):
     return binary_atomic_helper(op,x,y)
-  return (1,"illegal type")
+  return (1,f"illegal types in binary_atomic, x={x}, y={y}")
 
 def binary_atomic_helper(op,x,y):
   if op=='+':
@@ -301,12 +318,11 @@ def is_array(x):
   return isinstance(x,numpy.ndarray) # https://stackoverflow.com/questions/40312013/check-type-within-numpy-array
 
 def is_zero(x):
-  t = type(x)
-  if t is int:
+  if isinstance(x,int):
     return x==0
-  if t is float:
+  if isinstance(x,float):
     return x==0.0
-  die("illegal type")
+  die(f"illegal type in is_zero, x={x}")
 
 def write_image(image,filename):
   # inputs a numpy array
