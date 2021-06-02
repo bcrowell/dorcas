@@ -44,12 +44,21 @@ def verb_test()
   assert_equal(convolve2("i 137,d fine,r fine,o"),137)
   assert_equal(convolve2("i 5,d x,r x,r x,r x,b *,b *,o"),125)
   assert_equal(convolve2("c test/sample_tiny.png,read,i 0,o"),0)
+  assert_equal(convolve2("c test/sample_tiny.png,read,u max,o"),218) # find max value of input file; checked in gimp
+  assert_equal(convolve2("c test/sample_tiny.png,read_rot,u max,o"),218) # read with 180-degree rotation, max should be the same
+  assert_equal(convolve2("c test/sample_tiny.png,read,u sum_sq,o"),3.8e6,tol:0.1e6) # find total energy in input file
+  assert_equal(convolve2("c test/sample_tiny.png,read,d orig,r orig,u fft,u ifft,r orig,a -,u max,o"),0,tol:10.0)
+  # ... test that we can do an fft and inverse fft and get back the original array
   #----------------------------------------------------------------------------------------------
   print "Passed all tests.\n"
 end
 
-def assert_equal(x,y)
-  assert(x==y,data:[x,y])
+def assert_equal(x,y,tol:nil)
+  if tol.nil? then
+    assert(x==y,data:[x,y])
+  else
+    assert((x-y).abs<tol,data:[x,y,tol])
+  end
 end
 
 def assert(x,data:nil)

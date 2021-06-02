@@ -15,7 +15,7 @@ opcodes:
 i,f,c -- integer, float, or character string; push the literal value onto the stack
 d,r -- define and refer to symbols (includes a pop or a push, respectively)
 b,s,a -- binary operation on atomic types, scalar with array, or array with array
-u -- unary operation on array: fft, ifft, max
+u -- unary operation on array: fft, ifft, max, sum_sq
 o -- output the atomic type on the top of the stack to stdout
 read -- pop stack to get filename; read image file and push
 read_rot -- like read but rotates input by 180 degrees
@@ -49,7 +49,7 @@ def parse(key,data):
     else:
       die(f"unrecognized binary operator: {data}")
   if key=='u':
-    if data=='fft' or data=='ifft':
+    if data=='fft' or data=='ifft' or data=='max' or data=='sum_sq':
       return (key,data)
     else:
       die(f"unrecognized unary operator: {data}")
@@ -84,7 +84,7 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       result = z[1]
-      if result!=None:
+      if not (result is None):
         stack.append(result)
     if key=='b' or key=='s' or key=='a':
       y = stack.pop()
@@ -93,7 +93,7 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       result = z[1]
-      if result!=None:
+      if not (result is None):
         stack.append(result)
     if key=='read' or key=='read_rot':
       z = read_op(stack.pop(),key=='read_rot')
@@ -110,7 +110,7 @@ def execute(rpn):
 def read_op(filename,rotate):
   if not isinstance(filename,str):
     return (1,f"object {filename} is not a string")
-  im = read_image(filename,rotate)
+  im,w,h = read_image(filename,rotate)
   return (0,im)
 
 def write_op(im,filename):
@@ -122,12 +122,18 @@ def write_op(im,filename):
   return (0,None)
 
 def unary_array(key,op,x):
+  if not is_array(x):
+    return(1,f"object {x} is not a numpy array")
   if op=='fft':
+    aa = numpy.fft.fft2(x)
     return (0,numpy.fft.fft2(x))
   if op=='ifft':
     return (0,numpy.fft.ifft2(x))
   if op=='max':
-    return (0,numpy.max(x))
+    return (0,numpy.max(x).real)
+  if op=='sum_sq':
+    return (0,numpy.sum(numpy.abs(x)**2))
+  return(1,f"unrecognized unary array operation {op}")
 
 def binary(key,data,x,y):
   # returns (0,data) or (0,None) on success; in the latter case, nothing should be pushed onto the stack
