@@ -3,6 +3,8 @@
 #-------------------------------------------------------------------------
 
 def convolve2(code,commas:true,to_int:true)
+  # The default for to_int is meant for convenience. If the output is actually a float,
+  # set to_int to false and do an explicit to_f on the string that is returned.
   if commas then code = code.gsub(/,/,"\n") end # For convenience in testing, commas are replaced with newlines.
   temp = temp_file_name()
   create_text_file(temp,code)

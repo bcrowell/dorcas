@@ -1,0 +1,10 @@
+=Notes on order of array indices=
+My normal convention in my ruby code is (x,y).
+
+The python code for convolution uses PIL and Numpy.
+PIL uses (x,y). Numpy uses (y,x). The routines that convert back and forth between
+PIL and Numpy silently transpose by default.
+
+In my chapel code (which I will probably get rid of), I use
+(y,x) so that a document can be sliced horizontally into
+smaller jobs.

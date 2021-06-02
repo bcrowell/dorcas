@@ -32,6 +32,7 @@ def verb_test()
   assert_equal(boost_for_no_large_prime_factors(65536*7+1),460800)
   #     ... 2^11 x 3^2 x 5^2 = 65536*7+2*2048; this asserts the current behavior, not the theoretical optimum behavior
   #----------------------------------------------------------------------------------------------
+  #convolve2("c a.png,read,i 230,i 350,f 50.0,bloat,c b.png,write") # exercise bloat
   assert_equal(convolve2("i 2,i 2,b +,o"),4)
   assert_equal(convolve2("i 5,i 2,b -,o"),3)
   assert_equal(convolve2("i 5,i 2,b *,o"),10)
@@ -46,12 +47,23 @@ def verb_test()
   assert_equal(convolve2("c test/sample_tiny.png,read,i 0,o"),0)
   assert_equal(convolve2("c test/sample_tiny.png,read,u max,o"),218) # find max value of input file; checked in gimp
   assert_equal(convolve2("c test/sample_tiny.png,read_rot,u max,o"),218) # read with 180-degree rotation, max should be the same
-  assert_equal(convolve2("c test/sample_tiny.png,read,u sum_sq,o"),3.8e6,tol:0.1e6) # find total energy in input file
-  assert_equal(convolve2("c test/sample_tiny.png,read,d orig,r orig,u fft,u ifft,r orig,a -,u max,o"),0,tol:10.0)
+  assert_equal(convolve2("c test/sample_tiny.png,read,u sum_sq,o",to_int:false).to_f,1.2e9,tol:0.1e9)
+  #                  ... Find total energy in input file. This result is reasonable, since (w)(h)(256^2) is about 2e9.
+  assert_equal(convolve2("c test/sample_tiny.png,read,d orig,r orig,u fft,u ifft,r orig,a -,u max,o",to_int:false).to_f,0,tol:10.0)
   #                                               ... test that we can do an fft and inverse fft and get back the original image
-  convolve2("c test/sample_tiny.png,read,u fft,d f1,c test/epsilon.png,read_rot,f -1,s *,f 256,s +,u fft,r f1,a *,u ifft,f 1.0e-5,s *")
-  # ... Just test that it can do a convolution, but don't assert anything about the result. To see the result, add the following code
-  #     at the end: ,c a.png,write
+  assert_equal(convolve2("c test/sample_tiny.png,read,u fft,d f1,"+
+            "c test/epsilon.png,read_rot,i 224,i 148,f 255.0,bloat,"+
+            "f -1,s *,f 256,s +,"+
+            "u fft,r f1,a *,u ifft,f 1.0e-5,s *,"+
+            "i 134,i 62,index,o,"+
+            "exit,"+
+            "c b.png,write,",
+            to_int:false
+           ).to_f,
+           110.7,tol:0.1)
+  #     ... A workout with a convolution. To inspect the output b.png visually, comment out the line saying "exit".
+  #         The output being tested is the color of a pixel in the result that is a peak of the convolution function.
+  #         I checked visually that the image made sense.
   #----------------------------------------------------------------------------------------------
   print "Passed all tests.\n"
 end
