@@ -11,6 +11,14 @@ I haven't done that. The basic idea here is that if I have an image and 10 templ
 to be able to pass all that stuff to this code and have it crank away, rather than having to
 read and pad the same data lots of times.
 
+We want conveniences for hand-assembled code such as comments,
+indentation, or ways to put multiple statements on one line, but these
+are taken care of in the calling program, not in here. The convolve2()
+function in fft.rb has a human_input flag that is turned on by default
+and preprocesses the input to allow these things. Don't use it with
+machine-generated code, because commas in filenames will cause
+problems.
+
 Internally, arrays are stored in real or complex floating point, but when writing to PNG
 files they're converted to 8-bit integers. Operations like bloat that explicitly refer
 to width and height are defined in (w,h) order, although PIL actually has things
@@ -27,9 +35,11 @@ o -- output the atomic-type object on the top of the stack to stdout
 bloat -- increase size of array
 index -- pops x and y, then looks at pixel position (x,y) on the image on the top of the stack
          and pushes real part of the pixel's value; image is left alone
+high_pass -- in the frequency domain; zeroes all channels of the fourier spectrum at < the given x and y values; copies, doesn't mutate
+noneg -- sets all negative pixel values to zero in the image on the top of the stack; copies, doesn't mutate
 read -- pop stack to get filename; read image file and push
 read_rot -- like read but rotates input by 180 degrees
-write -- pop stack to get image and filename
+write -- pop stack to get image and filename; range has to 0-255 or output will be goofy; can use noneg to avoid negative values
 dup -- duplicate the value on the top of the stack
 rpn -- print the rpn, for debugging purposes
 stack -- print the stack, for debugging purposes
@@ -66,8 +76,7 @@ def parse(key,data):
       return (key,data)
     else:
       die(f"unrecognized unary operator: {data}")
-  if (key=='o' or key=='read' or key=='read_rot' or key=='write' or key=='rpn' or key=='stack' or key=='bloat' or key=='exit'
-                     or key=='print_stderr' or key=='index' or key=='dup'):
+  if key in ('o','read','read_rot','write','rpn','stack','bloat','exit','print_stderr','index','high_pass','noneg','dup'):
     return (key,None)
   die(f"unrecognized key: {key}")
 
@@ -131,6 +140,20 @@ def execute(rpn):
       x = stack.pop()
       im = stack[-1]
       stack.append(im[y,x].real) # numpy array is internally transposed, see INTERNALS
+    if key=='high_pass':
+      y = stack.pop()
+      x = stack.pop()
+      im = stack.pop()
+      z = high_pass(im,x,y)
+      if z[0]!=0:
+        die(f"error: {z[1]}, line={line}")
+      stack.append(z[1])
+    if key=='noneg':
+      im = stack.pop()
+      z = noneg(im)
+      if z[0]!=0:
+        die(f"error: {z[1]}, line={line}")
+      stack.append(z[1])
     if key=='bloat':
       background = stack.pop() # value to pad with
       h = stack.pop()
@@ -151,6 +174,30 @@ def bloat_op(im,w,h,background):
   # ... gets transposed on conversion between numpy and PIL, see INTERNALS
   bloated[:im.shape[0], :im.shape[1]] = im # https://stackoverflow.com/a/44623017
   return (0,bloated)
+
+def noneg(im):
+  # See comments in high_pass() re immutable data and parallelism.
+  # The loop may be slow.
+  a = deep_copy_numpy_array(im)
+  for i in range(a.shape[0]):
+    for j in range(a.shape[1]):
+      if a[i][j]<0.0:
+        a[i][j]=0.0
+  return (0,a)
+
+def high_pass(im,x,y):
+  # In order to avoid messing up the possibility of parallelism, this is implemented so that the original
+  # array is not modified in place, i.e., everything is in an fp style with immutable data.
+  a = deep_copy_numpy_array(im)
+  a[:y,:x] = 0.0 # Order is because of transposition, see INTERNALS. I believe this does 0..(x-1) and 0..(y-1)
+  return (0,a)
+
+def deep_copy_numpy_array(b):
+  # The following should make a deep copy.  There is also a copyto(), but it's not clear to me from the docs
+  # whether that really makes a deep copy.
+  a = numpy.empty_like(b)
+  a[:] = b
+  return a
 
 def read_op(filename,rotate):
   if not isinstance(filename,str):
