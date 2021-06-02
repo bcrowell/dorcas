@@ -118,7 +118,7 @@ def write_op(im,filename):
     return (1,f"object {filename} is not a string")
   if not is_array(im):
     return (1,f"object {im} is not a numpy array")
-  write_image(image,filename)
+  write_image(im,filename)
   return (0,None)
 
 def unary_array(key,op,x):
@@ -175,10 +175,12 @@ def binary_scalar_with_array(op,x,y):
     return (1,"division by an integer is not implemented")
   if op=='*':
     return (0,x*y) # numpy multiplication of array by scalar
+  if op=='+':
+    return (0,x+y) # numpy addition of array and scalar
   if op=='save':
     write_image(x,y) # write image x to filename y
     return (0,None)
-  return (1,"coding error, operation {op} fell through")
+  return (1,f"coding error, operation {op} fell through")
 
 def binary_atomic(op,x,y):
   if type(x)!=type(y):
@@ -215,6 +217,8 @@ def is_zero(x):
 def write_image(image,filename):
   # inputs a numpy array
   # When values are out of range, the behavior of these methods seems to be that they pin the meter (which is good) rather than wrapping around.
+  image = image.real.astype(numpy.uint8)
+  shape = numpy.shape(image)
   to_grayscale(Image.fromarray(image)).save(filename)
 
 def read_image(filename,rotate):
