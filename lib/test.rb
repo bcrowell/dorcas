@@ -49,7 +49,9 @@ def verb_test()
   assert_equal(convolve2("c test/sample_tiny.png,read,u sum_sq,o"),3.8e6,tol:0.1e6) # find total energy in input file
   assert_equal(convolve2("c test/sample_tiny.png,read,d orig,r orig,u fft,u ifft,r orig,a -,u max,o"),0,tol:10.0)
   #                                               ... test that we can do an fft and inverse fft and get back the original image
-  convolve2("c test/sample_tiny.png,read,u fft,d f1,c test/epsilon.png,read_rot,f -1,s *,f 256,s +,u fft,r f1,a *,u ifft,c a.png,write")
+  convolve2("c test/sample_tiny.png,read,u fft,d f1,c test/epsilon.png,read_rot,f -1,s *,f 256,s +,u fft,r f1,a *,u ifft,f 1.0e-5,s *")
+  # ... Just test that it can do a convolution, but don't assert anything about the result. To see the result, add the following code
+  #     at the end: ,c a.png,write
   #----------------------------------------------------------------------------------------------
   print "Passed all tests.\n"
 end
