@@ -5,6 +5,7 @@ import math,numpy
 # Fit these features with a function of the form
 #   C0 exp[-(x^2+y^2)/2sigma^2] + C1 exp[-(x^2)/2sigma^2] + C2 exp[-(y^2)/2sigma^2] + C3
 # in a square window centered on the origin with diameter 2a.
+# I call this a "gaussian cross."
 # Here C0 is the height of the peak we want.
 # Since this depends on the coefficients in a linear way, we can fit C0
 # to the data by convoluting with a kernel of the form
@@ -12,15 +13,61 @@ import math,numpy
 # where f0, ... f3 are the functions defined above that look like exp[...].
 # This is not yet integrated into the rest of the code, is just a stand-alone
 # demo program for now.
+# Should test this with fake data before I throw away my scratch paper.
 
 def main():
-  k = gaussian_cross_kernel_coefficients(5.0,3.0)
-  print(k)
+  gaussian_cross_test()
+
+def gaussian_cross_test():
+  # Put in each of the four fitting components and test that I get back the right answer.
+  # This is approximate because of discretization, but basically when I put in f0 I should
+  # get C0=1, and when I put in fm for m!=0, I should get C0=0.
+  a = 20
+  sigma = 3.0
+  ker = gaussian_cross_kernel(a,sigma)
+  print(ker)
+  n = 2*a+1
+  for m in range(4):
+    conv = 0.0
+    for i in range(n):
+      for j in range(n):
+        x = i-a
+        y = j-a
+        conv = conv +ker[i,j]*gaussian_cross_kernel_f(m,sigma,x,y)
+    print(f"f{m} convoluted with kernel gives C{m}={conv}")
+
+def gaussian_cross_kernel(a,sigma):
+  # a should be an integer
+  k = gaussian_cross_kernel_coefficients(a,sigma)
+  print(f"k={k}\n")
+  n = 2*a+1
+  ker = numpy.zeros((n,n))
+  for i in range(n):
+    for j in range(n):
+      for m in range(4):
+        x = i-a
+        y = j-a
+        ker[i,j] = ker[i,j]+k[m]*gaussian_cross_kernel_f(m,sigma,x,y)
+  return ker
+
+def gaussian_cross_kernel_f(m,sigma,x,y):
+  # Compute the function f_m(x,y) defined above.
+  p,q = gaussian_feature_overlap_helper3(m)
+  f = gaussian_cross_kernel_f_helper(p,x,sigma)
+  g = gaussian_cross_kernel_f_helper(q,y,sigma)
+  return f*g
+
+def gaussian_cross_kernel_f_helper(p,x,sigma):
+  if p==0:
+    return 1.0
+  else:
+    return math.exp(-(x/sigma)**2/2.0)
 
 def gaussian_cross_kernel_coefficients(a,sigma):
   # Compute the coefficients k0,...k3 defined above.
   a = gaussian_feature_overlap(a,sigma)
-  m = numpy.linalg.inv(a) # A is real and symmetric, so m is also real and symmetric
+  m = numpy.linalg.inv(a).real # A is real and symmetric, so m is also real and symmetric, but make sure there 
+                               # aren't imaginary parts due to rounding errors.
   return [m[0,0],m[1,0],m[2,0],m[3,0]]
 
 def gaussian_feature_overlap(a,sigma):
@@ -51,6 +98,5 @@ def gaussian_feature_overlap_helper3(i):
   # Convert to indices p and q, which are 0 or 1, from a single, more convenient index.
   return {0:(1,1),1:(1,0),2:(0,1),3:(0,0)}[i]
   
-  
-
 main()
+
