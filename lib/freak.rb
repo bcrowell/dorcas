@@ -65,6 +65,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   code = []
 
   skip_file_prep = false # if true, then for testing of code generation, don't bother writing and deleting files
+  write_debugging_images = true
 
   pat_widths = []
   pat_heights = []
@@ -100,7 +101,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
 
   # ship out the image of the text, generate code to read it in and do prep work
   freak_prep_image(text,image_file) unless skip_file_prep
-  code.concat(freak_gen_get_image('signal_f_domain_unfiltered',image_file,image_bg,image_ampl,w,h,debug:"signal"))
+  code.concat(freak_gen_get_image('signal_f_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
   code.push("r signal_f_domain_unfiltered,r high_pass_x,r high_pass_y,high_pass,d signal_f_domain")
 
   count = 0
@@ -122,14 +123,12 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("a *,a *,u ifft,noneg")
       code.push("d #{name_score}")
 
-      # debugging, qwe
-      code.push("r signal_f_domain,dup,u max,f 1,b max,f 255,swap,b /,s *")
-      code.push("c sf.png,write")
-      # --
-      code.push("r #{name_score}")
-      code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
-      code.push("c score_#{char_names[count]}_#{t}.png")
-      code.push("write")
+      if write_debugging_images then
+        code.push("r #{name_score}")
+        code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
+        code.push("c score_#{char_names[count]}_#{t}.png")
+        code.push("write")
+      end
 
       # for memory efficiency:
       if not parallelizable then
