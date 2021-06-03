@@ -59,6 +59,18 @@ def image_to_list_of_floats(image)
   return f
 end
 
+def n_black_pixels(image)
+  # Input is a chunkypng image.
+  w,h = image.width,image.height
+  nb = 0
+  0.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      if image[i,j]<128 then nb+=1 end
+    }
+  }
+  return nb
+end
+
 def color_to_ink(color) # returns a measure of darkness
   r,g,b = ChunkyPNG::Color.r(color),ChunkyPNG::Color.g(color),ChunkyPNG::Color.b(color)
   return 1.0-(r+g+b)/(3.0*255.0)

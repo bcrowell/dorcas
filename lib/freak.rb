@@ -84,6 +84,13 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   hpfx = (w.to_f/high_pass[0].to_f).round
   hpfy = (h.to_f/high_pass[1].to_f).round
 
+  k = 3.0
+  # score = (signal & b) - k (signal & w) - k (! signal) & b
+  # score/k = -N_b + Sum [ (1+1/k) (signal & b) - (signal & w) ]
+  #         = -N_b + signal convolved with [ (1+1/k) b - w ]
+  # where N_b = number of black bits in the pattern.
+  # We calculate this by convolution, on a scale where false=0, true=255.
+
   #-----------
 
   if not parallelizable then
@@ -101,40 +108,42 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
 
   # ship out the image of the text, generate code to read it in and do prep work
   freak_prep_image(text,image_file) unless skip_file_prep
-  code.concat(freak_gen_get_image('signal_f_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
-  code.push("r signal_f_domain_unfiltered,r high_pass_x,r high_pass_y,high_pass,d signal_f_domain")
+  code.concat(freak_gen_get_image('signal_space_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
+  code.push("r signal_space_domain_unfiltered,u fft,r high_pass_x,r high_pass_y,high_pass,d signal_f_domain")
 
   count = 0
   pats.each { |pat|
+    name_space = {}
+    nb = nil
     ['b','w'].each { |t|
-      name = "#{t}#{count}_f_domain"
-      name_score = "score_#{t}#{count}"
+      name_space[t] = "space_#{t}#{count}"
       if t=='b' then im=pat.bw else im=pat.white end
+      if t=='b' then nb=n_black_pixels(pat.bw) end
       # ship out the black and white masks for the character
       temp_file = temp_file_name()
       files_to_delete.push(temp_file)
       freak_prep_image(im,temp_file) unless skip_file_prep
       # generate code to read in and prepare
-      code.concat(freak_gen_get_image("#{name}",temp_file,255,255,w,h,rot:true))
+      code.concat(freak_gen_get_image("#{name_space[t]}",temp_file,255,255,w,h,rot:true))
       # generate code to analyze it
-      code.push("r signal_f_domain")
-      code.push("r kernel_f_domain")
-      code.push("r #{name}")
-      code.push("a *,a *,u ifft,noneg")
-      code.push("d #{name_score}")
-
-      if write_debugging_images then
-        code.push("r #{name_score}")
-        code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
-        code.push("c score_#{char_names[count]}_#{t}.png")
-        code.push("write")
-      end
-
-      # for memory efficiency:
-      if not parallelizable then
-        code.push("forget #{name}")
-      end
     }
+    if nb.nil? then die("nb nil") end
+    code.push("r #{name_space['b']},f #{1.0+1.0/k},s *")
+    code.push("r #{name_space['w']}")
+    code.push("a -") # linear combination of black and white convolutions
+    code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
+    code.push("u fft") # combined template in frequency domain
+    code.push("r signal_f_domain")
+    code.push("r kernel_f_domain")
+    code.push("a *,a *,u ifft,noneg")
+    code.push("d score_#{count}")
+    if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency
+    if write_debugging_images then
+      code.push("r score_#{count}")
+      code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
+      code.push("c score_#{char_names[count]}.png")
+      code.push("write")
+    end
     count = count+1
   }
 
@@ -161,26 +170,8 @@ def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false,debug:n
   code.push("c #{filename}") # do as a separate element in case of commas in filename
   if rot then code.push("read_rot") else code.push("read") end
   code.push("f #{a},s *,f #{b},s +") # invert video, background=0, ink=1
-
-
-  if !(debug.nil?) then
-    code.push("dup")
-    code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
-    code.push("c #{debug}.png")
-    code.push("write")
-  end
-
   if rot then bloat_op='bloat_rot' else bloat_op='bloat' end
   code.push("r w,r h,f 0.0,#{bloat_op}")
-  code.push("u fft")
   code.push("d #{label}")
-
-  if !(debug.nil?) then
-    code.push("r #{label}")
-    code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
-    code.push("c #{debug}_f.png")
-    code.push("write")
-  end
-
   return code
 end
