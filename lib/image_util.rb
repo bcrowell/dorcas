@@ -9,6 +9,8 @@ def image_from_file_to_grayscale(filename)
   return ChunkyPNG::Image.from_file(filename).grayscale
   # ... Conversion to grayscale can in principle be complicated. E.g., simply adding
   #     r+b+g is very inaccurate. However, we don't really care for our application.
+  #     Note that this may be different from what PIL does, so to avoid confusion
+  #     about normalization, never provide color images to PIL.
 end
 
 def pad_image(image,w,h,background)
@@ -60,6 +62,18 @@ end
 def color_to_ink(color) # returns a measure of darkness
   r,g,b = ChunkyPNG::Color.r(color),ChunkyPNG::Color.g(color),ChunkyPNG::Color.b(color)
   return 1.0-(r+g+b)/(3.0*255.0)
+end
+
+def ink_to_png_8bit_grayscale(ink)
+  # This is only needed for stuff like the interface between ruby (which uses chunkypng) and python (which uses PIL).
+  # In those cases, we need to make sure that any color images are converted to grayscale in a consistent way, by chunkypng,
+  # which is what we always do by reading with image_from_file_to_grayscale(). Then when we write a file for PIL to read,
+  # it's already grayscale. This routine is not designed to be efficient, and there should never be any need to call it
+  # on a pixel-by-pixel basis. This is for things like converting threshold values for use by python.
+  z = ((1.0-ink)*255).round
+  if z<0 then z=0 end
+  if z>255 then z=255 end
+  return z
 end
 
 def ink_to_color(ink) # inverse of color_to_ink

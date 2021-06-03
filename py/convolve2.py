@@ -26,6 +26,11 @@ files they're converted to 8-bit integers. Operations like bloat that explicitly
 to width and height are defined in (w,h) order, although PIL actually has things
 transposed (see INTERNALS).
 
+Any color input images are silently converted to grayscale using PIL's
+image.convert('L'). This is probably not the same as ChunkyPNG's
+image.grayscale. To avoid confusion about normalization, it's safest if
+images are always converted to grayscale before passing them to this code.
+
 If things go wrong, note that there are special opcodes for debugging.
 
 opcodes:
