@@ -272,9 +272,9 @@ def unary_array(key,op,x):
   if op=='ifft':
     return (0,numpy.fft.ifft2(x))
   if op=='max':
-    return (0,numpy.max(x).real)
+    return (0,float(numpy.max(x).real)) # convert to standard float from, e.g., numpy float64
   if op=='sum_sq':
-    return (0,numpy.sum(numpy.abs(x)**2))
+    return (0,float(numpy.sum(numpy.abs(x)**2)))
   return(1,f"unrecognized unary array operation {op}")
 
 def binary(key,data,x,y):
@@ -327,12 +327,12 @@ def binary_scalar_with_array(op,x,y):
   return (1,f"coding error, operation {op} fell through")
 
 def binary_atomic(op,x,y):
-  if type(x)!=type(y):
-    return (1,"mismatched types")
-  t = type(x)
-  if (t is int) or (t is float):
-    return binary_atomic_helper(op,x,y)
-  return (1,f"illegal types in binary_atomic, x={x}, y={y}")
+  # In the following, we can have, for example, a float and a numpy.float64.
+  if is_float(x) and is_float(y):
+    return binary_atomic_helper(op,float(x),float(y))
+  if is_int(x) and is_int(y):
+    return binary_atomic_helper(op,int(x),int(y))
+  return (1,f"mismatched or illegal types, {x} and {y}, types are {str(type(x))} and {str(type(y))}")
 
 def binary_atomic_helper(op,x,y):
   if op=='+':
@@ -349,6 +349,12 @@ def binary_atomic_helper(op,x,y):
 
 def is_array(x):
   return isinstance(x,numpy.ndarray) # https://stackoverflow.com/questions/40312013/check-type-within-numpy-array
+
+def is_float(x):
+  return isinstance(x,float)
+
+def is_int(x):
+  return isinstance(x,int)
 
 def is_zero(x):
   if isinstance(x,int):

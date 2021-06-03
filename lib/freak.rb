@@ -38,9 +38,16 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # high-pass filter to get rid of any modulation of background; x period and y period
   high_pass = [10*xheight,10*xheight]
 
-  code = freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass)
+  code,files_to_delete = freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass)
 
   print code
+
+  # run it
+  convolve2(code,human_input:false)
+
+  files_to_delete.each { |f|
+    FileUtils.rm_f(f)
+  }
 
   if false then
     print "monitor file #{monitor_file} not being deleted for convenience ---\n" # qwe
@@ -48,14 +55,14 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   end
 end
 
-def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,parallelizable:false)
+def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,parallelizable:false)
   # image_ampl,image_bg, and image_thr are all positive ints with black=0
   files_to_delete = []
   image_file = temp_file_name()
   files_to_delete.push(image_file)
   code = []
 
-  skip_file_prep = true # for testing of code generation, don't bother writing and deleting files
+  skip_file_prep = false # if true, then for testing of code generation, don't bother writing and deleting files
 
   pat_widths = []
   pat_heights = []
@@ -105,7 +112,7 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
       code.push("r signal_f_domain")
       code.push("r kernel_f_domain")
       code.push("r #{name}")
-      code.push("a *,a *,ifft,noneg")
+      code.push("a *,a *,u ifft,noneg")
       code.push("d #{name_score}")
       if not parallelizable then
         code.push("forget #{name}")
@@ -124,14 +131,7 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
   # postprocess code
   code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")+"\n"
 
-  # run it
-  convolve2(code)
-
-  files_to_delete.each { |f|
-    FileUtils.rm_f(f)
-  }
-
-  return code
+  return [code,files_to_delete]
 end
 
 def freak_prep_image(im,file)
