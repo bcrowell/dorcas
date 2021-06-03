@@ -147,7 +147,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("c score_#{char_names[count]}.png")
       code.push("write")
     end
-    code.push("r score_#{count},f 0.8,i #{a},i 10,c peaks_#{count}.txt,c w,peaks")
+    code.push("r score_#{count},f 100,i #{a},i 10,c peaks_#{count}.txt,c w,peaks")
     # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }

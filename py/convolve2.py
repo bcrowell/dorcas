@@ -282,10 +282,47 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode):
   # Look for array elements that are the greatest within a square with a certain radius and that are above
   # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
   # to the given file.
+  if not isinstance(filename,str):
+    return (1,f"object {filename} is not a string")
+  if not isinstance(mode,str):
+    return (1,f"object {mode} is not a string")
+  if not is_array(array):
+    return (1,f"object {array} is not a numpy array")
   h,w = array.shape
+  hits = []
+  #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
   for i in range(w):
     for j in range(h):
-      x = array[j,i]
+      x = array[j,i].real # results have small imaginary parts...why?
+      if x<threshold:
+        continue
+      # For efficiency, first do some code that tries to efficienctly impose the local max condition right away.
+      if (i>0 and x<array[j,i-1]) or (i<w-1 and x<array[j,i+1]) or (j>0 and x<array[j-1,i]) or (j<h-1 and x<array[j+1,i]):
+        continue
+      # The following search can be very cpu-intensive.
+      bad = False
+      for ii in range(i-radius,i+radius+1): # top end is excluded from range
+        if ii<0 or ii>w-1:
+          continue
+        for jj in range(j-radius,j+radius+1):
+          if jj<0 or jj>h-1:
+            continue
+          if x<array[jj,ii]:
+            bad=True
+            break
+        if bad:
+          break
+      if bad:
+        continue
+      # is a local max
+      hits.append([x,i,j])
+  hits.sort(reverse=True,key=lambda a: a[0])
+  n = len(hits)
+  if n>max_peaks:
+    n=max_peaks
+  with open(filename,mode) as f:
+    for i in range(n):
+      print(hits[i],file=f)
   return (0,None)
 
 def do_gaussian_cross_kernel(w,h,a,sigma):
