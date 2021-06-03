@@ -15,9 +15,26 @@ import math,numpy
 # This is not yet integrated into the rest of the code, is just a stand-alone
 # demo program for now.
 
-def gaussian_cross_kernel(a,sigma):
+def gaussian_cross_kernel(w,h,a,sigma):
   # a should be an integer
-  # Returns a numpy array.
+  # Returns a numpy array of the given size.
+  # The kernel is positioned at the origin, which with wrap-around makes it appear
+  # at the four corners of the resulting array. This choice makes it so that the
+  # convolution in frequency domain doesn't displace features.
+  small = gaussian_cross_kernel_small(a,sigma)
+  ker = numpy.zeros((h,w))
+  # ... gets transposed on conversion between numpy and PIL, see INTERNALS
+  n = 2*a+1
+  for i in range(n):
+    for j in range(n):
+      ii = (i-a)%w
+      jj = (j-a)%h
+      ker[jj,ii] = small[i,j]
+  return ker
+
+def gaussian_cross_kernel_small(a,sigma):
+  # a should be an integer
+  # Returns a numpy array with dimensions 2a+1 x 2a+1.
   k = gaussian_cross_kernel_coefficients(a,sigma)
   n = 2*a+1
   ker = numpy.zeros((n,n))
@@ -84,7 +101,7 @@ def gaussian_cross_test():
   # get C0=1, and when I put in fm for m!=0, I should get C0=0.
   a = 20
   sigma = 3.0
-  ker = gaussian_cross_kernel(a,sigma)
+  ker = gaussian_cross_kernel_small(a,sigma)
   print(ker)
   n = 2*a+1
   for m in range(4):

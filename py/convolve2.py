@@ -17,7 +17,9 @@ Because there are no side-effects, it is possible to parallelize the
 expensive operations, but I haven't done that. There is a strict_fp
 flag that is on by default, but turning it off allows definitions to
 be deleted, which may be desirable for memory efficiency when not doing
-any parallelism.
+any parallelism. It probably works just as well, if not better, to
+do parallelization at a higher level, with multiple invocations of
+this low-level program.
 
 We want conveniences for hand-assembled code such as comments,
 indentation, or ways to put multiple statements on one line, but these
@@ -48,7 +50,7 @@ o -- output the atomic-type object on the top of the stack to stdout
 dup -- duplicate the value on the top of the stack
 swap -- swap the two value on the top of the stack
 gaussian_cross_kernel -- calculates a numpy array for a peak-detection kernel; see description in comments at top of gaussian_cross.py;
-         pops the parameters a and sigma for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
+         pops the parameters w, h, a, and sigma for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
 bloat -- increase size of array
 index -- pops x and y, then looks at pixel position (x,y) on the image on the top of the stack
          and pushes real part of the pixel's value; image is left alone
@@ -159,7 +161,9 @@ def execute(rpn):
     if key=='gaussian_cross_kernel':
       sigma = stack.pop()
       a = stack.pop()
-      z = do_gaussian_cross_kernel(a,sigma)
+      h = stack.pop()
+      w = stack.pop()
+      z = do_gaussian_cross_kernel(w,h,a,sigma)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       stack.append(z[1])
@@ -257,10 +261,10 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
-def do_gaussian_cross_kernel(a,sigma):
+def do_gaussian_cross_kernel(w,h,a,sigma):
   if not (isinstance(a,int)):
     return (1,f"a={a} should be an integer")
-  ker = gaussian_cross_kernel(a,sigma)
+  ker = gaussian_cross_kernel(w,h,a,sigma)
   return (0,ker)
 
 def unary_array(key,op,x):

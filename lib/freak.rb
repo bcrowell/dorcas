@@ -93,7 +93,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   code.push("i #{a},d a,f #{sigma},d sigma")
 
   # kernel for peak detection
-  code.push("r a,r sigma,gaussian_cross_kernel")
+  code.push("r w,r h,r a,r sigma,gaussian_cross_kernel")
   code.push("r w,r h,f 0.0,bloat")
   code.push("u fft")
   code.push("d kernel_f_domain")
