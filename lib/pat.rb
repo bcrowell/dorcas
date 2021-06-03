@@ -42,6 +42,20 @@ class Pat
     return dir_and_file_to_path(dir,name+".pat")
   end
 
+  def white()
+    # A pattern where the part we conceptualize as white is set to black, and the red and white parts set to white.
+    # That is, this is a boolean mask that says where the conceptual white is.
+    w = ChunkyPNG::Image.new(self.width,self.height,bg_color = ChunkyPNG::Color::BLACK)
+    white_color = ChunkyPNG::Color::WHITE
+    0.upto(w.width-1) { |i|
+      0.upto(w.height-1) { |j|
+        if (not red_color.nil?) and has_ink(@red[i,j]) then w[i,j]=white_color end # Turn all the red to white.
+        if (not black_color.nil?) and has_ink(@bw[i,j]) then w[i,j]=white_color end # Turn all the black to white
+      }
+    }
+    return w
+  end
+
   def visual(black_color:ChunkyPNG::Color::rgb(0,0,0),red_color:ChunkyPNG::Color::rgb(255,0,0))
     # Either color can be nil.
     # Unlike most of our routines that return PNG images, this one returns a color image.
