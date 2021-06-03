@@ -1,14 +1,10 @@
-def freak(job,text,stats,output_dir,report_dir,metrics,threshold:0.60,verbosity:2)
+def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosity:2)
   # Pure frequency-domain analysis, using fft.
-  # metrics can come from seed_font.metrics(dpi,script)
+  # xheight can come from seed_font.metrics(dpi,script)['xheight']
   # stats should contain keys 'background', 'dark', and 'threshold'
   
   if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
   set = Fset.from_file_or_directory(job.set)
-
-  dpi = job.guess_dpi
-  line_spacing = metrics_to_estimated_line_spacing(dpi,set.size,spacing_multiple:1)
-  box = Box.from_image(text)
 
   if false then
     monitor_file = temp_file_name_short(prefix:"mon")+".png"
@@ -23,7 +19,6 @@ def freak(job,text,stats,output_dir,report_dir,metrics,threshold:0.60,verbosity:
   pats = chars.map{ |c| set.pat(c) }
 
   # parameters for gaussian cross peak detection:
-  x_height = metrics['xheight']
   sigma = x_height/10.0 # gives 3 for Giles, which seemed to work pretty well
   a = round(x_height/3.0) # gives 10 for Giles
 
@@ -49,6 +44,8 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
   files_to_delete.push(image_file)
   code = []
 
+  skip_file_prep = true # for testing of code generation, don't bother writing and deleting files
+
   pat_widths = []
   pat_heights = []
   pats.each { |pat|
@@ -64,7 +61,7 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
   code.push("i #{w},d w,i #{h},d h")
 
   # ship out the image of the text
-  freak_prep_image(text,image_file)
+  freak_prep_image(text,image_file) unless skip_file_prep
   code.concat(freak_gen_get_image('signal',image_file,image_bg,image_ampl,w,h))
 
   # ship out the black and white masks for the characters
@@ -74,7 +71,7 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
       if t=='b' then im=pat.bw else im=pat.white end
       temp_file = temp_file_name()
       files_to_delete.push(temp_file)
-      freak_prep_image(im,temp_file)
+      freak_prep_image(im,temp_file) unless skip_file_prep
       code.concat(freak_gen_get_image("#{t}#{count}",temp_file,0.0,1.0,w,h))
       count = count+1
     }

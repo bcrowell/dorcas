@@ -9,6 +9,7 @@ require_relative "lib/job"
 require_relative "lib/verbing"
 require_relative "lib/match"
 require_relative "lib/shotgun"
+require_relative "lib/freak"
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
 require_relative "lib/image_util"
@@ -70,8 +71,11 @@ def main()
   text,stats,peak_to_bg,dpi = analyze_text_image(text_file,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
-    # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
-    shotgun(job,text,stats,output_dir,report_dir)
+    freak(job,text,stats,output_dir,report_dir)
+    if false then
+      # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
+      shotgun(job,text,stats,output_dir,report_dir)
+    end
   else
     pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
