@@ -80,13 +80,16 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   w = boost_for_no_large_prime_factors(text.width+max_pat_width+2*a+1)
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
+  hpfx = (w.to_f/high_pass[0].to_f).round
+  hpfy = (h.to_f/high_pass[1].to_f).round
+
   #-----------
 
   if not parallelizable then
     code.push("i 0,d strict_fp") # allow mutation of the symbol table, so I can free up the memory used by images as I go
   end
   code.push("i #{w},d w,i #{h},d h")
-  code.push("i #{high_pass[0]},d high_pass_x,i #{high_pass[1]},d high_pass_y")
+  code.push("i #{hpfx},d high_pass_x,i #{hpfy},d high_pass_y")
   code.push("i #{a},d a,f #{sigma},d sigma")
 
   # kernel for peak detection
@@ -97,7 +100,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
 
   # ship out the image of the text, generate code to read it in and do prep work
   freak_prep_image(text,image_file) unless skip_file_prep
-  code.concat(freak_gen_get_image('signal_f_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
+  code.concat(freak_gen_get_image('signal_f_domain_unfiltered',image_file,image_bg,image_ampl,w,h,debug:"signal"))
   code.push("r signal_f_domain_unfiltered,r high_pass_x,r high_pass_y,high_pass,d signal_f_domain")
 
   count = 0
@@ -118,14 +121,20 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("r #{name}")
       code.push("a *,a *,u ifft,noneg")
       code.push("d #{name_score}")
-      if not parallelizable then
-        code.push("forget #{name}")
-      end
-      # for debugging, write to disk
+
+      # debugging, qwe
+      code.push("r signal_f_domain,dup,u max,f 1,b max,f 255,swap,b /,s *")
+      code.push("c sf.png,write")
+      # --
       code.push("r #{name_score}")
       code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
       code.push("c score_#{char_names[count]}_#{t}.png")
       code.push("write")
+
+      # for memory efficiency:
+      if not parallelizable then
+        code.push("forget #{name}")
+      end
     }
     count = count+1
   }
@@ -143,7 +152,7 @@ def freak_prep_image(im,file)
   im.save(file)
 end
 
-def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false)
+def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false,debug:nil)
   # image_ampl and image_bg are positive ints with black=0.
   # Image read from file will be non-inverse video.
   # Transform pixel values like y=ax+b.
@@ -153,8 +162,26 @@ def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false)
   code.push("c #{filename}") # do as a separate element in case of commas in filename
   if rot then code.push("read_rot") else code.push("read") end
   code.push("f #{a},s *,f #{b},s +") # invert video, background=0, ink=1
+
+
+  if !(debug.nil?) then
+    code.push("dup")
+    code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
+    code.push("c #{debug}.png")
+    code.push("write")
+  end
+
+
   code.push("r w,r h,f 0.0,bloat")
   code.push("u fft")
   code.push("d #{label}")
+
+  if !(debug.nil?) then
+    code.push("r #{label}")
+    code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
+    code.push("c #{debug}_f.png")
+    code.push("write")
+  end
+
   return code
 end
