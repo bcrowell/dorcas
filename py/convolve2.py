@@ -65,6 +65,7 @@ forget -- forget a previously defined symbol; for memory efficiency, this lets u
 rpn -- print the rpn, for debugging purposes
 stack -- print the stack, for debugging purposes
 print_stderr -- pop stack and write object to stderr
+peaks -- detect peaks and write them to a file
 exit -- end the program prematurely
 '''
 
@@ -98,7 +99,7 @@ def parse(key,data):
     else:
       die(f"unrecognized unary operator: {data}")
   if key in ('o','read','read_rot','write','rpn','stack','bloat','bloat_rot','exit','print_stderr','index','high_pass','noneg','dup','swap',
-                   'gaussian_cross_kernel'):
+                   'gaussian_cross_kernel','peaks'):
     return (key,None)
   die(f"unrecognized key: {key}")
 
@@ -157,6 +158,16 @@ def execute(rpn):
       filename = stack.pop()
       im = stack.pop()
       z = write_op(im,filename)
+      if z[0]!=0:
+        die(f"error: {z[1]}, line={line}")
+    if key=='peaks':
+      mode = stack.pop()
+      filename = stack.pop()
+      max_peaks = stack.pop()
+      radius = stack.pop()
+      threshold = stack.pop()
+      array = stack.pop()
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='gaussian_cross_kernel':
@@ -265,6 +276,16 @@ def write_op(im,filename):
   if not is_array(im):
     return (1,f"object {im} is not a numpy array")
   write_image(im,filename)
+  return (0,None)
+
+def peaks_op(array,threshold,radius,max_peaks,filename,mode):
+  # Look for array elements that are the greatest within a square with a certain radius and that are above
+  # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
+  # to the given file.
+  h,w = array.shape
+  for i in range(w):
+    for j in range(h):
+      x = array[j,i]
   return (0,None)
 
 def do_gaussian_cross_kernel(w,h,a,sigma):

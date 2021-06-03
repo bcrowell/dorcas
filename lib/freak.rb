@@ -41,7 +41,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 
   code,files_to_delete = freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
 
-  print code
+  #print code
 
   # run it
   convolve2(code,human_input:false)
@@ -85,7 +85,10 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   hpfy = (h.to_f/high_pass[1].to_f).round
 
   k = 3.0
-  # score = (signal & b) - k (signal & w) - k (! signal) & b
+  # Do a scoring algorithm that worked well for me before when coded naively:
+  #   score = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
+  # This is a boolean sliding window. It can be done more efficiently in frequency domain.
+  # The idea is that an "and" is just a convolution, while a "not" is 1-x, which just produces an additional constant term.
   # score/k = -N_b + Sum [ (1+1/k) (signal & b) - (signal & w) ]
   #         = -N_b + signal convolved with [ (1+1/k) b - w ]
   # where N_b = number of black bits in the pattern.
@@ -144,6 +147,8 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("c score_#{char_names[count]}.png")
       code.push("write")
     end
+    code.push("r score_#{count},f 0.8,i #{a},i 10,c peaks_#{count}.txt,c w,peaks")
+    # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }
 
