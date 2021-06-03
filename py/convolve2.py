@@ -51,7 +51,7 @@ dup -- duplicate the value on the top of the stack
 swap -- swap the two value on the top of the stack
 gaussian_cross_kernel -- calculates a numpy array for a peak-detection kernel; see description in comments at top of gaussian_cross.py;
          pops the parameters w, h, a, and sigma for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
-bloat -- increase size of array
+bloat, bloat_rot -- increase size of array
 index -- pops x and y, then looks at pixel position (x,y) on the image on the top of the stack
          and pushes real part of the pixel's value; image is left alone
 high_pass -- in the frequency domain; zeroes all channels of the fourier spectrum at < the given x and y values; copies, doesn't mutate
@@ -97,7 +97,8 @@ def parse(key,data):
       return (key,data)
     else:
       die(f"unrecognized unary operator: {data}")
-  if key in ('o','read','read_rot','write','rpn','stack','bloat','exit','print_stderr','index','high_pass','noneg','dup','swap','gaussian_cross_kernel'):
+  if key in ('o','read','read_rot','write','rpn','stack','bloat','bloat_rot','exit','print_stderr','index','high_pass','noneg','dup','swap',
+                   'gaussian_cross_kernel'):
     return (key,None)
   die(f"unrecognized key: {key}")
 
@@ -196,12 +197,12 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       stack.append(z[1])
-    if key=='bloat':
+    if key=='bloat' or key=='bloat_rot':
       background = stack.pop() # value to pad with
       h = stack.pop()
       w = stack.pop()
       im = stack.pop()
-      z = bloat_op(im,w,h,background)
+      z = bloat_op(im,w,h,background,key=='bloat_rot')
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       stack.append(z[1])
@@ -212,7 +213,7 @@ def strict_fp(symbols):
   else:
     return true
 
-def bloat_op(im,w,h,background):
+def bloat_op(im,w,h,background,rot):
   if not (isinstance(w,int) and isinstance(h,int)):
     return (1,f"w={w} and h={h} should both be integers")
   if not is_array(im):
@@ -220,8 +221,13 @@ def bloat_op(im,w,h,background):
   background = float(background)
   bloated = numpy.full((h, w),background,dtype=numpy.float64)
   # ... gets transposed on conversion between numpy and PIL, see INTERNALS
-  bloated[:im.shape[0], :im.shape[1]] = im # https://stackoverflow.com/a/44623017
+  # In the following, the python notation a:b only goes up to b-1.
+  if rot:
+    bloated[h-im.shape[0]:h, w-im.shape[1]:w] = im
+  else:
+    bloated[:im.shape[0], :im.shape[1]] = im # https://stackoverflow.com/a/44623017
   return (0,bloated)
+
 
 def noneg(im):
   # See comments in high_pass() re immutable data and parallelism.

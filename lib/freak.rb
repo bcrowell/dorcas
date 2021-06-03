@@ -171,8 +171,8 @@ def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false,debug:n
     code.push("write")
   end
 
-
-  code.push("r w,r h,f 0.0,bloat")
+  if rot then bloat_op='bloat_rot' else bloat_op='bloat' end
+  code.push("r w,r h,f 0.0,#{bloat_op}")
   code.push("u fft")
   code.push("d #{label}")
 
