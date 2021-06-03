@@ -42,7 +42,7 @@ If things go wrong, note that there are special opcodes for debugging.
 opcodes:
 i,f,c -- integer, float, or character string; push the literal value onto the stack
 d,r -- define and refer to symbols (includes a pop or a push, respectively)
-b,s,a -- binary operation on atomic types, scalar with array, or array with array
+b,s,a -- binary operation on atomic types, scalar with array, or array with array; operations are +, -, *, /, max
 u -- unary operation on array: fft, ifft, max, sum_sq; these all eat the array
 o -- output the atomic-type object on the top of the stack to stdout
 dup -- duplicate the value on the top of the stack
@@ -86,7 +86,7 @@ def parse(key,data):
   if key=='c' or key=='d' or key=='r' or key=='forget':
     return (key,data)
   if key=='b' or key=='s' or key=='a':
-    if data=='+' or data=='-' or data=='*' or data=='/':
+    if data=='+' or data=='-' or data=='*' or data=='/' or data=='max':
       return (key,data)
     else:
       die(f"unrecognized binary operator: {data}")
@@ -345,6 +345,8 @@ def binary_atomic_helper(op,x,y):
     if is_zero(y):
       return (1,"division by zero")
     return (0,x/y)
+  if op=='max':
+    return (0,max((x,y)))
   return (1,f"unknown binary operator: {op}")
 
 def is_array(x):

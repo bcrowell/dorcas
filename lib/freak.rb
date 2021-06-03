@@ -20,8 +20,9 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 
   ink_array_to_image(image_to_ink_array(text))
 
-  chars = 'ερ'
+  chars = 'ε'
   pats = chars.chars.map{ |c| set.pat(c) }
+  char_names = chars.chars.map { |c| char_to_short_name(c) }
 
   # parameters for gaussian cross peak detection:
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well
@@ -38,7 +39,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # high-pass filter to get rid of any modulation of background; x period and y period
   high_pass = [10*xheight,10*xheight]
 
-  code,files_to_delete = freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass)
+  code,files_to_delete = freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
 
   print code
 
@@ -55,8 +56,9 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   end
 end
 
-def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,parallelizable:false)
+def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
   # image_ampl,image_bg, and image_thr are all positive ints with black=0
+  # char_names is used only for things like picking readable names for debugging files
   files_to_delete = []
   image_file = temp_file_name()
   files_to_delete.push(image_file)
@@ -69,10 +71,12 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   pats.each { |pat|
     pat_widths.push(pat.width)
     pat_heights.push(pat.height)
+    #print "... #{pat.width}, #{pat.height}\n"
   }
   max_pat_width = pat_widths.max
   max_pat_height = pat_heights.max
 
+  #print "text.width=#{text.width}, max_pat_width=#{max_pat_width}, a=#{a}, #{text.width+max_pat_width+2*a+1}\n"
   w = boost_for_no_large_prime_factors(text.width+max_pat_width+2*a+1)
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
@@ -119,8 +123,8 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       end
       # for debugging, write to disk
       code.push("r #{name_score}")
-      code.push("dup,u max,f 255,swap,b /,s *") # normalize
-      code.push("c #{name_score}.png")
+      code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
+      code.push("c score_#{char_names[count]}_#{t}.png")
       code.push("write")
     }
     count = count+1

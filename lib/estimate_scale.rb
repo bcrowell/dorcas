@@ -240,6 +240,10 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   best_cepstrum,garbage = greatest_in_range(cepstrum,min_period,max_period)
   if verbosity>=3 then print "best period from cepstrum = #{best_cepstrum}\n" end
 
+  if best_cepstrum.nil? then
+    warn("couldn't estimate line spacing using cepstrum technique, taking it to be the guessed value #{guess_period}")
+    return guess_period
+  end
 
   graph_x = []
   graph_y = []
