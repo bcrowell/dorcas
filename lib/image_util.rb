@@ -65,6 +65,7 @@ def color_to_ink(color) # returns a measure of darkness
 end
 
 def ink_to_png_8bit_grayscale(ink)
+  # The output from this function has black=0 and white=255.
   # This is only needed for stuff like the interface between ruby (which uses chunkypng) and python (which uses PIL).
   # In those cases, we need to make sure that any color images are converted to grayscale in a consistent way, by chunkypng,
   # which is what we always do by reading with image_from_file_to_grayscale(). Then when we write a file for PIL to read,

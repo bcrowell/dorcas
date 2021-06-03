@@ -7,11 +7,17 @@ import numpy
 from gaussian_cross import * # just defines a bunch of pure functions
 
 '''
-Defines an functional RPN language for doing convolutions and associated operations on images.
-Because there are no side-effects, it is possible to parallelize the expensive operations, but
-I haven't done that. The basic idea here is that if I have an image and 10 templates, I want
-to be able to pass all that stuff to this code and have it crank away, rather than having to
-read and pad the same data lots of times.
+Defines an functional RPN language for doing convolutions and
+associated operations on images.  The basic idea here is that if I
+have an image and 10 templates, I want to be able to pass all that
+stuff to this code and have it crank away, rather than having to read
+and pad the same data lots of times.
+
+Because there are no side-effects, it is possible to parallelize the
+expensive operations, but I haven't done that. There is a strict_fp
+flag that is on by default, but turning it off allows definitions to
+be deleted, which may be desirable for memory efficiency when not doing
+any parallelism.
 
 We want conveniences for hand-assembled code such as comments,
 indentation, or ways to put multiple statements on one line, but these
@@ -40,6 +46,7 @@ b,s,a -- binary operation on atomic types, scalar with array, or array with arra
 u -- unary operation on array: fft, ifft, max, sum_sq; these all eat the array
 o -- output the atomic-type object on the top of the stack to stdout
 dup -- duplicate the value on the top of the stack
+swap -- swap the two value on the top of the stack
 gaussian_cross_kernel -- calculates a numpy array for a peak-detection kernel; see description in comments at top of gaussian_cross.py;
          pops the parameters a and sigma for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
 bloat -- increase size of array
@@ -50,6 +57,9 @@ noneg -- sets all negative pixel values to zero in the image on the top of the s
 read -- pop stack to get filename; read image file and push
 read_rot -- like read but rotates input by 180 degrees
 write -- pop stack to get image and filename; range has to 0-255 or output will be goofy; can use noneg to avoid negative values
+forget -- forget a previously defined symbol; for memory efficiency, this lets us to get rid of all references so that garbage
+     collection can happen; but this mutates the symbol table and therefore potentially breaks parallelism, so by default it's
+     not allowed; to allow it, set the symbol strict_fp to 0
 rpn -- print the rpn, for debugging purposes
 stack -- print the stack, for debugging purposes
 print_stderr -- pop stack and write object to stderr
@@ -73,7 +83,7 @@ def parse(key,data):
     return (key,int(data))
   if key=='f':
     return (key,float(data))
-  if key=='c' or key=='d' or key=='r':
+  if key=='c' or key=='d' or key=='r' or key=='forget':
     return (key,data)
   if key=='b' or key=='s' or key=='a':
     if data=='+' or data=='-' or data=='*' or data=='/':
@@ -85,7 +95,7 @@ def parse(key,data):
       return (key,data)
     else:
       die(f"unrecognized unary operator: {data}")
-  if key in ('o','read','read_rot','write','rpn','stack','bloat','exit','print_stderr','index','high_pass','noneg','dup','gaussian_cross_kernel'):
+  if key in ('o','read','read_rot','write','rpn','stack','bloat','exit','print_stderr','index','high_pass','noneg','dup','swap','gaussian_cross_kernel'):
     return (key,None)
   die(f"unrecognized key: {key}")
 
@@ -107,7 +117,15 @@ def execute(rpn):
       stack.append(data)
     if key=='d': # d=define: pop and define a symbol as that value
       symbol = data
+      if symbol in symbols:
+        die(f"symbol {symbol} redefined") # don't mutate the symbol table, that breaks pure fp behavior and creates possible problems for parallelization
       symbols[symbol] = stack.pop()
+    if key=='forget':
+      # This mutates the symbol table, which could break parallelism.
+      if strict_fp(symbols):
+        die(f"strict_fp is set, so the forget operation is not allowed")
+      symbol = data
+      del symbols[symbol]
     if key=='r': # r=reference: push value of a symbol
       symbol = data
       stack.append(symbols[symbol])
@@ -151,6 +169,10 @@ def execute(rpn):
       sys.stderr.write(f"{stack.pop()}\n")
     if key=='dup':
       stack.append(stack[-1])
+    if key=='swap':
+      t = stack[-2]
+      stack[-2] = stack[-1]
+      stack[-1] = t
     if key=='index':
       y = stack.pop()
       x = stack.pop()
@@ -179,6 +201,12 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       stack.append(z[1])
+
+def strict_fp(symbols):
+  if 'strict_fp' in symbols:
+    return (symbols['strict_fp']==1)
+  else:
+    return true
 
 def bloat_op(im,w,h,background):
   if not (isinstance(w,int) and isinstance(h,int)):

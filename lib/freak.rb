@@ -48,7 +48,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   end
 end
 
-def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass)
+def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,parallelizable:false)
   # image_ampl,image_bg, and image_thr are all positive ints with black=0
   files_to_delete = []
   image_file = temp_file_name()
@@ -71,6 +71,9 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
 
   #-----------
 
+  if not parallelizable then
+    code.push("i 0,d strict_fp") # allow mutation of the symbol table, so I can free up the memory used by images as I go
+  end
   code.push("i #{w},d w,i #{h},d h")
   code.push("i #{high_pass[0]},d high_pass_x,i #{high_pass[1]},d high_pass_y")
   code.push("i #{a},d a,f #{sigma},d sigma")
@@ -78,7 +81,7 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
   # kernel for peak detection
   code.push("r a,r sigma,gaussian_cross_kernel")
   code.push("r w,r h,f 0.0,bloat")
-  code.push("fft")
+  code.push("u fft")
   code.push("d kernel_f_domain")
 
   # ship out the image of the text, generate code to read it in and do prep work
@@ -86,27 +89,43 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
   code.concat(freak_gen_get_image('signal_f_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
   code.push("r signal_f_domain_unfiltered,r high_pass_x,r high_pass_y,high_pass,d signal_f_domain")
 
-  # ship out the black and white masks for the characters, generate code to read in and prepare
   count = 0
   pats.each { |pat|
     ['b','w'].each { |t|
+      name = "#{t}#{count}_f_domain"
+      name_score = "score_#{t}#{count}"
       if t=='b' then im=pat.bw else im=pat.white end
+      # ship out the black and white masks for the character
       temp_file = temp_file_name()
       files_to_delete.push(temp_file)
       freak_prep_image(im,temp_file) unless skip_file_prep
-      code.concat(freak_gen_get_image("#{t}#{count}_f_domain",temp_file,255,255,w,h,rot:true))
+      # generate code to read in and prepare
+      code.concat(freak_gen_get_image("#{name}",temp_file,255,255,w,h,rot:true))
+      # generate code to analyze it
+      code.push("r signal_f_domain")
+      code.push("r kernel_f_domain")
+      code.push("r #{name}")
+      code.push("a *,a *,ifft,noneg")
+      code.push("d #{name_score}")
+      if not parallelizable then
+        code.push("forget #{name}")
+      end
+      # for debugging, write to disk
+      code.push("r #{name_score}")
+      code.push("dup,u max,f 255,swap,b /,s *") # normalize
+      code.push("c #{name_score}.png")
+      code.push("write")
     }
     count = count+1
   }
 
-
-  code.push("r ")
-
   #-----------
 
   # postprocess code
-
   code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")+"\n"
+
+  # run it
+  convolve2(code)
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)
