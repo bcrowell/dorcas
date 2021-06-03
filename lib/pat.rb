@@ -49,8 +49,8 @@ class Pat
     white_color = ChunkyPNG::Color::WHITE
     0.upto(w.width-1) { |i|
       0.upto(w.height-1) { |j|
-        if (not red_color.nil?) and has_ink(@red[i,j]) then w[i,j]=white_color end # Turn all the red to white.
-        if (not black_color.nil?) and has_ink(@bw[i,j]) then w[i,j]=white_color end # Turn all the black to white
+        if has_ink(@red[i,j]) then w[i,j]=white_color end # Turn all the red to white.
+        if has_ink(@bw[i,j]) then w[i,j]=white_color end # Turn all the black to white
       }
     }
     return w

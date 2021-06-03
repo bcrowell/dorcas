@@ -16,11 +16,11 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   end
 
   chars = 'ερ'
-  pats = chars.map{ |c| set.pat(c) }
+  pats = chars.chars.map{ |c| set.pat(c) }
 
   # parameters for gaussian cross peak detection:
-  sigma = x_height/10.0 # gives 3 for Giles, which seemed to work pretty well
-  a = round(x_height/3.0) # gives 10 for Giles
+  sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well
+  a = (xheight/3.0).round # gives 10 for Giles
 
   # image stats, all in ink units
   image_bg = stats['background']
@@ -28,9 +28,9 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   image_thr = stats['threshold']
 
   # high-pass filter to get rid of any modulation of background; x period and y period
-  high_pass = [10*x_height,10*x_height]
+  high_pass = [10*xheight,10*xheight]
 
-  code = freak_generate_code(pats,a,sigma,image_ampl,image_bg,image_thr,high_pass)
+  code = freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass)
 
   if false then
     print "monitor file #{monitor_file} not being deleted for convenience ---\n" # qwe
@@ -77,7 +77,7 @@ def freak_generate_code(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pas
     }
   }
 
-  code = code.map { |x| x.gsub(/,/,"\n"}.join("\n")
+  code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)
@@ -91,7 +91,7 @@ def freak_prep_image(im,file)
   im.save(file)
 end
 
-freak_gen_get_image(label,filename,ink_bg,ink_ampl,w,h)
+def freak_gen_get_image(label,filename,ink_bg,ink_ampl,w,h)
   code = []
   code.push("c #{filename}") # do as a separate element in case of commas in filename
   code.push("read")
