@@ -61,9 +61,16 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 end
 
 def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
-  # image_ampl,image_bg, and image_thr are all positive ints with black=0
-  # char_names is used only for things like picking readable names for debugging files
-  # If you don't want high-pass filtering, input nil.
+  # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
+  # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
+  # correctly getting rid of DC. The result of all this is to make the signal approximately go from 0.0 (background) to 1.0 (ink).
+  # Image_thr could be used to binary-ize the data, but I'm currently not doing that. It could have the advantage of making the
+  # algorithm treat faint or faded ink the same as full-darkness ink, but it could have the disadvantage of misbehaving if
+  # the image parameters were estimated incorrectly.
+  # Char_names is used only for things like picking readable names for debugging files.
+  # If you don't want high-pass filtering, supply nil for this input.
+  verbosity=3
+
   files_to_delete = []
   image_file = temp_file_name()
   files_to_delete.push(image_file)
@@ -140,15 +147,16 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.concat(freak_gen_get_image("#{name_space[t]}",temp_file,255,255,w,h,rot:true))
       # generate code to analyze it
     }
-    if nb.nil? then die("nb nil") end
+    if verbosity>=3 then print "Nb=#{nb} for #{char_names[count]}\n" end
     code.push("r #{name_space['b']},f #{1.0+1.0/k},s *")
     code.push("r #{name_space['w']}")
     code.push("a -") # linear combination of black and white convolutions
-    code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
     code.push("u fft") # combined template in frequency domain
     code.push("r signal_f_domain")
     code.push("r kernel_f_domain")
-    code.push("a *,a *,u ifft,noneg")
+    code.push("a *,a *,u ifft")
+    code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
+    code.push("noneg")
     code.push("d score_#{count}")
     if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency
     if write_debugging_images then
@@ -157,7 +165,8 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("c score_#{char_names[count]}.png")
       code.push("write")
     end
-    code.push("r score_#{count},f 100,i #{a},i 10,c peaks_#{count}.txt,c w,peaks")
+    peak_detection_threshold = 100
+    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i 10,c peaks_#{count}.txt,c w,c #{char_names[count]},peaks")
     # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }

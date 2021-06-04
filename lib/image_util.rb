@@ -65,7 +65,7 @@ def n_black_pixels(image)
   nb = 0
   0.upto(w-1) { |i|
     0.upto(h-1) { |j|
-      if image[i,j]<128 then nb+=1 end
+      if color_to_ink(image[i,j])>0.5 then nb+=1 end
     }
   }
   return nb

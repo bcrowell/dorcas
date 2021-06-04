@@ -1,4 +1,4 @@
-import sys,re
+import sys,re,json
 import sys
 from PIL import Image
 # PIL library python3-pil ; is actually the fork called Pillow, https://en.wikipedia.org/wiki/Python_Imaging_Library
@@ -161,13 +161,14 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='peaks':
+      label = stack.pop()
       mode = stack.pop()
       filename = stack.pop()
       max_peaks = stack.pop()
       radius = stack.pop()
       threshold = stack.pop()
       array = stack.pop()
-      z = peaks_op(array,threshold,radius,max_peaks,filename,mode)
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='gaussian_cross_kernel':
@@ -278,7 +279,7 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
-def peaks_op(array,threshold,radius,max_peaks,filename,mode):
+def peaks_op(array,threshold,radius,max_peaks,filename,mode,label):
   # Look for array elements that are the greatest within a square with a certain radius and that are above
   # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
   # to the given file.
@@ -322,7 +323,9 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode):
     n=max_peaks
   with open(filename,mode) as f:
     for i in range(n):
-      print(hits[i],file=f)
+      z = hits[i].copy()
+      z.append({"name":label})
+      print(json.dumps(z),file=f)
   return (0,None)
 
 def do_gaussian_cross_kernel(w,h,a,sigma):
