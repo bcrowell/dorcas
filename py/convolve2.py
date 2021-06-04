@@ -58,6 +58,7 @@ index -- pops x and y, then looks at pixel position (x,y) on the image on the to
          and pushes real part of the pixel's value; image is left alone
 high_pass -- in the frequency domain; zeroes all channels of the fourier spectrum at < the given x and y values; copies, doesn't mutate
 noneg -- sets all negative pixel values to zero in the image on the top of the stack; copies, doesn't mutate
+clip -- clip all pixel values to the given range
 read -- pop stack to get filename; read image file and push
 read_rot -- like read but rotates input by 180 degrees
 write -- pop stack to get image and filename; range has to 0-255 or output will be goofy; can use noneg to avoid negative values
@@ -100,7 +101,7 @@ def parse(key,data):
       return (key,data)
     else:
       die(f"unrecognized unary operator: {data}")
-  if key in ('o','read','read_rot','write','rpn','stack','bloat','bloat_rot','exit','print_stderr','index','high_pass','noneg','dup','swap',
+  if key in ('o','read','read_rot','write','rpn','stack','bloat','bloat_rot','exit','print_stderr','index','high_pass','noneg','clip','dup','swap',
                    'gaussian_cross_kernel','peaks'):
     return (key,None)
   die(f"unrecognized key: {key}")
@@ -211,6 +212,14 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       stack.append(z[1])
+    if key=='clip':
+      max = stack.pop()
+      min = stack.pop()
+      im = stack.pop()
+      z = clip(im,min,max)
+      if z[0]!=0:
+        die(f"error: {z[1]}, line={line}")
+      stack.append(z[1])
     if key=='bloat' or key=='bloat_rot':
       background = stack.pop() # value to pad with
       h = stack.pop()
@@ -244,13 +253,13 @@ def bloat_op(im,w,h,background,rot):
 
 
 def noneg(im):
+  return clip(im,0.0,inf)
+
+def clip(im,min,max):
   # See comments in high_pass() re immutable data and parallelism.
-  # The loop may be slow.
-  a = deep_copy_numpy_array(im)
-  for i in range(a.shape[0]):
-    for j in range(a.shape[1]):
-      if a[i][j]<0.0:
-        a[i][j]=0.0
+  if not isinstance(max,float):
+    return (1,f"object {max} is not a float")
+  a = numpy.clip(im,min,max)
   return (0,a)
 
 def high_pass(im,x,y):
