@@ -7,7 +7,8 @@ import numpy
 from gaussian_cross import * # just defines a bunch of pure functions
 
 '''
-Defines an functional RPN language for doing convolutions and
+
+Defines a functional RPN language for doing convolutions and
 associated operations on images.  The basic idea here is that if I
 have an image and 10 templates, I want to be able to pass all that
 stuff to this code and have it crank away, rather than having to read
@@ -29,9 +30,10 @@ and preprocesses the input to allow these things. Don't use it with
 machine-generated code, because commas in filenames will cause
 problems.
 
-Internally, arrays are stored in real or complex floating point, but when writing to PNG
-files they're converted to 8-bit integers. Operations like bloat that explicitly refer
-to width and height are defined in (w,h) order, although PIL actually has things
+Internally, arrays are stored in real or complex floating point, but
+when writing to PNG files they're converted to 8-bit
+integers. Operations like bloat that explicitly refer to width and
+height are defined in (w,h) order, although PIL actually has things
 transposed (see INTERNALS).
 
 Any color input images are silently converted to grayscale using PIL's

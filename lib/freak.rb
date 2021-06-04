@@ -63,7 +63,10 @@ end
 def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
-  # correctly getting rid of DC. The result of all this is to make the signal approximately go from 0.0 (background) to 1.0 (ink).
+  # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
+  # The result of all this is to make the signal approximately go from 0.0 (background) to 1.0 (ink). For a character that
+  # has ink not as dark as the estimate (faded text, etc.), the highest value will be less than 1.0, and that will affect
+  # scores proportionately.
   # Image_thr could be used to binary-ize the data, but I'm currently not doing that. It could have the advantage of making the
   # algorithm treat faint or faded ink the same as full-darkness ink, but it could have the disadvantage of misbehaving if
   # the image parameters were estimated incorrectly.
@@ -101,13 +104,15 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
 
   k = 3.0
   # Do a scoring algorithm that worked well for me before when coded naively:
-  #   score = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
+  #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
   # This is a boolean sliding window. It can be done more efficiently in frequency domain.
   # The idea is that an "and" is just a convolution, while a "not" is 1-x, which just produces an additional constant term.
-  # score/k = -N_b + Sum [ (1+1/k) (signal & b) - (signal & w) ]
-  #         = -N_b + signal convolved with [ (1+1/k) b - w ]
-  # where N_b = number of black bits in the pattern.
-  # We calculate this by convolution, on a scale where false=0, true=255.
+  # S0/k = -N_b + Sum [ (1+1/k) (signal & b) - (signal & w) ]
+  #      = -N_b + signal convolved with [ (1+1/k) b - w ]
+  # where N_b = number of black bits in the template.
+  # We calculate this by convolution, on a hybrid analog-binary scale where false=0, true=1.0.
+  # What is returned by this algorithm is S=S0/kNb.
+  # For an input signal that's constrained to the range from 0 to 1, the maximum value of S is 1.
 
   #-----------
 
@@ -150,7 +155,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
     if verbosity>=3 then print "Nb=#{nb} for #{char_names[count]}\n" end
     code.push("r #{name_space['b']},f #{1.0+1.0/k},s *")
     code.push("r #{name_space['w']}")
-    code.push("a -") # linear combination of black and white convolutions
+    code.push("a -") # linear combination of black and white templates
     code.push("u fft") # combined template in frequency domain
     code.push("r signal_f_domain")
     code.push("r kernel_f_domain")
