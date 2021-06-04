@@ -96,7 +96,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
   write_debugging_images = true
-  peak_detection_threshold = 1
+  peak_detection_threshold = 0.1
   max_hits = 10
   want_clipping = false
   want_filtering = !(high_pass.nil?)
@@ -167,7 +167,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
     code.push("r signal_f_domain")
     code.push("r kernel_f_domain")
     code.push("a *,a *,u ifft")
-    #code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
+    code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
     code.push("noneg")
     code.push("d score_#{count}")
     if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency
@@ -177,7 +177,8 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("c score_#{char_names[count]}.png")
       code.push("write")
     end
-    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c peaks_#{count}.txt,c w,c #{char_names[count]},peaks")
+    norm = 1.0/nb
+    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c peaks_#{count}.txt,c w,c #{char_names[count]},f #{norm},peaks")
     # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }

@@ -164,6 +164,7 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='peaks':
+      norm = stack.pop()
       label = stack.pop()
       mode = stack.pop()
       filename = stack.pop()
@@ -171,7 +172,7 @@ def execute(rpn):
       radius = stack.pop()
       threshold = stack.pop()
       array = stack.pop()
-      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label)
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='gaussian_cross_kernel':
@@ -289,7 +290,7 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
-def peaks_op(array,threshold,radius,max_peaks,filename,mode,label):
+def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm):
   # Look for array elements that are the greatest within a square with a certain radius and that are above
   # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
   # to the given file.
@@ -300,6 +301,7 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode,label):
   if not is_array(array):
     return (1,f"object {array} is not a numpy array")
   h,w = array.shape
+  threshold = threshold_raw/norm
   hits = []
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
   for i in range(w):
@@ -328,7 +330,7 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode,label):
       if bad:
         continue
       # is a local max
-      hits.append([x,i,j])
+      hits.append([x*norm,i,j])
   hits.sort(reverse=True,key=lambda a: a[0])
   n = len(hits)
   if n>max_peaks:
