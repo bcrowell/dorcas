@@ -304,17 +304,14 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode,label):
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
   for i in range(w):
     for j in range(h):
-      x = array[j,i].real # when using high-pass filtering, results have small imaginary parts
-      debug = (i>=166 and i<=166 and j>=875 and j<=875)
-      if debug:
-        sys.stderr.write(f"hello, i={i}, j={j}, x={x}, threshold={threshold}\n")
+      x = array[j,i].real
+      # ... Even when not using high-pass filtering, results have small imaginary parts.
+      #     Note that numpy.complex64 will not throw an error on comparison: https://stackoverflow.com/q/67840584/1142217
       if x<threshold:
         continue
       # For efficiency, first do some code that tries to efficienctly impose the local max condition right away.
       if (i>0 and x<array[j,i-1]) or (i<w-1 and x<array[j,i+1]) or (j>0 and x<array[j-1,i]) or (j<h-1 and x<array[j+1,i]):
         continue
-      if debug:
-        sys.stderr.write(f"  100\n")
       # The following search can be very cpu-intensive.
       bad = False
       for ii in range(i-radius,i+radius+1): # top end is excluded from range
@@ -324,16 +321,12 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode,label):
           if jj<0 or jj>h-1 or (ii==0 and jj==0):
             continue
           if x<array[jj,ii].real:
-            if debug:
-              sys.stderr.write(f"  died because x is less than array at {ii},{jj}, {array[jj,ii]}\n")
             bad=True
             break
         if bad:
           break
       if bad:
         continue
-      if debug:
-        sys.stderr.write(f"  200\n")
       # is a local max
       hits.append([x,i,j])
   hits.sort(reverse=True,key=lambda a: a[0])
