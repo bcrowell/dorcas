@@ -293,7 +293,7 @@ def peaks_op(array,threshold,radius,max_peaks,filename,mode):
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
   for i in range(w):
     for j in range(h):
-      x = array[j,i].real # results have small imaginary parts...why?
+      x = array[j,i].real # when using high-pass filtering, results have small imaginary parts
       if x<threshold:
         continue
       # For efficiency, first do some code that tries to efficienctly impose the local max condition right away.

@@ -3,7 +3,8 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
   # units is the obvious, trivial one of multiplying or dividing by 255.
-  # xheight can come from seed_font.metrics(dpi,script)['xheight']
+  # Xheight can come from seed_font.metrics(dpi,script)['xheight'], is used to estimate
+  # parameters for peak detection kernel.
   # stats should contain keys 'background', 'dark', and 'threshold'
   
   if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
@@ -36,8 +37,11 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
   print "image_bg,image_ampl,image_thr = #{[image_bg,image_ampl,image_thr]}\n"
 
-  # high-pass filter to get rid of any modulation of background; x period and y period
-  high_pass = [10*xheight,10*xheight]
+  # Convolve2 allows a high-pass filter to get rid of any modulation of background.
+  # But this is not really needed when using the peak detection kernel, which makes the results
+  # insensitive to a DC or slowly varying background.
+  #high_pass = [10*xheight,10*xheight] # x period and y period
+  high_pass = nil
 
   code,files_to_delete = freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
 
@@ -59,6 +63,7 @@ end
 def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
   # image_ampl,image_bg, and image_thr are all positive ints with black=0
   # char_names is used only for things like picking readable names for debugging files
+  # If you don't want high-pass filtering, input nil.
   files_to_delete = []
   image_file = temp_file_name()
   files_to_delete.push(image_file)
@@ -81,8 +86,11 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   w = boost_for_no_large_prime_factors(text.width+max_pat_width+2*a+1)
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
-  hpfx = (w.to_f/high_pass[0].to_f).round
-  hpfy = (h.to_f/high_pass[1].to_f).round
+  want_filtering = !(high_pass.nil?)
+  if want_filtering then  
+    hpfx = (w.to_f/high_pass[0].to_f).round
+    hpfy = (h.to_f/high_pass[1].to_f).round
+  end
 
   k = 3.0
   # Do a scoring algorithm that worked well for me before when coded naively:
@@ -100,7 +108,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
     code.push("i 0,d strict_fp") # allow mutation of the symbol table, so I can free up the memory used by images as I go
   end
   code.push("i #{w},d w,i #{h},d h")
-  code.push("i #{hpfx},d high_pass_x,i #{hpfy},d high_pass_y")
+  if want_filtering then code.push("i #{hpfx},d high_pass_x,i #{hpfy},d high_pass_y") end
   code.push("i #{a},d a,f #{sigma},d sigma")
 
   # kernel for peak detection
@@ -112,7 +120,9 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   # ship out the image of the text, generate code to read it in and do prep work
   freak_prep_image(text,image_file) unless skip_file_prep
   code.concat(freak_gen_get_image('signal_space_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
-  code.push("r signal_space_domain_unfiltered,u fft,r high_pass_x,r high_pass_y,high_pass,d signal_f_domain")
+  code.push("r signal_space_domain_unfiltered,u fft")
+  if want_filtering then code.push("r high_pass_x,r high_pass_y,high_pass") end
+  code.push("d signal_f_domain")
 
   count = 0
   pats.each { |pat|
