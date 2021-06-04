@@ -178,7 +178,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("write")
     end
     norm = 1.0/nb
-    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c peaks_#{count}.txt,c w,c #{char_names[count]},f #{norm},peaks")
+    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c peaks_#{count}.txt,c w,c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},peaks")
     # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }

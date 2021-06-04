@@ -164,6 +164,8 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='peaks':
+      th = stack.pop()
+      tw = stack.pop()
       norm = stack.pop()
       label = stack.pop()
       mode = stack.pop()
@@ -172,7 +174,7 @@ def execute(rpn):
       radius = stack.pop()
       threshold = stack.pop()
       array = stack.pop()
-      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm)
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='gaussian_cross_kernel':
@@ -290,7 +292,7 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
-def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm):
+def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th):
   # Look for array elements that are the greatest within a square with a certain radius and that are above
   # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
   # to the given file.
@@ -329,8 +331,20 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm):
           break
       if bad:
         continue
-      # is a local max
-      hits.append([x*norm,i,j])
+      # We have a local max that is over the threshold.
+      # Results can legitimately be negative, as when the character is very near the left edge of the page, and the template's width hangs outside.
+      # These wrap around due to how the fft works, so fix them here. In cases where (i,j) lies within radius of the left or top, this can
+      # result in multiple hits being returned for what is actually a single hit. Trying to handle this correctly in the performance-intensive
+      # loop above would be a bad idea. Will need to clean that up later. See 'edge' flag below.
+      flag_edge = False
+      i2,j2 = i,j
+      if i>tw-1:
+        i2=i-w
+        flag_edge = True
+      if j>th-1:
+        j2=j-h
+        flag_edge = True
+      hits.append([x*norm,i2,j2,flag_edge])
   hits.sort(reverse=True,key=lambda a: a[0])
   n = len(hits)
   if n>max_peaks:
@@ -338,7 +352,11 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm):
   with open(filename,mode) as f:
     for i in range(n):
       z = hits[i].copy()
-      z.append({"name":label})
+      flag_edge = z.pop()
+      misc = {"name":label}
+      if flag_edge:
+        misc['edge']=1 # This flag means that this point has at least one negative coord, should be checked against neighbors to see if any are redundant.
+      z.append(misc)
       print(json.dumps(z),file=f)
   return (0,None)
 
