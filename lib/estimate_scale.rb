@@ -283,9 +283,9 @@ def fit_gaussian_to_peak(data,lo,hi,guesses)
   result = run_r_code(r).to_f
   if result<lo or result>hi then 
     result=0.5*(lo+hi)
-    warn("Result failed sanity check in fit_gaussian_to_peak(). Falling back to a possibly more reasonable default value.\n"+
+    warn("When attempting to find the line spacing, the result failed a sanity check. Falling back to a possibly more reasonable default value.\n"+
          "But the fact that this occurred probably means in reality that there is something wrong, e.g., that you picked\n"+
-         "the first page of a pdf file, which didn't actually have any text on it.")
+         "the first page of a pdf file, which didn't actually have any text on it, or that there is only a single line of text.")
   end
   return result
 end

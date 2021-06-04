@@ -80,7 +80,6 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   code = []
 
   skip_file_prep = false # if true, then for testing of code generation, don't bother writing and deleting files
-  write_debugging_images = true
 
   pat_widths = []
   pat_heights = []
@@ -96,6 +95,10 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   w = boost_for_no_large_prime_factors(text.width+max_pat_width+2*a+1)
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
+  write_debugging_images = true
+  peak_detection_threshold = 1
+  max_hits = 30
+  want_clipping = false
   want_filtering = !(high_pass.nil?)
   if want_filtering then  
     hpfx = (w.to_f/high_pass[0].to_f).round
@@ -133,7 +136,9 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   freak_prep_image(text,image_file) unless skip_file_prep
   code.concat(freak_gen_get_image('signal_space_domain_unfiltered',image_file,image_bg,image_ampl,w,h))
   code.push("r signal_space_domain_unfiltered")
-  code.push("f 0.0,f 1.0,clip") # restrict values to the range from 0 to 1; otherwise dark ink could give bogus ultra-high scores
+  if want_clipping then
+    code.push("f 0.0,f 1.0,clip") # restrict values to the range from 0 to 1; otherwise dark ink could give bogus ultra-high scores
+  end
   code.push("u fft")
   if want_filtering then code.push("r high_pass_x,r high_pass_y,high_pass") end
   code.push("d signal_f_domain")
@@ -162,7 +167,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
     code.push("r signal_f_domain")
     code.push("r kernel_f_domain")
     code.push("a *,a *,u ifft")
-    code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
+    #code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
     code.push("noneg")
     code.push("d score_#{count}")
     if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency
@@ -172,8 +177,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("c score_#{char_names[count]}.png")
       code.push("write")
     end
-    peak_detection_threshold = 10
-    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i 10,c peaks_#{count}.txt,c w,c #{char_names[count]},peaks")
+    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c peaks_#{count}.txt,c w,c #{char_names[count]},peaks")
     # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }
