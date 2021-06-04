@@ -42,6 +42,32 @@ def image_to_ink_array(image)
   return generate_array(w,h,lambda {|i,j| color_to_ink(image[i,j]) })
 end
 
+def image_fingerprint(image)
+  # input is a chunkypng object
+  w,h = image.width,image.height
+  result = 0
+  0.upto(w-1) { |i|
+    0.upto(w-1) { |j|
+      color = image[i,j]
+      r,g,b = ChunkyPNG::Color.r(color),ChunkyPNG::Color.g(color),ChunkyPNG::Color.b(color)
+      result = result + r+b+g
+    }
+  }
+  return result
+end
+
+def ink_array_fingerprint(image)
+  w,h = ink_array_dimensions(image)
+  result = 0.0
+  0.upto(w-1) { |i|
+    0.upto(w-1) { |j|
+      color = image[i,j]
+      result = result + image[i][j]
+    }
+  }
+  return result
+end
+
 def ink_array_dimensions(a)
   return [a.length,a[0].length]
 end
@@ -211,6 +237,8 @@ end
 
 def random_sample(image,n_points,threshold,scale)
   # Try to efficiently and fairly take a sample not containing any duplicated points.
+  # To make the output of the program reproducible, the random sample is actually pseudorandom,
+  # and is always based on the same seed every time this function is called.
   # If n_points is comparable to or greater than the number of pixels in the image, then
   # nothing really bad happens except that the details of the sampling will not be quite
   # statistically ideal. If n_points is greater than the number of pixels, then we only
@@ -219,13 +247,14 @@ def random_sample(image,n_points,threshold,scale)
   # If threshold is not nil, then we only return results that appear to be in or near actual text (as opposed to margins or other
   # large regions of whitespace). There must be a pixel over threshold within the distance scale.
   # This will be much, much slower.
+  prng = Random.new(0) # seed is 0
   sample = []
   w = image.width
   h = image.height
   n = w*h
   if n_points>w*h then n_points=n end
   lambda = n_points.to_f/n # probability that a given point will be sampled
-  z0 = rand(n) # index of point currently being sampled
+  z0 = prng.rand(n) # index of point currently being sampled
   z1 = 0 # should end up being approximately equal to n-1
   0.upto(n_points-1) { |count|
     z = z0+z1
@@ -248,7 +277,7 @@ def random_sample(image,n_points,threshold,scale)
     if hit then sample.push(color_to_ink(image[i,j])) end
     # Wait time between events in a Poisson process is exponentially distributed. Generate a number with an exponential distribution.
     # https://www.eg.bucknell.edu/~xmeng/Course/CS6337/Note/master/node50.html
-    y = rand # uniform (0,1)
+    y = prng.rand # uniform (0,1)
     x = -Math::log(1-y)/lambda
     step = x.round
     if lambda>0.1 and step>1 and z1/(n-1).to_f>count/(n_points-1).to_f then

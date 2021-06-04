@@ -12,7 +12,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 
   if false then
     monitor_file = temp_file_name_short(prefix:"mon")+".png"
-    monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n" # qwe
+    monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
     monitor_image = text.clone.grayscale
     monitor_image.save(monitor_file)
     print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
@@ -55,7 +55,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   }
 
   if false then
-    print "monitor file #{monitor_file} not being deleted for convenience ---\n" # qwe
+    print "monitor file #{monitor_file} not being deleted for convenience ---\n"
     FileUtils.rm_f(monitor_file)
   end
 end
