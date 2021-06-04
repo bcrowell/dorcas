@@ -106,16 +106,21 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   end
 
   k = 3.0
+  nb_fudge = 0.5
   # Do a scoring algorithm that worked well for me before when coded naively:
   #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
   # This is a boolean sliding window. It can be done more efficiently in frequency domain.
   # The idea is that an "and" is just a convolution, while a "not" is 1-x, which just produces an additional constant term.
-  # S0/k = -N_b + Sum [ (1+1/k) (signal & b) - (signal & w) ]
-  #      = -N_b + signal convolved with [ (1+1/k) b - w ]
-  # where N_b = number of black bits in the template.
+  # S0/k = -N_bf + Sum [ (1+1/k) (signal & b) - (signal & w) ]
+  #      = -N_bf + signal convolved with [ (1+1/k) b - w ]
+  # where N_b = number of black bits in the template and f is a fudge factor described below.
   # We calculate this by convolution, on a hybrid analog-binary scale where false=0, true=1.0.
   # What is returned by this algorithm is S=S0/kNb.
   # For an input signal that's constrained to the range from 0 to 1, the maximum value of S is 1.
+  # Theoretically the fudge factor f, which is set as the variable nb_fudge, should just be 1.
+  # But that's for perfectly clean data and perfect matches. In reality, setting f=1 causes many
+  # peaks of interest to become negative. This is awkward, for example, for visualization, and
+  # in fact we always discard negative scores.
 
   #-----------
 
@@ -167,7 +172,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
     code.push("r signal_f_domain")
     code.push("r kernel_f_domain")
     code.push("a *,a *,u ifft")
-    code.push("f #{-nb},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
+    code.push("f #{-nb*nb_fudge},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
     code.push("noneg")
     code.push("d score_#{count}")
     if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency
