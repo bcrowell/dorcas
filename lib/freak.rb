@@ -33,7 +33,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
   # is defined so that black is 0.
   image_bg = ink_to_png_8bit_grayscale(stats['background'])
-  image_ampl = ink_to_png_8bit_grayscale(stats['dark']-stats['background']) # positive
+  image_ampl = ink_to_png_8bit_grayscale(stats['background'])-ink_to_png_8bit_grayscale(stats['dark']) # positive
   image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
   print "image_bg,image_ampl,image_thr = #{[image_bg,image_ampl,image_thr]}\n"
 
@@ -96,7 +96,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
   write_debugging_images = true
-  peak_detection_threshold = 0.01
+  peak_detection_threshold = 0.001
   max_hits = 10
   want_clipping = false
   want_filtering = !(high_pass.nil?)
@@ -188,6 +188,8 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   # postprocess code
   code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")+"\n"
 
+  #print code
+
   return [code,files_to_delete]
 end
 
@@ -200,6 +202,7 @@ def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false,debug:n
   # image_ampl and image_bg are positive ints with black=0.
   # Image read from file will be non-inverse video.
   # Transform pixel values like y=ax+b.
+  if image_ampl<=0 then die("image_ampl<=0") end
   a = -1.0/image_ampl.to_f
   b = image_bg.to_f/image_ampl.to_f
   code = []
