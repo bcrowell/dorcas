@@ -235,8 +235,8 @@ def project_onto_y(image,lo_col,hi_col)
   return proj
 end
 
-def random_sample(image,n_points,threshold,scale)
-  # Image is chunkypng, but threshold and outputs are in ink units.
+def random_sample(ink_array,n_points,threshold,scale)
+  # Threshold and outputs are in ink units.
   # Try to efficiently and fairly take a sample not containing any duplicated points.
   # To make the output of the program reproducible, the random sample is actually pseudorandom,
   # and is always based on the same seed every time this function is called.
@@ -250,8 +250,7 @@ def random_sample(image,n_points,threshold,scale)
   # This will be much, much slower.
   prng = Random.new(0) # seed is 0
   sample = []
-  w = image.width
-  h = image.height
+  w,h = ink_array_dimensions(ink_array)
   n = w*h
   if n_points>w*h then n_points=n end
   lambda = n_points.to_f/n # probability that a given point will be sampled
@@ -268,14 +267,14 @@ def random_sample(image,n_points,threshold,scale)
         if ii<0 or ii>w-1 then next end
         (j-scale).upto(j+scale) { |jj|
           if jj<0 or jj>h-1 then next end
-          if color_to_ink(image[ii,jj])>threshold then hit=true; break end
+          if ink_array[ii][jj]>threshold then hit=true; break end
         }
         if hit then break end
       }
     else
       hit = true
     end
-    if hit then sample.push(color_to_ink(image[i,j])) end
+    if hit then sample.push(ink_array[i][j]) end
     # Wait time between events in a Poisson process is exponentially distributed. Generate a number with an exponential distribution.
     # https://www.eg.bucknell.edu/~xmeng/Course/CS6337/Note/master/node50.html
     y = prng.rand # uniform (0,1)
