@@ -11,6 +11,26 @@ def extract_subarray_with_padding(a,box,pad_value)
   return generate_array(box.width,box.height,lambda {|i,j| array_sub(a,i+dx,j+dy,pad_value) })
 end
 
+def array_max(a)
+  # very fast
+  result = a[0][0]
+  a.each { |col|
+    m = col.max
+    if m>result then result=m end
+  }
+  return result
+end
+
+def array_min(a)
+  # very fast
+  result = a[0][0]
+  a.each { |col|
+    m = col.min
+    if m<result then result=m end
+  }
+  return result
+end
+
 def array_sub(a,i,j,default)
   # won't croak if i or j is out of bounds, will return default instead
   col = a[i]

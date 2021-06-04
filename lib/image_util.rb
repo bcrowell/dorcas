@@ -236,6 +236,7 @@ def project_onto_y(image,lo_col,hi_col)
 end
 
 def random_sample(image,n_points,threshold,scale)
+  # Image is chunkypng, but threshold and outputs are in ink units.
   # Try to efficiently and fairly take a sample not containing any duplicated points.
   # To make the output of the program reproducible, the random sample is actually pseudorandom,
   # and is always based on the same seed every time this function is called.

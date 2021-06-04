@@ -11,11 +11,19 @@ def ink_stats_pat(bw,red)
   return {'mean'=>mean,'sd'=>sd}
 end
 
-def ink_stats_1(image)
-  sample = random_sample(image,1000,nil,nil) # nothing bad happens if the image has less than 1000 pixels, we just get a smaller sample
+def ink_sample_size()
+  # Used by ink_stats_1() and ink_stats_2(). Changing this to 10000 eats up 4 seconds of CPU time.
+  return 1000
+end
+
+def ink_stats_1(image,ink_array)
+  # Input is chunkypng, but outputs are in ink units.
+  # I've added a redundant second argument ink_array for efficiency, should use that as much as possible.
+  sample = random_sample(image,ink_sample_size(),nil,nil) # nothing bad happens if the image has less than this many pixels, we just get a smaller sample
   median = find_median(sample)
   min = sample.min
   max = sample.max
+  #print "max=#{max}, array_max=#{array_max(ink_array)}\n"
   mean,sd = find_mean_sd(sample)
   submedian,supermedian = find_sup_sub_median(sample,mean)
   # The submedian seems like an excellent estimate of the background.
@@ -26,15 +34,16 @@ def ink_stats_1(image)
   # would certainly look very different on something like a monochrome computer font, or possibly at higher resolution.
   threshold,dark = dark_ink(sample,median,submedian,supermedian,max)
   background = submedian
+  if dark-threshold<0.3 then warn("Ink stats fail a sanity check. This can happen if the input is a blank page.") end
   return {'background'=>background,'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
         'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark}
 end
 
-def ink_stats_2(image,stats,scale)
+def ink_stats_2(image,ink_array,stats,scale)
   # Scale is an estimate of something like the x-height, 
   # used so we can get some kind of guess as to how far we have to be from ink to be in total whitespace
   threshold = stats['threshold']
-  sample_in_text = random_sample(image,1000,threshold,scale)
+  sample_in_text = random_sample(image,ink_sample_size(),threshold,scale)
   mean_in_text,sd_in_text = find_mean_sd(sample_in_text)
   return stats.merge({'mean_in_text'=>mean_in_text,'sd_in_text'=>sd_in_text})
 end

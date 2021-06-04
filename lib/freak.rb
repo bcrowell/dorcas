@@ -96,7 +96,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
   write_debugging_images = true
-  peak_detection_threshold = 0.1
+  peak_detection_threshold = 0.01
   max_hits = 10
   want_clipping = false
   want_filtering = !(high_pass.nil?)

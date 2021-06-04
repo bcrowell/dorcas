@@ -67,8 +67,9 @@ def main()
   end
 
   if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image=text_file end
+  text_ink = image_to_ink_array(image_from_file_to_grayscale(job.image)) # Takes 0.5 s, but can be reused later by lots of stuff.
   # ... 500 dpi is the documented behavior
-  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,spacing_multiple,job.guess_dpi,job.guess_font_size)
+  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
     freak(job,text,stats,output_dir,report_dir)
@@ -90,7 +91,7 @@ end
 def create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
   if job.no_matching then
-    pats = create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_multiple)
+    pats = create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,text_ink,spacing_multiple)
   else
     pats = match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
@@ -98,9 +99,9 @@ def create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,f
   return pats
 end
 
-def create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,spacing_multiple)
+def create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,text_ink,spacing_multiple)
   all_fonts,script_and_case_to_font_name = load_fonts(job)
-  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,spacing_multiple,job.guess_dpi,job.guess_font_size) # needed for scaling
+  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size) # needed for scaling
   print "Not doing any matching, just rendering patterns for these characters from the seed font: #{job.characters}.\n"
   pats = []
   job.characters.each { |x|
@@ -230,15 +231,15 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
   return [pat,hits,composites]
 end
 
-def analyze_text_image(text_file,spacing_multiple,guess_dpi,guess_font_size)
+def analyze_text_image(text_file,text_ink,spacing_multiple,guess_dpi,guess_font_size)
   text = image_from_file_to_grayscale(text_file)
   print "Input file is #{text_file}\n"
-  stats = ink_stats_1(text)
+  stats = ink_stats_1(text,text_ink)
   peak_to_bg = stats['dark']/stats['submedian']
   text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size)
   stats['line_spacing'] = text_line_spacing
   stats['x_height'] = x_height
-  stats = ink_stats_2(text,stats,(text_line_spacing*0.3).round)
+  stats = ink_stats_2(text,text_ink,stats,(text_line_spacing*0.3).round)
   print "ink stats:\n#{stats_to_string(stats)}"
   if x_height<0.35*text_line_spacing/spacing_multiple then 
     warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
