@@ -253,7 +253,7 @@ def bloat_op(im,w,h,background,rot):
 
 
 def noneg(im):
-  return clip(im,0.0,inf)
+  return clip(im,0.0,numpy.Inf)
 
 def clip(im,min,max):
   # See comments in high_pass() re immutable data and parallelism.
