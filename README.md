@@ -29,8 +29,6 @@ Dumb Optical Recognition using Correlation
 
 debian packages: parallel r-cran-minpack.lm ruby python3 unicode libgd-perl ruby-zip python3-numpy python3-pil
 
-Also depends on the chapel compiler.
-
 optional debian packages: imagemagick qpdf
 
 ## Method of use
