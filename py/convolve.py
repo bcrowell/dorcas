@@ -24,7 +24,7 @@ this low-level program.
 
 We want conveniences for hand-assembled code such as comments,
 indentation, or ways to put multiple statements on one line, but these
-are taken care of in the calling program, not in here. The convolve2()
+are taken care of in the calling program, not in here. The convolve()
 function in fft.rb has a human_input flag that is turned on by default
 and preprocesses the input to allow these things. Don't use it with
 machine-generated code, because commas in filenames will cause

@@ -2,7 +2,7 @@
 #    2-dimensional fft
 #-------------------------------------------------------------------------
 
-def convolve2(code,to_int:true,human_input:true)
+def convolve(code,to_int:true,human_input:true)
   # The default for to_int is meant for convenience. If the output is actually a float,
   # set to_int to false and do an explicit to_f on the string that is returned.
   if human_input then
@@ -12,7 +12,7 @@ def convolve2(code,to_int:true,human_input:true)
   end
   temp = temp_file_name()
   create_text_file(temp,code)
-  result = shell_out("python3 py/convolve2.py <#{temp}",output_marker:false)
+  result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
   FileUtils.rm_f(temp)
   if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
   return result

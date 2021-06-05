@@ -37,7 +37,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
   print "image_bg,image_ampl,image_thr = #{[image_bg,image_ampl,image_thr]}\n"
 
-  # Convolve2 allows a high-pass filter to get rid of any modulation of background.
+  # Convolve allows a high-pass filter to get rid of any modulation of background.
   # But this is not really needed when using the peak detection kernel, which makes the results
   # insensitive to a DC or slowly varying background.
   #high_pass = [10*xheight,10*xheight] # x period and y period
@@ -48,7 +48,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   #print code
 
   # run it
-  convolve2(code,human_input:false)
+  convolve(code,human_input:false)
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)
