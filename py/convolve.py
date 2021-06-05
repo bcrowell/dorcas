@@ -164,6 +164,7 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='peaks':
+      batch_code = stack.pop()
       th = stack.pop()
       tw = stack.pop()
       norm = stack.pop()
@@ -174,7 +175,7 @@ def execute(rpn):
       radius = stack.pop()
       threshold = stack.pop()
       array = stack.pop()
-      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th)
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='gaussian_cross_kernel':
@@ -292,7 +293,7 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
-def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th):
+def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code):
   # Look for array elements that are the greatest within a square with a certain radius and that are above
   # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
   # to the given file.
@@ -353,7 +354,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
     for i in range(n):
       z = hits[i].copy()
       flag_edge = z.pop()
-      misc = {"name":label}
+      misc = {"label":label,"batch":batch_code}
       if flag_edge:
         misc['edge']=1 # This flag means that this point has at least one negative coord, should be checked against neighbors to see if any are redundant.
       z.append(misc)

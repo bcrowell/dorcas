@@ -1,4 +1,4 @@
-def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosity:2)
+def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -43,12 +43,16 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   #high_pass = [10*xheight,10*xheight] # x period and y period
   high_pass = nil
 
-  code,files_to_delete = freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
+  outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
+
+  code,files_to_delete = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
 
   #print code
 
   # run it
-  convolve(code,human_input:false)
+  hits = convolve(code,human_input:false,batch_code:batch_code,retrieve_hits_from_file:outfile)
+
+  print "hits=#{hits}\n"
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)
@@ -60,7 +64,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   end
 end
 
-def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
+def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
   # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
@@ -183,7 +187,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
       code.push("write")
     end
     norm = 1.0/nb
-    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c peaks_#{count}.txt,c w,c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},peaks")
+    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c #{outfile},c a,c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},peaks")
     # peaks_op(array,threshold,radius,max_peaks,filename,mode)
     count = count+1
   }

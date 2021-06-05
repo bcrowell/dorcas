@@ -56,7 +56,7 @@ class Fset
     }
     data_file = dir_and_file_to_path(dir,"_data.json")
     if File.exists?(data_file) then
-      data = data=JSON.parse(slurp_file(data_file))
+      data=JSON.parse(slurp_file(data_file))
     else
       warn("No _data.json file found in #{dir}, supplying default values.")
       data = {"size"=>12,"dpi"=>300}

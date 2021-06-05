@@ -2,9 +2,11 @@
 #    2-dimensional fft
 #-------------------------------------------------------------------------
 
-def convolve(code,to_int:true,human_input:true)
-  # The default for to_int is meant for convenience. If the output is actually a float,
-  # set to_int to false and do an explicit to_f on the string that is returned.
+def convolve(code,to_int:true,human_input:true,retrieve_hits_from_file:nil,batch_code:nil)
+  # The default values are meant for convenience in writing a test suite.
+  # When used with the defaults, for testing, this routine just returns whatever was written to stdout.
+  # In real use, with retrieve_hits, it returns a list of hits.
+  # If the output is actually a float, set to_int to false and do an explicit to_f on the string that is returned.
   if human_input then
      # For convenience in testing, allow indentation and comments, and replace commas with newlines.
      # The use of commas could cause problems on machine-generated filenames that contain commas.
@@ -14,8 +16,21 @@ def convolve(code,to_int:true,human_input:true)
   create_text_file(temp,code)
   result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
   FileUtils.rm_f(temp)
-  if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
-  return result
+  if retrieve_hits_from_file.nil? then
+    if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
+    return result
+  end
+  # If we fall through to here then we're retrieving hits.
+  hits = []
+  File.open(retrieve_hits_from_file,'r') { |f|
+    f.each_line {|line|
+      score,x,y,misc = JSON.parse(line)
+      if (!(batch_code.nil?)) and ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
+      misc.delete('batch')
+      hits.push([score,x,y,misc])
+    }
+  }
+  return hits
 end
 
 def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,high_pass_x:150,high_pass_y:200,options:{})
