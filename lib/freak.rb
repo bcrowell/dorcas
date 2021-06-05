@@ -106,7 +106,7 @@ def freak_generate_code_and_prep_files(text,pats,a,sigma,image_ampl,image_bg,ima
   end
 
   k = 3.0
-  nb_fudge = 0.5
+  nb_fudge = 0.3
   # Do a scoring algorithm that worked well for me before when coded naively:
   #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
   # This is a boolean sliding window. It can be done more efficiently in frequency domain.
