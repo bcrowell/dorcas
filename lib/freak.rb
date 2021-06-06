@@ -1,4 +1,4 @@
-def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosity:2,batch_code:'')
+def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -6,6 +6,12 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.6
   # Xheight can come from seed_font.metrics(dpi,script)['xheight'], is used to estimate
   # parameters for peak detection kernel.
   # stats should contain keys 'background', 'dark', and 'threshold'
+
+  # The following should not be hardcoded, fixme.
+  threshold1 = 0.1
+  threshold2 = -0.5
+  threshold3 = -0.5
+  smear = 2 # used in Pat.fix_red()
   
   if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
   set = Fset.from_file_or_directory(job.set)
@@ -50,7 +56,7 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.6
     all_chars = all_chars+chars
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
-    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
+    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1)
     files_to_delete.concat(killem)
     all_codes.push(code)
   }
@@ -79,19 +85,17 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.6
 
   hits2 = []
   bg = stats['background']
-  threshold1 = 0.62 # hardcoded, fixme
-  threshold2 = 0.62 # ...
-  smear = 2         # ...
   hits.each { |x|
     score,i,j,misc = x
     short_name = misc['label']
     norm = sdp[short_name]*stats['sd_in_text']
     co1 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
-    if i==32 and j==154 then debug=pat_by_name[short_name] else debug=nil end
+    debug=nil
+    #if i==32 and j==154 then debug=pat_by_name[short_name] end
     co2,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
-    print "i,j=#{i} #{j} raw=#{score}, co1=#{co1}, co2=#{co2}\n"
-    if co1<threshold1 then next end
-    if co2<threshold2 then next end
+    if co1>0.0 then print "i,j=#{i} #{j} raw=#{score}, co1=#{co1}, co2=#{co2}\n" end
+    if co1<threshold2 then next end
+    if co2<threshold3 then next end
     hits2.push(x)
   }
   print "filtered #{hits.length} to #{hits2.length}\n"
@@ -111,7 +115,8 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.6
   end
 end
 
-def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,parallelizable:false)
+def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,
+                       parallelizable:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
   # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
@@ -123,6 +128,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   # the image parameters were estimated incorrectly.
   # Char_names is used only for things like picking readable names for debugging files.
   # If you don't want high-pass filtering, supply nil for this input.
+  # The parallelizable flag would be set to true if we were going to hypothetically do parallelization *inside* convolve.py.
   verbosity=3
 
   files_to_delete = []
@@ -147,7 +153,6 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
   write_debugging_images = true
-  peak_detection_threshold = 0.001
   max_hits = 10
   want_clipping = false
   want_filtering = !(high_pass.nil?)
@@ -234,8 +239,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
       code.push("write")
     end
     norm = 1.0/nb
-    code.push("r score_#{count},f #{peak_detection_threshold},i #{a},i #{max_hits},c #{outfile},c a,c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},peaks")
-    # peaks_op(array,threshold,radius,max_peaks,filename,mode)
+    code.push("r score_#{count},f #{threshold1},i #{a},i #{max_hits},c #{outfile},c a,c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},peaks")
     count = count+1
   }
 
