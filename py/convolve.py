@@ -313,7 +313,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
   h,w = array.shape
   threshold = threshold_raw/norm
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
-  hits = search_for_peaks(array,w,h,tw,th,threshold,threshold+1.0/norm,radius,norm,max_peaks,0)
+  hits = search_for_peaks(array,w,h,tw,th,threshold,numpy.Inf,radius,norm,max_peaks,0)
   n = len(hits)
   if n>max_peaks:
     n=max_peaks

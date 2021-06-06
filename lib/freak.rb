@@ -10,6 +10,7 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   # The following should not be hardcoded, fixme.
   threshold1,threshold2,threshold3 = [0.1,-0.5,-0.5]
   smear = 2 # used in Pat.fix_red()
+  #threshold1 = -1.0 # qwe
 
   # parameters for gaussian cross peak detection:
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well; varying sigma mainly just renormalizes scores
