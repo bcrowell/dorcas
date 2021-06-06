@@ -8,11 +8,13 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   # stats should contain keys 'background', 'dark', and 'threshold'
 
   # The following should not be hardcoded, fixme.
-  threshold1 = 0.1
-  threshold2 = -0.5
-  threshold3 = -0.5
+  threshold1,threshold2,threshold3 = [0.1,-0.5,-0.5]
   smear = 2 # used in Pat.fix_red()
-  
+
+  # parameters for gaussian cross peak detection:
+  sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well; varying sigma mainly just renormalizes scores
+  a = (xheight/3.0).round # gives 10 for Giles; reducing it by a factor of 2 breaks peak detection; doubling it has little effect
+
   if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
   set = Fset.from_file_or_directory(job.set)
 
@@ -24,10 +26,6 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
     print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
     # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
   end
-
-  # parameters for gaussian cross peak detection:
-  sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well
-  a = (xheight/3.0).round # gives 10 for Giles
 
   # Input image stats are all in ink units. See comments at top of function about why it's OK
   # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
@@ -83,26 +81,47 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   foo = pat_by_name['epsilon']
   Pat.fix_red(foo.red,foo.baseline)
 
+  make_scatterplot = false
+
   hits2 = []
   bg = stats['background']
+  if make_scatterplot then scatt=[] end
   hits.each { |x|
-    score,i,j,misc = x
+    co1,i,j,misc = x
     short_name = misc['label']
     norm = sdp[short_name]*stats['sd_in_text']
-    co1 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
+    co2 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
     debug=nil
-    #if i==32 and j==154 then debug=pat_by_name[short_name] end
-    co2,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
-    if co1>0.0 then print "i,j=#{i} #{j} raw=#{score}, co1=#{co1}, co2=#{co2}\n" end
-    if co1<threshold2 then next end
-    if co2<threshold3 then next end
+    co3,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
+    if make_scatterplot then scatt.push([co1,co3]) end
+    #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}\n" end
+    if co2<threshold2 then next end
+    if co3<threshold3 then next end
     hits2.push(x)
   }
   print "filtered #{hits.length} to #{hits2.length}\n"
   hits = hits2
 
   png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
-
+  if make_scatterplot then
+    bins = 40
+    s = generate_array(bins,bins,lambda { |i,j| 0})
+    scatt.each { |p|
+      x,y = p
+      y = (y+2)*0.333
+      x=(x*bins).round
+      y=(y*bins).round
+      y = bins-1-y
+      if x<0 then x=0 end
+      if x>bins-1 then x=bins-1 end
+      if y<0 then y=0 end
+      if y>bins-1 then y=bins-1 end
+      s[x][y] += 1
+    }
+    File.open('scatt.txt','w') { |f|
+      f.print array_ascii_art(s,fn:lambda {|x| if x==0 then ' ' else 'x' end})
+    }
+  end
   print "hits written to #{outfile}\n"
 
   files_to_delete.each { |f|
@@ -130,6 +149,8 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   # If you don't want high-pass filtering, supply nil for this input.
   # The parallelizable flag would be set to true if we were going to hypothetically do parallelization *inside* convolve.py.
   verbosity=3
+
+  if a.class!=1.class then die("a is not an integer") end
 
   files_to_delete = []
   image_file = temp_file_name()
@@ -161,8 +182,10 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
     hpfy = (h.to_f/high_pass[1].to_f).round
   end
 
-  k = 3.0
+  k = 3.0 # changing this to 1.0 makes little difference, mainly just renormalizes scores
   nb_fudge = 0.3
+  # ... Changing this to 0 or 0.4 just renormalizes scores; raising it to 1.0 requires vastly lowering threshold, gives terrible performance.
+
   # Do a scoring algorithm that worked well for me before when coded naively:
   #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
   # This is a boolean sliding window. It can be done more efficiently in frequency domain.
@@ -229,12 +252,11 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
     code.push("r kernel_f_domain")
     code.push("a *,a *,u ifft")
     code.push("f #{-nb*nb_fudge},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
-    code.push("noneg")
     code.push("d score_#{count}")
     if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency
     if write_debugging_images then
       code.push("r score_#{count}")
-      code.push("dup,u max,f 1,b max,f 255,swap,b /,s *") # normalize
+      code.push("dup,u max,f 1,b max,f 255,swap,b /,s *,noneg") # normalize
       code.push("c score_#{char_names[count]}.png")
       code.push("write")
     end

@@ -1,3 +1,19 @@
+#!/bin/ruby
+
+require 'json'
+
+# Reads two input files, each containing a JSON hash.
+# Merges them and writes the resulting JSON code to stdout.
+
+def main()
+  if ARGV.length!=2 then die("need 2 args") end
+  in1 = ARGV[0]
+  in2 = ARGV[1]
+  m = json_from_file_or_die(in1).merge(json_from_file_or_die(in2))
+  print JSON.generate(m)
+end
+
+
 # returns contents or nil on error; for more detailed error reporting, see slurp_file_with_detailed_error_reporting()
 def slurp_file(file)
   x = slurp_file_with_detailed_error_reporting(file)
@@ -43,3 +59,11 @@ def create_text_file(filename,text)
     f.print text
   }
 end
+
+def die(message)
+  #  $stderr.print message,"\n"
+  raise message # gives a stack trace
+  exit(-1)
+end
+
+main()

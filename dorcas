@@ -47,7 +47,7 @@ def main()
     exit(0)
   end
 
-  job_file = ARGV[0]
+  job_file = ARGV[0] # can be '-' for stdin
   job = Job.from_file(job_file)
   print "Parameters for this job:#{job}\n"
 

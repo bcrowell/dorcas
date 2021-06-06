@@ -110,12 +110,14 @@ def array_to_string(a,indentation,format,fn:lambda {|x| x})
   return lines.join("\n")
 end
 
-def array_ascii_art(a,fn)
+def array_ascii_art(a,fn:lambda { |c| c})
+  result = ''
   w,h = array_dimensions(a)
   0.upto(h-1) { |j|
     0.upto(w-1) { |i|
-      print fn.call(a[i][j])
+      result = result + fn.call(a[i][j])
     }
-    print "\n"
+    result = result + "\n"
   }
+  return result
 end

@@ -25,6 +25,16 @@ Dumb Optical Recognition using Correlation
 
 * I'm not making much of an effort to make it something that could run on Windows.
 
+## Usage
+
+`dorcas foo.job` ... reads parameters from a json file
+
+`dorcas -` ... reads from stdin
+
+`dorcas extract help`
+
+`dorcas insert help`
+
 ## Dependencies:
 
 debian packages: ruby python3 r-cran-minpack.lm unicode libgd-perl ruby-zip python3-numpy python3-pil
@@ -139,7 +149,7 @@ dorcas extract old.set ρ bw.png
 
 dorcas insert old.set ρ bw.png new.set
 
-For a reminder of usage on these utilities, do "dorcase insert help", etc.
+For a reminder of usage on these utilities, do "dorcas insert help", etc.
 
 # Portability
 

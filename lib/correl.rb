@@ -125,7 +125,7 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,smear:2,debug:nil)
       total += wt*score
     }
   }
-  if debug then print array_ascii_art(terms,lambda {|x| {0=>' ',1=>'+',-3=>'-'}[x.round]}) end
+  if debug then print array_ascii_art(terms,fn:lambda {|x| {0=>' ',1=>'+',-3=>'-'}[x.round]}) end
   return [total/norm,{"image"=>filename}]
 end
 

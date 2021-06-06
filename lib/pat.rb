@@ -138,7 +138,7 @@ class Pat
     # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
     # down into ε's whitespace.
     r = image_to_boolean_ink_array(red)
-    #print array_ascii_art(r,lambda {|x| {true=>'t',false=>' '}[x]}) 
+    #print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) 
     w,h = ink_array_dimensions(r)
 
     red_below_baseline = []
@@ -167,7 +167,7 @@ class Pat
         }
       end
     }
-    #print array_ascii_art(r,lambda {|x| {true=>'t',false=>' '}[x]}) 
+    #print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) 
     return boolean_ink_array_to_image(r)
   end
 

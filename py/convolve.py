@@ -340,7 +340,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
       if bad:
         continue
       # We have a local max that is over the threshold.
-      # Results can legitimately be negative, as when the character is very near the left edge of the page, and the template's width hangs outside.
+      # Coords (i,j) can legitimately be negative, as when the character is very near the left edge of the page, and the template's width hangs outside.
       # These wrap around due to how the fft works, so fix them here. In cases where (i,j) lies within radius of the left or top, this can
       # result in multiple hits being returned for what is actually a single hit. Trying to handle this correctly in the performance-intensive
       # loop above would be a bad idea. Will need to clean that up later. See 'edge' flag below.
