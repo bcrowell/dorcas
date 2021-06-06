@@ -22,6 +22,13 @@ any parallelism. It probably works just as well, if not better, to
 do parallelization at a higher level, with multiple invocations of
 this low-level program.
 
+When parallelizing by invoking this script multiple times, a quick
+and easy method is to use a single output file for all the processes,
+and tell the peaks() function to open a file to append. On linux,
+this is probably reliable as long as every line is less than about
+~4k characters. The output from the different processes should appear
+interleaved, but individual lines should be written atomically.
+
 We want conveniences for hand-assembled code such as comments,
 indentation, or ways to put multiple statements on one line, but these
 are taken care of in the calling program, not in here. The convolve()
@@ -350,7 +357,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
   n = len(hits)
   if n>max_peaks:
     n=max_peaks
-  with open(filename,mode) as f:
+  with open(filename,mode) as f: # On linux, when you open to append it's non-locking. This may not work on windows.
     for i in range(n):
       z = hits[i].copy()
       flag_edge = z.pop()
@@ -358,7 +365,9 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
       if flag_edge:
         misc['edge']=1 # This flag means that this point has at least one negative coord, should be checked against neighbors to see if any are redundant.
       z.append(misc)
-      print(json.dumps(z),file=f)
+      print(json.dumps(z),file=f) # On linux, most likely this is atomic if the line is under about 4k.
+      # At least on unix, this seems likely to avoid having one line interrupted by another from another process. 
+      # https://unix.stackexchange.com/a/42564/39248
   return (0,None)
 
 def do_gaussian_cross_kernel(w,h,a,sigma):

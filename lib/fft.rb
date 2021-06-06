@@ -14,23 +14,25 @@ def convolve(code,to_int:true,human_input:true,retrieve_hits_from_file:nil,batch
   end
   temp = temp_file_name()
   create_text_file(temp,code)
-  result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
-  FileUtils.rm_f(temp)
   if retrieve_hits_from_file.nil? then
+    result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
     if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
-    return result
-  end
-  # If we fall through to here then we're retrieving hits.
-  hits = []
-  File.open(retrieve_hits_from_file,'r') { |f|
-    f.each_line {|line|
-      score,x,y,misc = JSON.parse(line)
-      if (!(batch_code.nil?)) and ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
-      misc.delete('batch')
-      hits.push([score,x,y,misc])
+    return_value = result
+  else
+    # We're retrieving hits.
+    hits = []
+    File.open(retrieve_hits_from_file,'r') { |f|
+      f.each_line {|line|
+        score,x,y,misc = JSON.parse(line)
+       if (!(batch_code.nil?)) and ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
+        misc.delete('batch')
+        hits.push([score,x,y,misc])
+      }
     }
-  }
-  return hits
+    return_value = hits
+  end
+  FileUtils.rm_f(temp)
+  return return_value
 end
 
 def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,high_pass_x:150,high_pass_y:200,options:{})

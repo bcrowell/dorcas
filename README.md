@@ -165,3 +165,7 @@ For rendering fonts, we shell out to a perl interpreter and use Perl's GD
 library. (See lib/other_interpreters.rb.)
 
 For pdf input, we need imagemagick and qpdf.
+
+In convolve.py, we open the output file to append, and we write lines of under ~4k characters.
+On linux, this should work when there are multiple processes. On windows, opening probably
+locks the file.
