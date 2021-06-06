@@ -67,9 +67,11 @@ def main()
   end
 
   if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image=text_file end
-  text_ink = image_to_ink_array(image_from_file_to_grayscale(job.image)) # Takes 0.5 s, but can be reused later by lots of stuff.
+  # The following two lines are somewhat slow:
+  text = image_from_file_to_grayscale(job.image)
+  text_ink = image_to_ink_array(text)
   # ... 500 dpi is the documented behavior
-  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size)
+  stats,peak_to_bg,dpi = analyze_text_image(text,text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
     freak(job,text,text_ink,stats,output_dir,report_dir,batch_code:Process.pid.to_s)
@@ -231,8 +233,7 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
   return [pat,hits,composites]
 end
 
-def analyze_text_image(text_file,text_ink,spacing_multiple,guess_dpi,guess_font_size)
-  text = image_from_file_to_grayscale(text_file)
+def analyze_text_image(text,text_file,text_ink,spacing_multiple,guess_dpi,guess_font_size)
   print "Input file is #{text_file}\n"
   stats = ink_stats_1(text,text_ink)
   peak_to_bg = stats['dark']/stats['submedian']
@@ -251,7 +252,7 @@ def analyze_text_image(text_file,text_ink,spacing_multiple,guess_dpi,guess_font_
   # Although the value of text_line_spacing is good, the way I'm using it in setting the font size is
   # not super great, sometimes results in a font whose size is wrong by 15%.
 
-  return [text,stats,peak_to_bg]
+  return [stats,peak_to_bg]
 end
 
 def match_seed_font_scale(font,stats,script,fudge_size)

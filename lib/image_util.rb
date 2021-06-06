@@ -6,6 +6,7 @@ def image_any_type_to_chunky(x,grayscale:true)
 end
 
 def image_from_file_to_grayscale(filename)
+  # This is somewhat slow, takes about one second on a full page.
   return ChunkyPNG::Image.from_file(filename).grayscale
   # ... Conversion to grayscale can in principle be complicated. E.g., simply adding
   #     r+b+g is very inaccurate. However, we don't really care for our application.
