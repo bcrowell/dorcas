@@ -2,10 +2,43 @@
 #    2-dimensional fft
 #-------------------------------------------------------------------------
 
-def convolve(code,to_int:true,human_input:true,retrieve_hits_from_file:nil,batch_code:nil)
+def convolve(code_array,retrieve_hits_from_files,batch_code)
+  # Spawns a set of processes to do a job in parallel.
+  # Code_array contains code for each of the n processes.
+  # Retrieve_hits_from_files contains a list of file names from which to retrieve input. (Can be just one.)
+  # Returns a list of hits.
+  files_to_delete = []
+  pids = []
+  code_array.each { |code|
+    temp = temp_file_name()
+    create_text_file(temp,code)
+    files_to_delete.push(temp)
+    pid = Process.spawn("python3","py/convolve.py",{:in=>temp})
+    pids.push(pid)
+  }
+  pids.each { |pid|
+    Process.wait(pid)
+  }
+  files_to_delete.each { |f|
+    FileUtils.rm_f(f)
+  }
+  hits = []
+  retrieve_hits_from_files.each { |file|
+    File.open(file,'r') { |f|
+      f.each_line {|line|
+        score,x,y,misc = JSON.parse(line)
+        if ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
+        misc.delete('batch')
+        hits.push([score,x,y,misc])
+      }
+    }
+  }
+  return hits
+end
+
+def test_convolve(code,to_int:true,human_input:true)
   # The default values are meant for convenience in writing a test suite.
   # When used with the defaults, for testing, this routine just returns whatever was written to stdout.
-  # In real use, with retrieve_hits, it returns a list of hits.
   # If the output is actually a float, set to_int to false and do an explicit to_f on the string that is returned.
   if human_input then
      # For convenience in testing, allow indentation and comments, and replace commas with newlines.
@@ -14,25 +47,9 @@ def convolve(code,to_int:true,human_input:true,retrieve_hits_from_file:nil,batch
   end
   temp = temp_file_name()
   create_text_file(temp,code)
-  if retrieve_hits_from_file.nil? then
-    result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
-    if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
-    return_value = result
-  else
-    # We're retrieving hits.
-    pid = Process.spawn("python3","py/convolve.py",{:in=>temp})
-    Process.wait(pid)
-    hits = []
-    File.open(retrieve_hits_from_file,'r') { |f|
-      f.each_line {|line|
-        score,x,y,misc = JSON.parse(line)
-       if (!(batch_code.nil?)) and ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
-        misc.delete('batch')
-        hits.push([score,x,y,misc])
-      }
-    }
-    return_value = hits
-  end
+  result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
+  if to_int then result=result.to_i end # For convenience in testing, convert result to an integer.
+  return_value = result
   FileUtils.rm_f(temp)
   return return_value
 end

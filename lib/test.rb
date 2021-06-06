@@ -32,23 +32,23 @@ def verb_test()
   assert_equal(boost_for_no_large_prime_factors(65536*7+1),460800)
   #     ... 2^11 x 3^2 x 5^2 = 65536*7+2*2048; this asserts the current behavior, not the theoretical optimum behavior
   #----------------------------------------------------------------------------------------------
-  assert_equal(convolve("i 2,i 2,b +,o"),4)
-  assert_equal(convolve("i 5,i 2,b -,o"),3)
-  assert_equal(convolve("i 5,i 2,b *,o"),10)
-  assert_equal(convolve("i 69343957,i 37,b /,o"),1874161) # 36^5/37
-  assert_equal(convolve("f 2,f 2,b +,o"),4.0)
-  assert_equal(convolve("f 2,f 2,b -,o"),0.0)
-  assert_equal(convolve("f 2,f 3,b *,o"),6.0)
-  assert_equal(convolve("f 1,f 2,b /,o",to_int:false).to_f,0.5) # 1/2 has an exact binary representation
-  assert_equal(convolve("c hello,o",to_int:false),"hello\n")
-  assert_equal(convolve("i 137,d fine,r fine,o"),137)
-  assert_equal(convolve("i 5,d x,r x,r x,r x,b *,b *,o"),125)
-  assert_equal(convolve("c test/sample_tiny.png,read,i 0,o"),0)
-  assert_equal(convolve("c test/sample_tiny.png,read,u max,o"),218) # find max value of input file; checked in gimp
-  assert_equal(convolve("c test/sample_tiny.png,read_rot,u max,o"),218) # read with 180-degree rotation, max should be the same
-  assert_equal(convolve("c test/sample_tiny.png,read,u sum_sq,o",to_int:false).to_f,1.2e9,tol:0.1e9)
+  assert_equal(test_convolve("i 2,i 2,b +,o"),4)
+  assert_equal(test_convolve("i 5,i 2,b -,o"),3)
+  assert_equal(test_convolve("i 5,i 2,b *,o"),10)
+  assert_equal(test_convolve("i 69343957,i 37,b /,o"),1874161) # 36^5/37
+  assert_equal(test_convolve("f 2,f 2,b +,o"),4.0)
+  assert_equal(test_convolve("f 2,f 2,b -,o"),0.0)
+  assert_equal(test_convolve("f 2,f 3,b *,o"),6.0)
+  assert_equal(test_convolve("f 1,f 2,b /,o",to_int:false).to_f,0.5) # 1/2 has an exact binary representation
+  assert_equal(test_convolve("c hello,o",to_int:false),"hello\n")
+  assert_equal(test_convolve("i 137,d fine,r fine,o"),137)
+  assert_equal(test_convolve("i 5,d x,r x,r x,r x,b *,b *,o"),125)
+  assert_equal(test_convolve("c test/sample_tiny.png,read,i 0,o"),0)
+  assert_equal(test_convolve("c test/sample_tiny.png,read,u max,o"),218) # find max value of input file; checked in gimp
+  assert_equal(test_convolve("c test/sample_tiny.png,read_rot,u max,o"),218) # read with 180-degree rotation, max should be the same
+  assert_equal(test_convolve("c test/sample_tiny.png,read,u sum_sq,o",to_int:false).to_f,1.2e9,tol:0.1e9)
   #                  ... Find total energy in input file. This result is reasonable, since (w)(h)(256^2) is about 2e9.
-  assert_equal(convolve("c test/sample_tiny.png,read,d orig,r orig,u fft,u ifft,r orig,a -,u max,o",to_int:false).to_f,0,tol:10.0)
+  assert_equal(test_convolve("c test/sample_tiny.png,read,d orig,r orig,u fft,u ifft,r orig,a -,u max,o",to_int:false).to_f,0,tol:10.0)
   #                                               ... test that we can do an fft and inverse fft and get back the original image
 
   # A workout with a convolution. To inspect the output b.png visually, comment out the line saying "exit".
@@ -73,7 +73,7 @@ def verb_test()
     #exit,
     c b.png,write
   CODE
-  assert_equal(convolve(code,to_int:false).to_f,201.0,tol:1.0)
+  assert_equal(test_convolve(code,to_int:false).to_f,201.0,tol:1.0)
   # Fiddle with gaussian cross peak detection.
   code = <<-"CODE"
     i 500,d w,                       # semi-arbitrary dimensiona to bloat everything to
@@ -99,7 +99,7 @@ def verb_test()
     #exit,
     c c.png,write
   CODE
-  convolve(code)
+  test_convolve(code)
   #----------------------------------------------------------------------------------------------
   print "Passed all tests.\n"
 end

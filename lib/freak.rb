@@ -50,7 +50,9 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   #print code
 
   # run it
-  hits = convolve(code,human_input:false,batch_code:batch_code,retrieve_hits_from_file:outfile)
+  hits = convolve([code],[outfile],batch_code)
+
+  print hits,"\n"
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)
