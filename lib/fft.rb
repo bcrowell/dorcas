@@ -20,7 +20,8 @@ def convolve(code,to_int:true,human_input:true,retrieve_hits_from_file:nil,batch
     return_value = result
   else
     # We're retrieving hits.
-    result = shell_out("python3 py/convolve.py <#{temp}",output_marker:false)
+    pid = Process.spawn("python3","py/convolve.py",{:in=>temp})
+    Process.wait(pid)
     hits = []
     File.open(retrieve_hits_from_file,'r') { |f|
       f.each_line {|line|
