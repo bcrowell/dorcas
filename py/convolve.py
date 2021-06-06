@@ -313,8 +313,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
   h,w = array.shape
   threshold = threshold_raw/norm
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
-  hits = search_for_peaks(array,w,h,tw,th,threshold,numpy.Inf,radius,norm)
-  hits.sort(reverse=True,key=lambda a: a[0])
+  hits = search_for_peaks(array,w,h,tw,th,threshold,threshold+1.0/norm,radius,norm,max_peaks,0)
   n = len(hits)
   if n>max_peaks:
     n=max_peaks
@@ -331,7 +330,26 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
       # https://unix.stackexchange.com/a/42564/39248
   return (0,None)
 
-def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm):
+def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm,max_peaks,depth):
+  err,hits = search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,max_peaks)
+  if err==0:
+    return hits
+  # too many hits
+  if numpy.isinf(hi):
+    mid = lo+1.0/norm
+  else:
+    mid = (lo+hi)*0.5
+  hits1 = search_for_peaks(array,w,h,tw,th,mid,hi,radius,norm,max_peaks,depth+1)
+  if len(hits1)==max_peaks:
+    return hits1
+  hits2 = search_for_peaks(array,w,h,tw,th,lo,mid,radius,norm,max_peaks-len(hits1),depth+1)
+  return hits1+hits2
+
+def search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,max_peaks):
+  # Returns [err,hits].
+  # If there were going to be too many hits by more than the amount defined by overdo, returns with an error.
+  # If the number of hits is greater than max_peaks but less than overdo, returns the highest ones as requested.
+  overdo = max_peaks*2+10000
   hits = []
   for i in range(w):
     for j in range(h):
@@ -358,6 +376,8 @@ def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm):
           break
       if bad:
         continue
+      if len(hits)>overdo:
+        return [1,None]
       # We have a local max that is over the threshold.
       # Coords (i,j) can legitimately be negative, as when the character is very near the left edge of the page, and the template's width hangs outside.
       # These wrap around due to how the fft works, so fix them here. In cases where (i,j) lies within radius of the left or top, this can
@@ -372,7 +392,10 @@ def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm):
         j2=j-h
         flag_edge = True
       hits.append([x*norm,i2,j2,flag_edge])
-  return hits
+  hits.sort(reverse=True,key=lambda a: a[0])
+  if len(hits)>max_peaks:
+    hits = hits[:max_peaks]
+  return [0,hits]
 
 def do_gaussian_cross_kernel(w,h,a,sigma):
   if not (isinstance(a,int)):
