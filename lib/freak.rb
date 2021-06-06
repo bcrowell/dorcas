@@ -21,10 +21,6 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 
   ink_array_to_image(image_to_ink_array(text))
 
-  chars = 'ε'
-  pats = chars.chars.map{ |c| set.pat(c) }
-  char_names = chars.chars.map { |c| char_to_short_name(c) }
-
   # parameters for gaussian cross peak detection:
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well
   a = (xheight/3.0).round # gives 10 for Giles
@@ -45,14 +41,24 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 
   outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
 
-  code,files_to_delete = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
+  files_to_delete = []
+  all_codes = []
+
+
+  ['αβ','γδ','εζ','ηθ'].each { |chars|
+    pats = chars.chars.map{ |c| set.pat(c) }
+    char_names = chars.chars.map { |c| char_to_short_name(c) }
+    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
+    files_to_delete.concat(killem)
+    all_codes.push(code)
+  }
 
   #print code
 
   # run it
-  hits = convolve([code],[outfile],batch_code)
+  hits = convolve(all_codes,[outfile],batch_code)
 
-  print hits,"\n"
+  print "hits written to #{outfile}\n"
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)

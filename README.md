@@ -27,7 +27,7 @@ Dumb Optical Recognition using Correlation
 
 ## Dependencies:
 
-debian packages: parallel r-cran-minpack.lm ruby python3 unicode libgd-perl ruby-zip python3-numpy python3-pil
+debian packages: ruby python3 r-cran-minpack.lm unicode libgd-perl ruby-zip python3-numpy python3-pil
 
 optional debian packages: imagemagick qpdf
 
@@ -154,8 +154,6 @@ Unix fontconfig utilities fc-match and fc-query, which won't work on windows.
 
 We assume we can invoke the Unix command-line utility "unicode" through a shell.
 (See lib/string_util.rb.)
-
-For parallel processing, we use gnu parallel. (See lib/correl.rb.)
 
 For graphing, we shell out to the R language, although these functions are
 not needed for operation of the software. R is also used for curve fitting.
