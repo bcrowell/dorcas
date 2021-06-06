@@ -186,3 +186,22 @@ end
 def mm_to_pt(mm)
   return mm/(25.4/72.0) # https://en.wikipedia.org/wiki/Point_(typography)
 end
+
+def png_report(monitor_file,text,hits,chars,set,verbosity:2)
+  if monitor_file.nil? then die("no filename set for monitor file") end
+  monitor_image = text.clone.grayscale
+  overlays = {}
+  v = {}
+  chars.chars.each { |c|
+    v[char_to_short_name(c)] = set.pat(c).visual(black_color:ChunkyPNG::Color::rgba(255,0,0,130),red_color:nil) # semitransparent red
+  }
+  hits.each { |x|
+    score,i,j,misc = x
+    short_name = misc['label']
+    if verbosity>=3 then print "    ",x,"\n" end
+    vv = v[short_name]
+    print "vv.nil?=#{vv.nil?}, i,j=#{[i,j]} monitor_image=#{monitor_image.class.name}\n"
+    monitor_image = compose_safe(monitor_image,v[short_name],i,j)
+    monitor_image.save(monitor_file)
+  }
+end

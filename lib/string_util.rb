@@ -78,7 +78,6 @@ def is_name_of_hebrew_letter(s)
   return s=~/^(Alef|Bet|Gimel|Dalet|He|Vav|Zayin|Het|Tet|Yod|Final_Kaf|Kaf|Lamed|Final_Mem|Mem|Final_Nun|Nun|Samekh|Ayin|Final_Pe|Pe|Final_Tsadi|Tsadi|Qof|Resh|Shin|Tav)$/i
 end
 
-
 def char_unicode_property(c,property)
   # https://en.wikipedia.org/wiki/Unicode_character_property
   # Shells out to the linux command-line utility called	"unicode," which is installed as the debian packaged of	the same name.

@@ -10,7 +10,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
   set = Fset.from_file_or_directory(job.set)
 
-  if false then
+  if true then
     monitor_file = temp_file_name_short(prefix:"mon")+".png"
     monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
     monitor_image = text.clone.grayscale
@@ -41,11 +41,15 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
 
   outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
 
+  all_chars = ''
   files_to_delete = []
   all_codes = []
 
 
+  #['αααααααααααααα'].each { |chars|
+  #['αααααααααααααα','ββββββββββββββ','γγγγγγγγγγγγγγγγ','δδδδδδδδδδδδδδδδδ'].each { |chars|
   ['αβ','γδ','εζ','ηθ'].each { |chars|
+    all_chars = all_chars+chars
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
     code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names)
@@ -58,15 +62,17 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # run it
   hits = convolve(all_codes,[outfile],batch_code)
 
+  png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
+
   print "hits written to #{outfile}\n"
 
   files_to_delete.each { |f|
     FileUtils.rm_f(f)
   }
 
-  if false then
+  if true then
     print "monitor file #{monitor_file} not being deleted for convenience ---\n"
-    FileUtils.rm_f(monitor_file)
+    #FileUtils.rm_f(monitor_file)
   end
 end
 
