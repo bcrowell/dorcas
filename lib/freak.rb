@@ -1,4 +1,4 @@
-def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosity:2,batch_code:'')
+def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -18,8 +18,6 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
     print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
     # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
   end
-
-  ink_array_to_image(image_to_ink_array(text))
 
   # parameters for gaussian cross peak detection:
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well
@@ -62,7 +60,31 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # run it
   hits = convolve(all_codes,[outfile],batch_code)
 
-  png_report(monitor_file,text,hits,batch_code,all_chars,set,verbosity:2)
+  bw = {}
+  red = {}
+  sdp = {}
+  all_chars.chars.each { |c|
+    n = char_to_short_name(c)
+    bw[n] = image_to_ink_array(set.pat(c).bw)
+    red[n] = image_to_ink_array(set.pat(c).red)
+    pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
+    sdp[n] = pat_stats['sd']
+  }
+
+  hits2 = []
+  bg = stats['background']
+  threshold = 0.62 # hardcoded, fixme
+  hits.each { |x|
+    score,i,j,misc = x
+    short_name = misc['label']
+    norm = sdp[short_name]*stats['sd_in_text']
+    co = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
+    if co>threshold then hits2.push(x) end
+  }
+  print "filtered #{hits.length} to #{hits2.length}\n"
+  hits = hits2
+
+  png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
 
   print "hits written to #{outfile}\n"
 

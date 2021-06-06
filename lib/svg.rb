@@ -187,7 +187,7 @@ def mm_to_pt(mm)
   return mm/(25.4/72.0) # https://en.wikipedia.org/wiki/Point_(typography)
 end
 
-def png_report(monitor_file,text,hits,batch_label,chars,set,verbosity:2)
+def png_report(monitor_file,text,hits,chars,set,verbosity:2)
   if monitor_file.nil? then die("no filename set for monitor file") end
   monitor_image = text.clone.grayscale
   overlays = {}

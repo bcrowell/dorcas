@@ -72,7 +72,7 @@ def main()
   text,stats,peak_to_bg,dpi = analyze_text_image(text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
-    freak(job,text,stats,output_dir,report_dir,batch_code:Process.pid.to_s)
+    freak(job,text,text_ink,stats,output_dir,report_dir,batch_code:Process.pid.to_s)
     if false then
       # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
       shotgun(job,text,stats,output_dir,report_dir)
