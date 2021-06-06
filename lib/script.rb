@@ -95,11 +95,11 @@ class Script
     # that are from the same script. This was an issue for GFSPorson, which lacks Latin characters.
     guard = nil
     if self.name=='latin' then
-      if side==0 then guard = "AT1!H.,;:'{_=|~?/" else guard="!]':?HTiXo" end
+      if side==0 then guard = "AT1!H.,;:p'{_=|~?/" else guard="!]':?HTiXoj" end
     end
     if self.name=='greek' then
       # Don't add characters to the following that may not be covered in a Greek font. In particular, GFSPorson lacks Latin characters.
-      if side==0 then guard = "ΠΩΔΥΗ.,'" else guard="ΠΩΔΥΗ'" end
+      if side==0 then guard = "ΠΩΔΥΗ.,'ρ" else guard="ΠΩΔΥΗ'" end
     end
     if self.name=='hebrew' then
       # Don't add characters to the following that may not be covered in a Hebrew font.

@@ -43,6 +43,16 @@ def image_to_ink_array(image)
   return generate_array(w,h,lambda {|i,j| color_to_ink(image[i,j]) })
 end
 
+def image_to_boolean_ink_array(image)
+  return generate_array(image.width,image.height,lambda {|i,j| has_ink(image[i,j])})
+end
+
+def boolean_ink_array_to_image(b)
+  w,h =ink_array_dimensions(b) 
+  ink = generate_array(w,h,lambda {|i,j| if b[i][j] then 1.0 else 0.0 end}) # if true, then black ink
+  return ink_array_to_image(ink)
+end
+
 def image_fingerprint(image)
   # input is a chunkypng object
   w,h = image.width,image.height
@@ -124,7 +134,10 @@ end
 def compose_safe(a,b,i,j)
   # ChunkyPNG crashes if b hangs outside of a. In that situation, just silently fail.
   # Some of the ! functions like compose! seem to crash, so don't use them.
-  if i+b.width>a.width-1 or j+b.height>a.height-1 then return a end
+  if i+b.width>a.width or j+b.height>a.height then
+    #warn("failing")
+    return a
+  end
   return a.compose(b,i,j)
 end
 

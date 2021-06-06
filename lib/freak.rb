@@ -63,23 +63,35 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.6
   bw = {}
   red = {}
   sdp = {}
+  pat_by_name = {}
   all_chars.chars.each { |c|
     n = char_to_short_name(c)
-    bw[n] = image_to_ink_array(set.pat(c).bw)
-    red[n] = image_to_ink_array(set.pat(c).red)
+    p = set.pat(c)
+    pat_by_name[n] = p
+    bw[n] = image_to_ink_array(p.bw)
+    red[n] = image_to_ink_array(p.red)
     pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
     sdp[n] = pat_stats['sd']
   }
 
+  foo = pat_by_name['epsilon']
+  Pat.fix_red(foo.red,foo.baseline)
+
   hits2 = []
   bg = stats['background']
-  threshold = 0.62 # hardcoded, fixme
+  threshold1 = 0.62 # hardcoded, fixme
+  threshold2 = 0.62 # ...
   hits.each { |x|
     score,i,j,misc = x
     short_name = misc['label']
     norm = sdp[short_name]*stats['sd_in_text']
-    co = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
-    if co>threshold then hits2.push(x) end
+    co1 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
+    if i==32 and j==154 then debug=pat_by_name[short_name] else debug=nil end
+    co2,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,debug:debug)
+    if i==32 and j==154 then print "i,j=#{i} #{j} raw=#{score}, co1=#{co1}, co2=#{co2}\n" end
+    if co1<threshold1 then next end
+    if co2<threshold2 then next end
+    hits2.push(x)
   }
   print "filtered #{hits.length} to #{hits2.length}\n"
   hits = hits2

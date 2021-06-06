@@ -59,7 +59,7 @@ def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold)
   hits.each { |x|
     c,i,j = x
     s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
-    s = (s-mean)/(1.0-mean) # formalize so that a perfect match is 1 and a real-world uncorrelated result is about 0
+    s = (s-mean)/(1.0-mean) # normalize so that a perfect match is 1 and a real-world uncorrelated result is about 0
     s = s*1.23-0.08 
     # ... Adjust so that  we can use the same threshold as with the basic correlation algorithm.
     #     The multiplicative constant is derived by making good matches be about the same. We then apply the -0.08 so that
@@ -74,11 +74,12 @@ def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold)
   return cooked
 end
 
-def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats)
+def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,debug:nil)
   # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
   # text_raw, pat_raw, and red_raw are ink arrays
   # dx,dy are offsets of pat within text
   # stats should include the keys background, dark, and threshold, which refer to text
+  # If debug is not nil, it should be a Pat object.
   w,h = ink_array_dimensions(pat_raw)
 
   background,threshold,dark = stats['background'],stats['threshold'],stats['dark']
@@ -90,13 +91,22 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats)
   pat = array_elements_threshold(pat_raw,0.5)
   red = array_elements_threshold(red_raw,0.5)
 
-  filename = sprintf("squirrel%04d_%04d.png",dx,dy)
-  #ink_array_to_image(text_gray).save(filename)
+  do_debug = ! (debug.nil?)
+  if do_debug then
+    pat_obj = debug
+    filename = sprintf("squirrel%04d_%04d.png",dx,dy)
+    v = pat_obj.visual(black_color:ChunkyPNG::Color::rgba(0,0,255,130),red_color:ChunkyPNG::Color::rgba(255,0,0,130))
+    #v.save("sqv_"+filename)
+    ii = ink_array_to_image(text_gray)
+    ii = compose_safe(ii,v,0,0)
+    ii.save(filename)
+  end
 
   norm = 0.0
   total = 0.0
-  0.upto(w-1) { |i|
-    0.upto(h-1) { |j|
+  if debug then terms=generate_array(w,h,lambda {|i,j| 0.0}) end
+  0.upto(h-1) { |j|
+    0.upto(w-1) { |i|
       if red[i][j]==1 then next end
       p = pat[i][j]
       t = text[i][j]
@@ -105,9 +115,11 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats)
       if (!pp) and (!tt) then wt=0.0; score=0.0 end # we don't care if they're both whitespace
       if (pp!=tt) then wt=1.0; score= -3.0 end      # we care a lot if one has ink and the other doesn't
       if pp and tt then wt=1.0; score= 1.0 end      # they both have ink in the same place
+      if debug then terms[i][j]=wt*score end
       norm += wt
       total += wt*score
     }
   }
+  if debug then print array_ascii_art(terms,lambda {|x| {0=>' ',1=>'+',-3=>'-'}[x.round]}) end
   return [total/norm,{"image"=>filename}]
 end

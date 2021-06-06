@@ -95,7 +95,7 @@ class Pat
     temp_files.each { |n| FileUtils.rm_f(n) }
   end
 
-  def Pat.from_file(filename)
+  def Pat.from_file(filename,if_fix_red:true)
     temp_files = []
     read_as_name = ["bw.png","red.png","data.json"]
     name_to_index = {}
@@ -128,8 +128,49 @@ class Pat
     temp_files.each { |n| FileUtils.rm_f(n) }
     if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
     if data.has_key?('line_spacing') then line_spacing=data['line_spacing'] end
-    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
+    if if_fix_red then red=Pat.fix_red(red,data['baseline']) end
+    p = Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
+    return p
   end
+
+  def Pat.fix_red(red,baseline)
+    # It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
+    # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
+    # down into ε's whitespace.
+    r = image_to_boolean_ink_array(red)
+    #print array_ascii_art(r,lambda {|x| {true=>'t',false=>' '}[x]}) 
+    w,h = ink_array_dimensions(r)
+
+    red_below_baseline = []
+    0.upto(w-1) { |i|
+      # Find the fraction of pixels above baseline that are red.
+      n = 0
+      nr = 0
+      0.upto(baseline) { |j|
+        n += 1
+        if r[i][j] then nr +=1 end
+      }
+      red_below_baseline.push(n>0 && nr/n.to_f>0.25)
+    }
+    smear = (w*0.07).round
+    smeared_red_below_baseline = red_below_baseline.clone
+    0.upto(w-1) { |i|
+      (i-smear).upto(i+smear) { |ii|
+        if ii>=0 and ii<=w-1 and red_below_baseline[ii] then smeared_red_below_baseline[i]=true end
+      }
+    }
+    red_below_baseline = smeared_red_below_baseline
+    0.upto(w-1) { |i|
+      if red_below_baseline[i] then
+        baseline.upto(h-1) { |j|
+          r[i][j] = true
+        }
+      end
+    }
+    #print array_ascii_art(r,lambda {|x| {true=>'t',false=>' '}[x]}) 
+    return boolean_ink_array_to_image(r)
+  end
+
 end
 
 #---------- end of class Pat
