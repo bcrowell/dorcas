@@ -7,10 +7,29 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   # parameters for peak detection kernel.
   # stats should contain keys 'background', 'dark', and 'threshold'
 
+  est_max_chars = 0.3*text.width*text.height/(xheight*xheight)
+  # The 0.3 was estimated from some sample text.
+  est_max_freq = 0.13 # frequency of 'e' in English text, https://en.wikipedia.org/wiki/Letter_frequency
+  est_max_one_char = est_max_freq*est_max_chars # estimated maximum number of occurrences of any character
+  max_hits = (est_max_one_char*2).round # double the plausible number of occurrences
+  #print "est_max_chars=#{est_max_chars}, est_max_freq=#{est_max_freq}, est_max_one_char=#{est_max_one_char}, max_hits=#{max_hits}\n"
+
   # The following should not be hardcoded, fixme.
-  threshold1,threshold2,threshold3 = [0.1,-0.5,-0.5]
+  # Setting threshold1 very low incurs a big performance hit in peak detection and ends up bringing back only a few more
+  # mathches  that would make it through later stages.
+  # Setting threshold1:
+  #   Comparing values of 0.0 and 0.2, the latter cut about half the matches while getting rid of only 1 of 51 hits later judged good.
+  #   At 0.2, we get about 18% real matches, the rest false positives.
+  # Setting threshold2:
+  #   When other thresholds are set to reasonable values (t1=0.2, t3=0.0), setting t2 to any value less <=0.5 doesn't
+  #   get rid of any matches. Setting it to 0.7 gives about 1/3 false negatives. Setting it fairly high gives me more
+  #   room to make the final matching algorithm more cpu-intensive.
+  # Setting threshold3:
+  #   If you leave the earlier stages wide open (threshold1=-1, max_hits very high), then setting
+  #   threshold3=-0.2 gives many obviously bad matches, 0 gives only a few false positives. If early stages are
+  #   set much tighter, then threshold3 can be set as low as -0.5 with very few false positives.
+  threshold1,threshold2,threshold3 = [0.2,0.4,0.0]
   smear = 2 # used in Pat.fix_red()
-  #threshold1 = -1.0 # qwe
 
   # parameters for gaussian cross peak detection:
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well; varying sigma mainly just renormalizes scores
@@ -48,14 +67,14 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   files_to_delete = []
   all_codes = []
 
-
   #['αααααααααααααα'].each { |chars|
   #['αααααααααααααα','ββββββββββββββ','γγγγγγγγγγγγγγγγ','δδδδδδδδδδδδδδδδδ'].each { |chars|
   ['αβ','γδ','εζ','ηθ'].each { |chars|
     all_chars = all_chars+chars
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
-    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1)
+    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
+           threshold1,max_hits)
     files_to_delete.concat(killem)
     all_codes.push(code)
   }
@@ -136,7 +155,7 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
 end
 
 def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,
-                       parallelizable:false)
+                       max_hits,parallelizable:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
   # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
@@ -175,7 +194,6 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
   write_debugging_images = true
-  max_hits = 10
   want_clipping = false
   want_filtering = !(high_pass.nil?)
   if want_filtering then  
