@@ -81,14 +81,15 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,threshold:0.6
   bg = stats['background']
   threshold1 = 0.62 # hardcoded, fixme
   threshold2 = 0.62 # ...
+  smear = 2         # ...
   hits.each { |x|
     score,i,j,misc = x
     short_name = misc['label']
     norm = sdp[short_name]*stats['sd_in_text']
     co1 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
     if i==32 and j==154 then debug=pat_by_name[short_name] else debug=nil end
-    co2,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,debug:debug)
-    if i==32 and j==154 then print "i,j=#{i} #{j} raw=#{score}, co1=#{co1}, co2=#{co2}\n" end
+    co2,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
+    print "i,j=#{i} #{j} raw=#{score}, co1=#{co1}, co2=#{co2}\n"
     if co1<threshold1 then next end
     if co2<threshold2 then next end
     hits2.push(x)

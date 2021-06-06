@@ -74,7 +74,7 @@ def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold)
   return cooked
 end
 
-def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,debug:nil)
+def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,smear:2,debug:nil)
   # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
   # text_raw, pat_raw, and red_raw are ink arrays
   # dx,dy are offsets of pat within text
@@ -112,8 +112,13 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,debug:nil)
       t = text[i][j]
       wt = 1
       pp,tt = (p==1),(t==1) # boolean versions
-      if (!pp) and (!tt) then wt=0.0; score=0.0 end # we don't care if they're both whitespace
-      if (pp!=tt) then wt=1.0; score= -3.0 end      # we care a lot if one has ink and the other doesn't
+      pn = squirrel_helper_has_neighbor(pat,w,h,i,j,smear)
+      tn = squirrel_helper_has_neighbor(text,w,h,i,j,smear)
+      # We don't care if they're both whitespace. Default to doing nothing unless something more special happens.
+      wt=0.0
+      score=0.0
+      mismatch = ((!tn) && pp) || ((!pn) && tt)
+      if mismatch then wt=1.0; score= -3.0 end      # we care a lot if one has ink and the other doesn't
       if pp and tt then wt=1.0; score= 1.0 end      # they both have ink in the same place
       if debug then terms[i][j]=wt*score end
       norm += wt
@@ -122,4 +127,16 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,debug:nil)
   }
   if debug then print array_ascii_art(terms,lambda {|x| {0=>' ',1=>'+',-3=>'-'}[x.round]}) end
   return [total/norm,{"image"=>filename}]
+end
+
+def squirrel_helper_has_neighbor(x,w,h,i,j,radius)
+  (-radius).upto(radius) { |di|
+    (-radius).upto(radius) { |dj|
+      ii = i+di
+      jj = j+dj
+      if ii<0 or ii>w-1 or jj<0 or jj>h-1 then next end
+      if x[ii][jj]==1 then return true end
+    }
+  }
+  return false
 end
