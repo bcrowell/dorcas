@@ -312,14 +312,33 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
     return (1,f"object {array} is not a numpy array")
   h,w = array.shape
   threshold = threshold_raw/norm
-  hits = []
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
+  hits = search_for_peaks(array,w,h,tw,th,threshold,numpy.Inf,radius,norm)
+  hits.sort(reverse=True,key=lambda a: a[0])
+  n = len(hits)
+  if n>max_peaks:
+    n=max_peaks
+  with open(filename,mode) as f: # On linux, when you open to append it's non-locking. This may not work on windows.
+    for i in range(n):
+      z = hits[i].copy()
+      flag_edge = z.pop()
+      misc = {"label":label,"batch":batch_code}
+      if flag_edge:
+        misc['edge']=1 # This flag means that this point has at least one negative coord, should be checked against neighbors to see if any are redundant.
+      z.append(misc)
+      print(json.dumps(z),file=f) # On linux, most likely this is atomic if the line is under about 4k.
+      # At least on unix, this seems likely to avoid having one line interrupted by another from another process. 
+      # https://unix.stackexchange.com/a/42564/39248
+  return (0,None)
+
+def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm):
+  hits = []
   for i in range(w):
     for j in range(h):
       x = array[j,i].real
       # ... Even when not using high-pass filtering, results have small imaginary parts.
       #     Note that numpy.complex64 will not throw an error on comparison: https://stackoverflow.com/q/67840584/1142217
-      if x<threshold:
+      if x<lo or x>=hi:
         continue
       # For efficiency, first do some code that tries to efficienctly impose the local max condition right away.
       if (i>0 and x<array[j,i-1]) or (i<w-1 and x<array[j,i+1]) or (j>0 and x<array[j-1,i]) or (j<h-1 and x<array[j+1,i]):
@@ -353,22 +372,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
         j2=j-h
         flag_edge = True
       hits.append([x*norm,i2,j2,flag_edge])
-  hits.sort(reverse=True,key=lambda a: a[0])
-  n = len(hits)
-  if n>max_peaks:
-    n=max_peaks
-  with open(filename,mode) as f: # On linux, when you open to append it's non-locking. This may not work on windows.
-    for i in range(n):
-      z = hits[i].copy()
-      flag_edge = z.pop()
-      misc = {"label":label,"batch":batch_code}
-      if flag_edge:
-        misc['edge']=1 # This flag means that this point has at least one negative coord, should be checked against neighbors to see if any are redundant.
-      z.append(misc)
-      print(json.dumps(z),file=f) # On linux, most likely this is atomic if the line is under about 4k.
-      # At least on unix, this seems likely to avoid having one line interrupted by another from another process. 
-      # https://unix.stackexchange.com/a/42564/39248
-  return (0,None)
+  return hits
 
 def do_gaussian_cross_kernel(w,h,a,sigma):
   if not (isinstance(a,int)):
