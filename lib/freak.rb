@@ -62,7 +62,7 @@ def freak(job,text,stats,output_dir,report_dir,xheight:30,threshold:0.60,verbosi
   # run it
   hits = convolve(all_codes,[outfile],batch_code)
 
-  png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
+  png_report(monitor_file,text,hits,batch_code,all_chars,set,verbosity:2)
 
   print "hits written to #{outfile}\n"
 
