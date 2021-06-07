@@ -1,6 +1,4 @@
 # coding: utf-8
-  # figure out from job object: text_file(=job.image), text, spacing_multiple, threshold, cluster_threshold, output_dir(=job.output), prev_set(=job.set)
-  # fudge_size(=job.adjust_size), stats(=page.stats), peak_to_bg(=page....), dpi(=page...)
 
 def learn_pats(job,page,report_dir,temp_dir)
   if job.no_matching then
@@ -11,7 +9,7 @@ def learn_pats(job,page,report_dir,temp_dir)
   return pats
 end
 
-def  match_characters_to_image(job,page,report_dir,temp_dir)
+def match_characters_to_image(job,page,report_dir,temp_dir)
   all_fonts,script_and_case_to_font_name = load_fonts(job)
 
   pats = []
@@ -31,8 +29,7 @@ def  match_characters_to_image(job,page,report_dir,temp_dir)
       if (not job.force_location.nil?) and job.force_location.has_key?(char) then force_loc=job.force_location[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
-      pat,hits,composites = match_character(char,text,text_file,temp_dir,prev_set,output_dir,seed_font,dpi,script,threshold,stats,cluster_threshold,
-                                 report_dir,matches_svg_file,name,force_cl,force_loc)
+      pat,hits,composites = match_character(char,job,page,temp_dir,seed_font,dpi,script,report_dir,matches_svg_file,name,force_cl,force_loc)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }
@@ -41,46 +38,37 @@ def  match_characters_to_image(job,page,report_dir,temp_dir)
 
 end
 
-def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,
-         char_name,force_cl,force_loc)
+  # figure out from job object: text_file(=job.image), text, spacing_multiple, threshold, cluster_threshold, output_dir(=job.output), prev_set(=job.set)
+  # fudge_size(=job.adjust_size), stats(=page.stats), peak_to_bg(=page....), dpi(=page...)
+
+def match_character(char,job,page,temp_dir,seed_font,dpi,script,report_dir,matches_svg_file,name,force_cl,force_loc)
   verbosity = 2
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
   pat_from_prev = false
-  if !(prev_set.nil?) then pat_from_prev=prev_set.pat(char) end
-  if pat_from_prev and not force_cl.nil? then
-    warn("The pattern #{prev_pat_filename} exists for character #{char}, but prefer_cluster is set to #{force_cl+1}.\n"+
-         "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
-         "Normally the prefer_cluster feature is used with the seed font, not with a previously constructed pattern.\n")
-  end
-  if pat_from_prev and not force_loc.nil? then
-    warn("A pattern exists in the input pattern set for character #{char}, but force_loc is set to #{force_loc}.\n"+
-         "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
-         "Normally the force_location feature is used with the seed font, not with a previously constructed pattern.\n")
-  end
+  if !(job.set.nil?) then pat_from_prev=job.set.pat(char) end
+  wmatch_character_messages_helper(pat_from_prev,force_cl,force_loc,verbosity)
   if pat_from_prev then
-    if verbosity>=2 then print "  Taking pattern from previous run\n" end
-    pat = prev_set.pat(char)
+    pat = job.set.pat(char)
   else
-    if verbosity>=2 then print "  Generating new character from seed font.\n" end
-    pat = char_to_pat(char,temp_dir,f,dpi,script,char)
+    pat = char_to_pat(char,temp_dir,f,page.dpi,script,char)
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
   max_hits = 30 # Performance is bad when the number of hits is very large.
-  hits = match(text,pat,stats,threshold,force_loc,max_hits)
-  composites = swatches(hits,text,pat,stats,char,cluster_threshold)
+  hits = match(text,pat,page.stats,threshold,force_loc,max_hits)
+  # in git commit cda9ba6ff452a0b508 , file match.rb, function old_match()
+  # Also see notes at top of Match class.
+  composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold)
+  # ... in match.rb
   if force_cl.nil? then
     composite = composites[0]
   else
-    if verbosity>=2 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
-    if force_cl<0 or force_cl>composites.length-1 then 
-      die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
-    end
+    match_character_messages_helper2(verbosity,force_cl,composites,char)
     composite = composites[force_cl]
   end
   if composite.nil? then print "  no matches found for #{char}\n"; return end
-  matches_as_svg(report_dir,matches_svg_file,char_name,text_file,text,pat,hits,composites)
+  matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,hits,composites)
   pat.transplant(composite)
   pat.save(Pat.char_to_filename(output_dir,char))
   return [pat,hits,composites]
@@ -165,3 +153,31 @@ def copy_all_pat_files(set,output_dir)
     set.pat(char_name).save(destination)
   }
 end
+
+def match_character_messages_helper(pat_from_prev,force_cl,force_loc,verbosity)
+  if pat_from_prev and not force_cl.nil? then
+    warn("The pattern #{prev_pat_filename} exists for character #{char}, but prefer_cluster is set to #{force_cl+1}.\n"+
+         "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
+         "Normally the prefer_cluster feature is used with the seed font, not with a previously constructed pattern.\n")
+  end
+  if pat_from_prev and not force_loc.nil? then
+    warn("A pattern exists in the input pattern set for character #{char}, but force_loc is set to #{force_loc}.\n"+
+         "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
+         "Normally the force_location feature is used with the seed font, not with a previously constructed pattern.\n")
+  end
+  if verbosity>=2 then
+    if pat_from_prev then
+      print "  Taking pattern from previous run\n"
+    else
+      print "  Generating new character from seed font.\n"
+    end
+  end
+end
+
+def match_character_messages_helper2(verbosity,force_cl,composites,char)
+  if verbosity>=2 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
+  if force_cl<0 or force_cl>composites.length-1 then 
+    die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
+  end
+end
+
