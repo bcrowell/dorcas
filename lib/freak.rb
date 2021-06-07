@@ -5,11 +5,18 @@ def freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,ve
   # units is the obvious, trivial one of multiplying or dividing by 255.
   # stats should contain keys 'background', 'dark', and 'threshold'
 
+  image_bg = ink_to_png_8bit_grayscale(stats['background'])
+  image_ampl = ink_to_png_8bit_grayscale(stats['background'])-ink_to_png_8bit_grayscale(stats['dark']) # positive
+  image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
+  print "image_bg,image_ampl,image_thr,xheight = #{[image_bg,image_ampl,image_thr,xheight]}\n"
+
   # Convolve allows a high-pass filter to get rid of any modulation of background.
   # But this is not really needed when using the peak detection kernel, which makes the results
   # insensitive to a DC or slowly varying background.
   #high_pass = [10*xheight,10*xheight] # x period and y period
   high_pass = nil
+
+  if chars.nil? then die("chars = nil") end
 
   all_chars = ''
   files_to_delete = []
@@ -21,7 +28,7 @@ def freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,ve
     all_chars = all_chars+chars
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
-    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
+    code,killem = freak_generate_code_and_prep_files(outfile,batch_code,page.image,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
            threshold1,max_hits)
     files_to_delete.concat(killem)
     all_codes.push(code)
@@ -30,7 +37,8 @@ def freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,ve
   #print code
 
   # run it
-  return convolve(all_codes,[outfile],batch_code)
+  hits = convolve(all_codes,[outfile],batch_code)
+  return [hits,files_to_delete]
 
 end
 

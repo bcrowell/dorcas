@@ -8,7 +8,7 @@ class Page
     @png_filename = png_filename
   end
 
-  attr_accessor :image,:ink,:png_filename
+  attr_accessor :image,:ink,:png_filename,:stats
 
   def width
     return self.image.width

@@ -4,6 +4,7 @@
 require 'oily_png'  # ubuntu package ruby-oily-png
 require 'json' # ubuntu package ruby-zip
 require 'zip'
+require 'set'
 
 require_relative "lib/job"
 require_relative "lib/verbing"
@@ -69,13 +70,13 @@ def main()
   page = Page.from_file(text_file) # handles extracting a page from a pdf, if that syntax was used
   job.image = page.png_filename
   stats,peak_to_bg,dpi = analyze_text_image(page,spacing_multiple,job.guess_dpi,job.guess_font_size)
+  page.stats = stats
 
   if job.characters.nil? then
     m = Match.new(characters:'αβγδεζθη') # fixme
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
     set = Fset.from_file_or_directory(job.set)
-    xheight = seed_font.metrics(dpi,script)['xheight']
-    match.execute(page,set,xheight,batch_code:Process.pid.to_s)
+    m.execute(page,set,batch_code:Process.pid.to_s)
     if false then
       # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
       shotgun(job,text,stats,output_dir,report_dir)

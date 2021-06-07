@@ -22,24 +22,18 @@ class Match
 
   attr_reader :scripts,:characters
 
-  def execute(page,set,xheight:30,verbosity:2,batch_code:'')
-    # caller can get set from job.set, xheight from...?
-    # Xheight can come from seed_font.metrics(dpi,script)['xheight'], is used to estimate
-    # parameters for peak detection kernel.
+  def execute(page,set,verbosity:2,batch_code:'')
+    # caller can get set from job.set. Page must have .stats containing an 'x_height' key, which
+    # is used to estimate parameters for peak detection kernel and maximum number of hits.
+    # Stats should also contain keys 'background', 'dark', and 'threshold'.
 
-    pars = three_stage_guess_pars(page,xheight)
+    unless ['x_height','background','dark','threshold'].to_set.subset?(page.stats.keys.to_set) then
+      die("stats has keys #{stats.keys}, does not contain the required ones")
+    end
 
-    stats = page.stats # should contain keys 'background', 'dark', and 'threshold'
+    stats = page.stats
     text = page.image
     text_ink = page.ink
-
-    # Input image stats are all in ink units. See comments at top of function about why it's OK
-    # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
-    # is defined so that black is 0.
-    image_bg = ink_to_png_8bit_grayscale(stats['background'])
-    image_ampl = ink_to_png_8bit_grayscale(stats['background'])-ink_to_png_8bit_grayscale(stats['dark']) # positive
-    image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
-    print "image_bg,image_ampl,image_thr = #{[image_bg,image_ampl,image_thr]}\n"
 
     if true then
       monitor_file = temp_file_name_short(prefix:"mon")+".png"
@@ -50,7 +44,7 @@ class Match
       # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
     end
 
-    hits = three_stage(page,chars,pars,xheight,batch_code)
+    hits = three_stage(page,self.characters,set,stats,batch_code,monitor_file:monitor_file)
 
     if true then
       print "monitor file #{monitor_file} not being deleted for convenience ---\n"
@@ -60,12 +54,20 @@ class Match
   end
 end
 
-def three_stage(page,chars,pars,xheight,batch_code)
+def three_stage(page,chars,set,stats,batch_code,monitor_file:nil)
+  xheight = stats['x_height']
+
+  pars = three_stage_guess_pars(page,xheight)
   threshold1,threshold2,threshold3,sigma,a,smear,max_hits = pars
+
+  # Input image stats are all in ink units. See comments at top of function about why it's OK
+  # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
+  # is defined so that black is 0.
+  stats = page.stats
 
   # Three-stage matching consisting of freak, simple correlation, and squirrel.
   outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-  hits = freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,batch_code:batch_code)
+  hits,files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,max_hits,batch_code:batch_code)
 
   bw = {}
   red = {}
@@ -90,9 +92,9 @@ def three_stage(page,chars,pars,xheight,batch_code)
     co1,i,j,misc = x
     short_name = misc['label']
     norm = sdp[short_name]*stats['sd_in_text']
-    co2 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
+    co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
     debug=nil
-    co3,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
+    co3,garbage = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
     if make_scatterplot then scatt.push([co1,co3]) end
     #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}\n" end
     if co2<threshold2 then next end
@@ -102,7 +104,7 @@ def three_stage(page,chars,pars,xheight,batch_code)
   print "filtered #{hits.length} to #{hits2.length}\n"
   hits = hits2
 
-  png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
+  unless monitor_file.nil? then png_report(monitor_file,page.image,hits,chars,set,verbosity:2) end
   if make_scatterplot then print ascii_scatterplot(hits,save_to_file:'scatt.txt') end
 
   files_to_delete.each { |f|
