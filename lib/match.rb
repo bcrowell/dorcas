@@ -5,7 +5,8 @@ class Match
   # options such as forcing a character to be matched near a certain location on the page.
   # Forcing location is not yet implemented. When implementing it, use squirrel only, not freak. See old code
   # in git commit cda9ba6ff452a0b508 , file match.rb, function old_match().
-  def initialize(scripts:nil,characters:nil)
+  # Meta_threshold is meant to go from 0 to 1. See tuning.rb for details.
+  def initialize(scripts:nil,characters:nil,meta_threshold:0.5)
     # Scripts is a list of script names or Script objects. Characters is a string containing the characters to be matched.
     # Either or both can be left to be set by default.
     if scripts.nil? then
@@ -22,9 +23,11 @@ class Match
       characters = scripts.map { |s| s.alphabet(c:"both") }.inject('') {|s1,s2| s1+s2} # both upper and lower case in every script
     end
     @characters = characters
+    @meta_threshold = meta_threshold
   end
 
   attr_reader :scripts,:characters
+  attr_accessor :meta_threshold
 
   def execute(page,set,verbosity:2,batch_code:'')
     # caller can get set from job.set. Page must have .stats containing an 'x_height' key, which
@@ -48,7 +51,7 @@ class Match
       # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
     end
 
-    hits = three_stage(page,self.characters,set,stats,batch_code,monitor_file:monitor_file)
+    hits = three_stage(page,self.characters,set,stats,batch_code,self.meta_threshold,monitor_file:monitor_file)
 
     if true then
       print "monitor file #{monitor_file} not being deleted for convenience ---\n"
@@ -58,10 +61,10 @@ class Match
   end
 end
 
-def three_stage(page,chars,set,stats,batch_code,monitor_file:nil)
+def three_stage(page,chars,set,stats,batch_code,meta_threshold,monitor_file:nil)
   xheight = stats['x_height']
 
-  pars = three_stage_guess_pars(page,xheight)
+  pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
   threshold1,threshold2,threshold3,sigma,a,smear,max_hits = pars
 
   # Input image stats are all in ink units. See comments at top of function about why it's OK

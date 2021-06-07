@@ -8,7 +8,7 @@ class Job
     init_helper(data,'characters',nil)
     init_helper(data,'seed_fonts',[["Times"]])
     init_helper(data,'spacing_multiple',1.0)
-    init_helper(data,'threshold',0.62)
+    init_helper(data,'threshold',0.5)
     init_helper(data,'cluster_threshold',0.85)
     init_helper(data,'adjust_size',1.0)
     init_helper(data,'guess_dpi',300)

@@ -101,7 +101,8 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 * spacing_multiple - Set to 2 if double-spaced. Default: 1. Setting this appropriately helps the software to guess the right scaling for the seed font.
 
-* threshold - The lowest correlation between seed font and image that we consider to be of interest. Defaults to 0.62.
+* threshold - The worst match between seed font or pattern and the image that we consider to be of interest. Defaults to 0.5.
+         Reasonable values range from 0.0 (very sloppy, many false positives) to 1.0 (very stringent, many false negatives).
 
 * cluster_threshold -  The lowest correlation between two characters in the image that we take as meaning that they're the same.
             Defaults to 0.85.

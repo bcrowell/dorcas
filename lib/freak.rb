@@ -39,7 +39,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:3
     all_codes.push(code)
   }
 
-  #print code
+  #print all_codes[0] 
 
   # run it
   hits = convolve(all_codes,[outfile],batch_code)
@@ -61,7 +61,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   # Char_names is used only for things like picking readable names for debugging files.
   # If you don't want high-pass filtering, supply nil for this input.
   # The parallelizable flag would be set to true if we were going to hypothetically do parallelization *inside* convolve.py.
-  verbosity=3
+  verbosity=2
 
   if a.class!=1.class then die("a is not an integer") end
 
