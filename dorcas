@@ -22,7 +22,7 @@ require_relative "lib/correl"
 require_relative "lib/clustering"
 require_relative "lib/tempfile"
 require_relative "lib/file_util"
-require_relative "lib/constants"
+require_relative "lib/tuning"
 require_relative "lib/smp"
 require_relative "lib/graphing"
 require_relative "lib/estimate_image_params"
@@ -228,37 +228,6 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
   pat.transplant(composite)
   pat.save(Pat.char_to_filename(output_dir,char))
   return [pat,hits,composites]
-end
-
-def analyze_text_image(page,spacing_multiple,guess_dpi,guess_font_size)
-  print "Input file is #{page.png_filename}\n"
-  stats = ink_stats_1(page.image,page.ink)
-  peak_to_bg = stats['dark']/stats['submedian']
-  text_line_spacing,x_height = estimate_scale(page.image,peak_to_bg,spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size)
-  stats['line_spacing'] = text_line_spacing
-  stats['x_height'] = x_height
-  stats = ink_stats_2(page.image,page.ink,stats,(text_line_spacing*0.3).round)
-  print "ink stats:\n#{stats_to_string(stats)}"
-  if x_height<0.35*text_line_spacing/spacing_multiple then 
-    warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
-  end
-  stats['background'] = stats['submedian'] # background ink level of text, in ink units
-
-  # The result of all this is that text_line_spacing is quite robust and fairly precise, whereas x_height is
-  # total crap, should probably not be used for anything more than the warning above.
-  # Although the value of text_line_spacing is good, the way I'm using it in setting the font size is
-  # not super great, sometimes results in a font whose size is wrong by 15%.
-
-  return [stats,peak_to_bg]
-end
-
-def match_seed_font_scale(font,stats,script,fudge_size)
-  # estimate scale so that pattern has resolution approximately equal to that of text
-  text_line_spacing = stats['line_spacing']*fudge_size
-  dpi = 300 # initial guess
-  dpi = (dpi*text_line_spacing.to_f/font.line_spacing_pixels(dpi,script).to_f).round
-
-  return dpi
 end
 
 def create_directories(output_dir,report_dir)

@@ -1,5 +1,29 @@
 # coding: utf-8
-def match(text,pat,stats,threshold,force_loc,max_hits)
+
+class Match
+  # Describes a plan of attack for OCRing text. Includes thresholds, a list of characters to be matched, and
+  # options such as forcing a character to be matched near a certain location on the page.
+  def initialize(scripts:nil,characters:nil)
+    # Scripts is a list of Script objects. Characters is a string containing the characters to be matched.
+    # Either or both can be left to be set by default.
+    if scripts.nil? then
+      if characters.nil? then
+        scripts = [Script.new('latin')]
+      else
+        scripts = characters.chars.map {|c| char_to_code_block(c)}.uniq.map {|s| Script.new(s)}
+      end
+    end
+    @scripts = scripts
+    if characters.nil? then
+      characters = scripts.map { |s| s.alphabet(c:"both") }.inject('') {|s1,s2| s1+s2} # both upper and lower case in every script
+    end
+    @characters = characters
+  end
+
+  attr_reader :scripts,:characters
+end
+
+def old_match(text,pat,stats,threshold,force_loc,max_hits)
   # text is a ChunkyPNG object
   # pat is a Pat
   # stats is is a hash describing the text, the most important member being line_spacing
