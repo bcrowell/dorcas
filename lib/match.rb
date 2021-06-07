@@ -3,8 +3,7 @@
 class Match
   # Describes a plan of attack for OCRing text. Includes thresholds, a list of characters to be matched, and
   # options such as forcing a character to be matched near a certain location on the page.
-  # Forcing location is not yet implemented. When implementing it, use squirrel only, not freak. See old code
-  # in git commit cda9ba6ff452a0b508 , file match.rb, function old_match().
+  # Forcing location is not yet implemented.
   # Meta_threshold is meant to go from 0 to 1. See tuning.rb for details.
   def initialize(scripts:nil,characters:nil,meta_threshold:0.5)
     # Scripts is a list of script names or Script objects. Characters is a string containing the characters to be matched.
@@ -57,6 +56,8 @@ class Match
       print "monitor file #{monitor_file} not being deleted for convenience ---\n"
       #FileUtils.rm_f(monitor_file)
     end
+
+    return hits
 
   end
 end
@@ -131,7 +132,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   if nhits>10 then nhits=10 end
   images = []
   0.upto(nhits-1) { |k|
-    c,i,j = hits[k]
+    c,i,j,misc = hits[k]
     if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n"; next end
     sw = text.crop(i,j,wp,hp)
     fatten = (stats['x_height']*0.09).round # rough guess as to how much to fatten up the red mask so that we get everything

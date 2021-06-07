@@ -55,12 +55,11 @@ def match_character(char,job,page,temp_dir,seed_font,dpi,script,report_dir,match
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
-  max_hits = 30 # Performance is bad when the number of hits is very large.
-  hits = match(text,pat,page.stats,threshold,force_loc,max_hits)
-  # in git commit cda9ba6ff452a0b508 , file match.rb, function old_match()
-  # Also see notes at top of Match class.
+  m = Match.new(characters:char,meta_threshold:job.threshold,force_loc:job.force_location)
+  # ... force_loc not yet reimplemented
+  hits = m.execute(page,job.set,batch_code:Process.pid.to_s)
+  # ...consider using squirrel only, esp. if using force_loc
   composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold)
-  # ... in match.rb
   if force_cl.nil? then
     composite = composites[0]
   else
