@@ -8,7 +8,7 @@ require 'zip'
 require_relative "lib/job"
 require_relative "lib/verbing"
 require_relative "lib/match"
-require_relative "lib/shotgun"
+require_relative "lib/page"
 require_relative "lib/freak"
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
@@ -66,15 +66,12 @@ def main()
     copy_all_pat_files(prev_set,output_dir) # copy over pat files from previous run; these may get overwritten later
   end
 
-  if text_file=~/pdf\[\d+\]$/ then text_file=extract_pdf_page(text_file,500); job.image=text_file end
-  # The following two lines are somewhat slow:
-  text = image_from_file_to_grayscale(job.image)
-  text_ink = image_to_ink_array(text)
-  # ... 500 dpi is the documented behavior
-  stats,peak_to_bg,dpi = analyze_text_image(text,text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size)
+  page = Page.from_file(text_file) # handles extracting a page from a pdf, if that syntax was used
+  job.image = page.png_filename
+  stats,peak_to_bg,dpi = analyze_text_image(page,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
-    freak(job,text,text_ink,stats,output_dir,report_dir,batch_code:Process.pid.to_s)
+    freak(job,page,stats,output_dir,report_dir,batch_code:Process.pid.to_s)
     if false then
       # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
       shotgun(job,text,stats,output_dir,report_dir)
@@ -233,14 +230,14 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
   return [pat,hits,composites]
 end
 
-def analyze_text_image(text,text_file,text_ink,spacing_multiple,guess_dpi,guess_font_size)
-  print "Input file is #{text_file}\n"
-  stats = ink_stats_1(text,text_ink)
+def analyze_text_image(page,spacing_multiple,guess_dpi,guess_font_size)
+  print "Input file is #{page.png_filename}\n"
+  stats = ink_stats_1(page.image,page.ink)
   peak_to_bg = stats['dark']/stats['submedian']
-  text_line_spacing,x_height = estimate_scale(text,peak_to_bg,spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size)
+  text_line_spacing,x_height = estimate_scale(page.image,peak_to_bg,spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size)
   stats['line_spacing'] = text_line_spacing
   stats['x_height'] = x_height
-  stats = ink_stats_2(text,text_ink,stats,(text_line_spacing*0.3).round)
+  stats = ink_stats_2(page.image,page.ink,stats,(text_line_spacing*0.3).round)
   print "ink stats:\n#{stats_to_string(stats)}"
   if x_height<0.35*text_line_spacing/spacing_multiple then 
     warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")

@@ -1,4 +1,4 @@
-def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,batch_code:'')
+def freak(job,page,stats,output_dir,report_dir,xheight:30,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -7,8 +7,11 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   # parameters for peak detection kernel.
   # stats should contain keys 'background', 'dark', and 'threshold'
 
+  text = page.image
+  text_ink = page.ink
+
   est_max_chars = 0.3*text.width*text.height/(xheight*xheight)
-  # The 0.3 was estimated from some sample text.
+  # ... The 0.3 was estimated from some sample text.
   est_max_freq = 0.13 # frequency of 'e' in English text, https://en.wikipedia.org/wiki/Letter_frequency
   est_max_one_char = est_max_freq*est_max_chars # estimated maximum number of occurrences of any character
   max_hits = (est_max_one_char*2).round # double the plausible number of occurrences
@@ -123,25 +126,7 @@ def freak(job,text,text_ink,stats,output_dir,report_dir,xheight:30,verbosity:2,b
   hits = hits2
 
   png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
-  if make_scatterplot then
-    bins = 40
-    s = generate_array(bins,bins,lambda { |i,j| 0})
-    scatt.each { |p|
-      x,y = p
-      y = (y+2)*0.333
-      x=(x*bins).round
-      y=(y*bins).round
-      y = bins-1-y
-      if x<0 then x=0 end
-      if x>bins-1 then x=bins-1 end
-      if y<0 then y=0 end
-      if y>bins-1 then y=bins-1 end
-      s[x][y] += 1
-    }
-    File.open('scatt.txt','w') { |f|
-      f.print array_ascii_art(s,fn:lambda {|x| if x==0 then ' ' else 'x' end})
-    }
-  end
+  if make_scatterplot then print ascii_scatterplot(hits,save_to_file:'scatt.txt') end
   print "hits written to #{outfile}\n"
 
   files_to_delete.each { |f|
