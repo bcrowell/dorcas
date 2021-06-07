@@ -1,5 +1,6 @@
 def correl(text,pat,red,background,dx,dy,norm)
   # Simple correlation. Somewhat useful because it's efficient and has a meaningful absolute normalization.
+  # We also use this as a measure of similarity when clustering results in pattern learning mode.
   # All input images are ink arrays.
   # Seems to work well if norm is the product of the sd of this particular pattern multiplied by sd_in_text from ink stats.
   # dx,dy are offsets of pat within text

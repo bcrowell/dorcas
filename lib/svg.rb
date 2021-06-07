@@ -1,4 +1,5 @@
-def write_svg_reports(job,output_dir,dir,pats)
+def write_svg_reports(job,dir,pats)
+  output_dir = job.output
   write_svg_reports_helper(dir,output_dir,"swatches.svg","Writing a summary of new swatches to %s\n",pats)
 
   job.characters.each { |x|
