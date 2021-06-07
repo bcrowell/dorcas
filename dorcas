@@ -81,7 +81,7 @@ def run_job(job,page)
     m.execute(page,set,batch_code:Process.pid.to_s)
   end
   if job.verb=='learn' then
-    pats = learn_pats(job,fudge_size,report_dir,temp_dir,stats,peak_to_bg,dpi)
+    pats = learn_pats(job,page,report_dir,temp_dir)
     write_svg_reports(job,report_dir,pats)
   end
 end

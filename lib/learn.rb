@@ -1,46 +1,17 @@
 # coding: utf-8
-def learn_pats(job,report_dir,temp_dir,stats,peak_to_bg,dpi)
   # figure out from job object: text_file(=job.image), text, spacing_multiple, threshold, cluster_threshold, output_dir(=job.output), prev_set(=job.set)
-  # fudge_size(=job.adjust_size), stats(=page.stats).
+  # fudge_size(=job.adjust_size), stats(=page.stats), peak_to_bg(=page....), dpi(=page...)
+
+def learn_pats(job,page,report_dir,temp_dir)
   if job.no_matching then
-    pats = create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,text_ink,spacing_multiple)
+    pats = create_pats_no_matching(job,page)
   else
-    pats = match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
-               text,stats,peak_to_bg,dpi)
+    pats = match_characters_to_image(job,page,report_dir,temp_dir)
   end
   return pats
 end
 
-def create_pats_no_matching(job,stats,fudge_size,output_dir,text_file,text_ink,spacing_multiple)
-  all_fonts,script_and_case_to_font_name = load_fonts(job)
-  text,stats,peak_to_bg,dpi = analyze_text_image(text_file,text_ink,spacing_multiple,job.guess_dpi,job.guess_font_size) # needed for scaling
-  print "Not doing any matching, just rendering patterns for these characters from the seed font: #{job.characters}.\n"
-  pats = []
-  job.characters.each { |x|
-    script_name,c,chars = x 
-    font_name = script_and_case_to_font_name["#{script_name}***#{c}"]
-    seed_font = all_fonts[font_name]
-    script = Script.new(script_name)
-    dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
-    print "  #{script_name} #{c} #{chars} #{font_name} #{dpi.round} dpi, #{job.guess_font_size} pt\n"
-    print "  metrics: #{seed_font.metrics(dpi,script)}\n"
-    chars.chars.each { |char|
-      print "    Rendering #{char}.\n"
-      name = char_to_short_name(char)
-      pat = char_to_pat(char,output_dir,seed_font,dpi,script,char)
-      if pat.nil? then die("    ...nil result") end
-      if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
-      file = Pat.char_to_filename(output_dir,char)
-      print "    ...Written to #{file}\n"
-      pat.save(file)
-    }
-  }
-  return pats
-end
-
-def  match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
-              text,stats,peak_to_bg,dpi)
-
+def  match_characters_to_image(job,page,report_dir,temp_dir)
   all_fonts,script_and_case_to_font_name = load_fonts(job)
 
   pats = []
@@ -50,7 +21,7 @@ def  match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_
     font_name = script_and_case_to_font_name["#{script_name}***#{c}"]
     seed_font = all_fonts[font_name]
     script = Script.new(script_name)
-    dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
+    dpi = match_seed_font_scale(seed_font,page.stats,script,job.adjust_size)
     print "  #{script_name} #{c} #{chars} #{font_name} #{dpi.round} dpi\n"
     print "  metrics: #{seed_font.metrics(dpi,script)}\n"
     chars.chars.each { |char|
@@ -68,34 +39,6 @@ def  match_characters_to_image(job,text_file,spacing_multiple,threshold,cluster_
 
   return pats
 
-end
-
-def load_fonts(job)
-  # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
-  # fall back to something stupid. We try to detect that and warn them.
-  # Build a hash all_fonts whose keys are the user-supplied strings and whose values are Font objects.
-  all_fonts = {}
-  script_and_case_to_font_name = {}
-  print "Fonts:\n"
-  job.seed_fonts.each { |x|
-    s = x[0] # may be a font name or a ttf filename
-    script_and_case_to_font_name["#{x[1]}***#{x[2]}"] = s # key is like greek***lowercase
-    file = Job.font_string_to_path(s)
-    if Job.font_string_is_full_path(s) then
-      print "  #{s}\n"
-    else
-      print "  #{s} -> #{file}\n"
-      round_trip = Fontconfig.path_to_name(file)
-      if round_trip!=s then
-        warn("In #{job_file}, the font name '#{s}' does not match the name '#{round_trip}' of the file supplied by fontconfig.\n"+
-               "This probably means either that you don't have the font on your system or that you gave the wrong name or a different form of the name.")
-      end
-    end
-    if not (all_fonts.has_key?(s)) then
-      all_fonts[s] = Font.new(file_path:file)
-    end
-  }
-  return [all_fonts,script_and_case_to_font_name]
 end
 
 def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,script,threshold,stats,cluster_threshold,report_dir,matches_svg_file,
@@ -141,6 +84,60 @@ def match_character(char,text,text_file,temp_dir,prev_set,output_dir,f,dpi,scrip
   pat.transplant(composite)
   pat.save(Pat.char_to_filename(output_dir,char))
   return [pat,hits,composites]
+end
+
+def create_pats_no_matching(job,page)
+  all_fonts,script_and_case_to_font_name = load_fonts(job)
+  print "Not doing any matching, just rendering patterns for these characters from the seed font: #{job.characters}.\n"
+  pats = []
+  job.characters.each { |x|
+    script_name,c,chars = x 
+    font_name = script_and_case_to_font_name["#{script_name}***#{c}"]
+    seed_font = all_fonts[font_name]
+    script = Script.new(script_name)
+    dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
+    print "  #{script_name} #{c} #{chars} #{font_name} #{dpi.round} dpi, #{job.guess_font_size} pt\n"
+    print "  metrics: #{seed_font.metrics(dpi,script)}\n"
+    chars.chars.each { |char|
+      print "    Rendering #{char}.\n"
+      name = char_to_short_name(char)
+      pat = char_to_pat(char,output_dir,seed_font,dpi,script,char)
+      if pat.nil? then die("    ...nil result") end
+      if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
+      file = Pat.char_to_filename(output_dir,char)
+      print "    ...Written to #{file}\n"
+      pat.save(file)
+    }
+  }
+  return pats
+end
+
+def load_fonts(job)
+  # Tell them what seed fonts we understood them as requesting. If they gave a name that doesn't work, fontconfig will
+  # fall back to something stupid. We try to detect that and warn them.
+  # Build a hash all_fonts whose keys are the user-supplied strings and whose values are Font objects.
+  all_fonts = {}
+  script_and_case_to_font_name = {}
+  print "Fonts:\n"
+  job.seed_fonts.each { |x|
+    s = x[0] # may be a font name or a ttf filename
+    script_and_case_to_font_name["#{x[1]}***#{x[2]}"] = s # key is like greek***lowercase
+    file = Job.font_string_to_path(s)
+    if Job.font_string_is_full_path(s) then
+      print "  #{s}\n"
+    else
+      print "  #{s} -> #{file}\n"
+      round_trip = Fontconfig.path_to_name(file)
+      if round_trip!=s then
+        warn("In #{job_file}, the font name '#{s}' does not match the name '#{round_trip}' of the file supplied by fontconfig.\n"+
+               "This probably means either that you don't have the font on your system or that you gave the wrong name or a different form of the name.")
+      end
+    end
+    if not (all_fonts.has_key?(s)) then
+      all_fonts[s] = Font.new(file_path:file)
+    end
+  }
+  return [all_fonts,script_and_case_to_font_name]
 end
 
 def create_directories(output_dir,report_dir)
