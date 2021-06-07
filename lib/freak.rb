@@ -1,4 +1,4 @@
-def freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,verbosity:2,batch_code:'')
+def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -16,16 +16,21 @@ def freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,ve
   #high_pass = [10*xheight,10*xheight] # x period and y period
   high_pass = nil
 
-  if chars.nil? then die("chars = nil") end
+  if all_chars.nil? then die("all_chars = nil") end
 
-  all_chars = ''
   files_to_delete = []
   all_codes = []
 
-  #['αααααααααααααα'].each { |chars|
-  #['αααααααααααααα','ββββββββββββββ','γγγγγγγγγγγγγγγγ','δδδδδδδδδδδδδδδδδ'].each { |chars|
-  ['αβ','γδ','εζ','ηθ'].each { |chars|
-    all_chars = all_chars+chars
+  n = guess_n_cores()
+  μοῖραι = Array.new(n) { |i| "" }
+  count = 0
+  all_chars.chars.each { |c|
+    μοῖραι[count%n] += c
+    count += 1
+  }
+  print "μοῖραι=#{μοῖραι}\n"
+
+  μοῖραι.each { |chars|
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
     code,killem = freak_generate_code_and_prep_files(outfile,batch_code,page.image,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,

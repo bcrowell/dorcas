@@ -6,7 +6,7 @@ class Match
   # Forcing location is not yet implemented. When implementing it, use squirrel only, not freak. See old code
   # in git commit cda9ba6ff452a0b508 , file match.rb, function old_match().
   def initialize(scripts:nil,characters:nil)
-    # Scripts is a list of Script objects. Characters is a string containing the characters to be matched.
+    # Scripts is a list of script names or Script objects. Characters is a string containing the characters to be matched.
     # Either or both can be left to be set by default.
     if scripts.nil? then
       if characters.nil? then
@@ -14,6 +14,8 @@ class Match
       else
         scripts = characters.chars.map {|c| char_to_code_block(c)}.uniq.map {|s| Script.new(s)}
       end
+    else
+      scripts = scripts.map { |s| if s.kind_of?(Script) then s else Script.new(s) end}
     end
     @scripts = scripts
     if characters.nil? then

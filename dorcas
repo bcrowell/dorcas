@@ -73,7 +73,7 @@ def main()
   page.stats = stats
 
   if job.characters.nil? then
-    m = Match.new(characters:'αβγδεζθη') # fixme
+    m = Match.new(scripts:['greek','latin']) # fixme, should be in job file
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
     set = Fset.from_file_or_directory(job.set)
     m.execute(page,set,batch_code:Process.pid.to_s)
