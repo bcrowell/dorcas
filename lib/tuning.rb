@@ -1,4 +1,5 @@
 def three_stage_guess_pars(page,xheight)
+  # Returns all the necessary parameters for a three-stage match consisting of freak, simple correlation, and squirrel.
   est_max_chars = 0.3*page.width*page.height/(xheight*xheight)
   # ... The 0.3 was estimated from some sample text.
   est_max_freq = 0.13 # frequency of 'e' in English text, https://en.wikipedia.org/wiki/Letter_frequency

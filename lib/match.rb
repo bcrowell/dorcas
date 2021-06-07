@@ -21,6 +21,95 @@ class Match
   end
 
   attr_reader :scripts,:characters
+
+  def execute(page,set,xheight:30,verbosity:2,batch_code:'')
+    # caller can get set from job.set, xheight from...?
+    # Xheight can come from seed_font.metrics(dpi,script)['xheight'], is used to estimate
+    # parameters for peak detection kernel.
+
+    pars = three_stage_guess_pars(page,xheight)
+
+    stats = page.stats # should contain keys 'background', 'dark', and 'threshold'
+    text = page.image
+    text_ink = page.ink
+
+    # Input image stats are all in ink units. See comments at top of function about why it's OK
+    # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
+    # is defined so that black is 0.
+    image_bg = ink_to_png_8bit_grayscale(stats['background'])
+    image_ampl = ink_to_png_8bit_grayscale(stats['background'])-ink_to_png_8bit_grayscale(stats['dark']) # positive
+    image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
+    print "image_bg,image_ampl,image_thr = #{[image_bg,image_ampl,image_thr]}\n"
+
+    if true then
+      monitor_file = temp_file_name_short(prefix:"mon")+".png"
+      monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
+      monitor_image = text.clone.grayscale
+      monitor_image.save(monitor_file)
+      print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
+      # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
+    end
+
+    hits = three_stage(page,chars,pars,xheight,batch_code)
+
+    if true then
+      print "monitor file #{monitor_file} not being deleted for convenience ---\n"
+      #FileUtils.rm_f(monitor_file)
+    end
+
+  end
+end
+
+def three_stage(page,chars,pars,xheight,batch_code)
+  threshold1,threshold2,threshold3,sigma,a,smear,max_hits = pars
+
+  # Three-stage matching consisting of freak, simple correlation, and squirrel.
+  outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
+  hits = freak(page,chars,set,outfile,stats,threshold1,sigma,a,max_hits,batch_code:batch_code)
+
+  bw = {}
+  red = {}
+  sdp = {}
+  pat_by_name = {}
+  chars.chars.each { |c|
+    n = char_to_short_name(c)
+    p = set.pat(c)
+    pat_by_name[n] = p
+    bw[n] = image_to_ink_array(p.bw)
+    red[n] = image_to_ink_array(p.red)
+    pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
+    sdp[n] = pat_stats['sd']
+  }
+
+  make_scatterplot = false
+
+  hits2 = []
+  bg = stats['background']
+  if make_scatterplot then scatt=[] end
+  hits.each { |x|
+    co1,i,j,misc = x
+    short_name = misc['label']
+    norm = sdp[short_name]*stats['sd_in_text']
+    co2 = correl(text_ink,bw[short_name],red[short_name],bg,i,j,norm)
+    debug=nil
+    co3,garbage = squirrel(text_ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
+    if make_scatterplot then scatt.push([co1,co3]) end
+    #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}\n" end
+    if co2<threshold2 then next end
+    if co3<threshold3 then next end
+    hits2.push(x)
+  }
+  print "filtered #{hits.length} to #{hits2.length}\n"
+  hits = hits2
+
+  png_report(monitor_file,text,hits,all_chars,set,verbosity:2)
+  if make_scatterplot then print ascii_scatterplot(hits,save_to_file:'scatt.txt') end
+
+  files_to_delete.each { |f|
+    FileUtils.rm_f(f)
+  }
+
+  return hits2
 end
 
 def old_match(text,pat,stats,threshold,force_loc,max_hits)

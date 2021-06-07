@@ -71,7 +71,11 @@ def main()
   stats,peak_to_bg,dpi = analyze_text_image(page,spacing_multiple,job.guess_dpi,job.guess_font_size)
 
   if job.characters.nil? then
-    freak(job,page,stats,output_dir,report_dir,batch_code:Process.pid.to_s)
+    m = Match.new(characters:'αβγδεζθη') # fixme
+    if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
+    set = Fset.from_file_or_directory(job.set)
+    xheight = seed_font.metrics(dpi,script)['xheight']
+    match.execute(page,set,xheight,batch_code:Process.pid.to_s)
     if false then
       # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
       shotgun(job,text,stats,output_dir,report_dir)
