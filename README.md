@@ -79,6 +79,9 @@ To edit a pattern:
 
 The input file is a JSON hash with keys and values described below. Comments are allowed using javascript syntax ("// ...").
 
+* verb - To do the initial learning of the set of character shapes for a certain font, use "learn." To use an existing set
+          to OCR text, use "ocr."
+
 * image - Name of a PNG file containing the text that we want to do OCR on. As a convenience feature, if this is
           specified in the form "foo.pdf[37]", then page q37 of the pdf file will be rendered at 500 dpi, converted to grayscale, saved
           in the current working directory as foo_037.png, and used as the input. (This feature requires imagemagick and qpdf.)

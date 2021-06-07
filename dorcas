@@ -72,16 +72,14 @@ def main()
   stats,peak_to_bg,dpi = analyze_text_image(page,spacing_multiple,job.guess_dpi,job.guess_font_size)
   page.stats = stats
 
-  if job.characters.nil? then
-    m = Match.new(characters:'h',meta_threshold:job.threshold)
+  if job.verb=='ocr' then
+    #m = Match.new(characters:'h',meta_threshold:job.threshold)
+    m = Match.new(scripts:['latin','greek'],meta_threshold:job.threshold)
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
     set = Fset.from_file_or_directory(job.set)
     m.execute(page,set,batch_code:Process.pid.to_s)
-    if false then
-      # fixme: threshold should have a reasonable default, not hardcoded here, not the same as for matching a seed font
-      shotgun(job,text,stats,output_dir,report_dir)
-    end
-  else
+  end
+  if job.verb=='learn' then
     pats = create_new_pats(job,text_file,spacing_multiple,threshold,cluster_threshold,fudge_size,prev_set,output_dir,report_dir,temp_dir,
                text,stats,peak_to_bg,dpi)
     write_svg_reports(job,output_dir,report_dir,pats)

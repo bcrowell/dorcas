@@ -2,6 +2,7 @@ class Job
   def initialize(data)
     # When calling this on data derived from user input, make sure to canonicalize all unicode characters first.
     @keys = []
+    init_helper(data,'verb',nil)
     init_helper(data,'image',nil)
     init_helper(data,'prev',nil)
     init_helper(data,'output',"output")
@@ -17,6 +18,8 @@ class Job
     init_helper(data,'force_location',nil)
     init_helper(data,'no_matching',false)
     init_helper(data,'set',nil)
+    if @verb.nil? then die("no verb specified") end
+    if !(@verb=='ocr' || @verb=='learn') then die("unrecognized verb: #{verb}") end
     if @image.nil? then die("no image specified") end
     if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
     if not @characters.nil? then characters_helper() end
@@ -24,7 +27,7 @@ class Job
     if bogus_keys.length>0 then die("bogus keys: #{bogus_keys}") end
   end
 
-  attr_accessor :image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
+  attr_accessor :verb,:image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
           :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching,:set
 
   def to_s
@@ -47,6 +50,7 @@ class Job
     end
     @keys = @keys.push(key)
     recognized = false
+    if key=='verb' then @verb = value; recognized=true end
     if key=='image' then @image = value; recognized=true end
     if key=='prev' then @prev = value; recognized=true end
     if key=='output' then @output = value; recognized=true end

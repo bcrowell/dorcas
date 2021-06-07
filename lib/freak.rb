@@ -100,9 +100,10 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   nb_fudge = 0.3
   # ... Changing this to 0 or 0.4 just renormalizes scores; raising it to 1.0 requires vastly lowering threshold, gives terrible performance.
 
+  if laxness<0 then laxness=0.0 end
   if laxness>=1 then laxness=1.0; do_kernel=false else do_kernel=true end
 
-  print "laxness=#{laxness}, do_kernel=#{do_kernel}\n"
+  #print "laxness=#{laxness}, do_kernel=#{do_kernel}\n"
 
   # Do a scoring algorithm that worked well for me before when coded naively:
   #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
