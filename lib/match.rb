@@ -65,7 +65,7 @@ def three_stage(page,chars,set,stats,batch_code,meta_threshold,monitor_file:nil)
   xheight = stats['x_height']
 
   pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
-  threshold1,threshold2,threshold3,sigma,a,smear,max_hits = pars
+  threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = pars
 
   # Input image stats are all in ink units. See comments at top of function about why it's OK
   # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
@@ -74,7 +74,7 @@ def three_stage(page,chars,set,stats,batch_code,meta_threshold,monitor_file:nil)
 
   # Three-stage matching consisting of freak, simple correlation, and squirrel.
   outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-  hits,files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,max_hits,batch_code:batch_code)
+  hits,files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:batch_code)
 
   bw = {}
   red = {}

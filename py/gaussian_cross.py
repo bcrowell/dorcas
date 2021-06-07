@@ -11,17 +11,20 @@ import math,numpy
 # to the data by convoluting with a kernel of the form
 #   K(x,y) = k0 f0 + k1 f1 + k2 f2 + k3 f3
 # where f0, ... f3 are the functions defined above that look like exp[...].
-# Did some basic testing using gaussian_cross_test(), seemed to work.
-# This is not yet integrated into the rest of the code, is just a stand-alone
-# demo program for now.
+# There is some basic testing in gaussian_cross_test().
+# Seems to work well in practice when the template is accurate. When the template
+# is a poor match, the real peaks can be smeared out horizontally or vertically,
+# which then makes the kernel reject them completely. To deal with this, I added
+# the parameter laxness, which, if nonzero, lets through some fraction of the
+# "ridges" as well as the peak.
 
-def gaussian_cross_kernel(w,h,a,sigma):
+def gaussian_cross_kernel(w,h,a,sigma,laxness):
   # a should be an integer
   # Returns a numpy array of the given size.
   # The kernel is positioned at the origin, which with wrap-around makes it appear
   # at the four corners of the resulting array. This choice makes it so that the
   # convolution in frequency domain doesn't displace features.
-  small = gaussian_cross_kernel_small(a,sigma)
+  small = gaussian_cross_kernel_small(a,sigma,laxness)
   ker = numpy.zeros((h,w))
   # ... gets transposed on conversion between numpy and PIL, see INTERNALS
   n = 2*a+1
@@ -32,10 +35,10 @@ def gaussian_cross_kernel(w,h,a,sigma):
       ker[jj,ii] = small[i,j]
   return ker
 
-def gaussian_cross_kernel_small(a,sigma):
+def gaussian_cross_kernel_small(a,sigma,laxness):
   # a should be an integer
   # Returns a numpy array with dimensions 2a+1 x 2a+1.
-  k = gaussian_cross_kernel_coefficients(a,sigma)
+  k = gaussian_cross_kernel_coefficients(a,sigma,laxness)
   n = 2*a+1
   ker = numpy.zeros((n,n))
   for i in range(n):
@@ -59,12 +62,12 @@ def gaussian_cross_kernel_f_helper(p,x,sigma):
   else:
     return math.exp(-(x/sigma)**2/2.0)
 
-def gaussian_cross_kernel_coefficients(a,sigma):
+def gaussian_cross_kernel_coefficients(a,sigma,laxness):
   # Compute the coefficients k0,...k3 defined above.
   a = gaussian_feature_overlap(a,sigma)
   m = numpy.linalg.inv(a).real # A is real and symmetric, so m is also real and symmetric, but make sure there 
                                # aren't imaginary parts due to rounding errors.
-  return [m[0,0],m[1,0],m[2,0],m[3,0]]
+  return [m[0,0]+laxness*(m[0,1]+m[0,2]),m[1,0]+laxness*(m[1,1]+m[1,2]),m[2,0]+laxness*(m[2,1]+m[2,2]),m[3,0]+laxness*(m[3,1]+m[3,2])]
 
 def gaussian_feature_overlap(a,sigma):
   # Let e_pq = exp[-(px^2+qy^2)/2sigma^2], where p and q are 0 or 1.

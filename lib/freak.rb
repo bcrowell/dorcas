@@ -1,4 +1,5 @@
-def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:30,verbosity:2,batch_code:'')
+# coding: utf-8
+def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,xheight:30,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -31,10 +32,11 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:3
   print "μοῖραι=#{μοῖραι}\n"
 
   μοῖραι.each { |chars|
+    if chars=='' then next end
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
     code,killem = freak_generate_code_and_prep_files(outfile,batch_code,page.image,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
-           threshold1,max_hits)
+           threshold1,max_hits,laxness:laxness)
     files_to_delete.concat(killem)
     all_codes.push(code)
   }
@@ -48,7 +50,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,max_hits,xheight:3
 end
 
 def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,
-                       max_hits,parallelizable:false)
+                       max_hits,parallelizable:false,laxness:0.0)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
   # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
@@ -98,6 +100,10 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   nb_fudge = 0.3
   # ... Changing this to 0 or 0.4 just renormalizes scores; raising it to 1.0 requires vastly lowering threshold, gives terrible performance.
 
+  if laxness>=1 then laxness=1.0; do_kernel=false else do_kernel=true end
+
+  print "laxness=#{laxness}, do_kernel=#{do_kernel}\n"
+
   # Do a scoring algorithm that worked well for me before when coded naively:
   #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
   # This is a boolean sliding window. It can be done more efficiently in frequency domain.
@@ -120,13 +126,15 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   end
   code.push("i #{w},d w,i #{h},d h")
   if want_filtering then code.push("i #{hpfx},d high_pass_x,i #{hpfy},d high_pass_y") end
-  code.push("i #{a},d a,f #{sigma},d sigma")
+  code.push("i #{a},d a,f #{sigma},d sigma,f #{laxness},d laxness")
 
   # kernel for peak detection
-  code.push("r w,r h,r a,r sigma,gaussian_cross_kernel")
-  code.push("r w,r h,f 0.0,bloat")
-  code.push("u fft")
-  code.push("d kernel_f_domain")
+  if do_kernel then
+    code.push("r w,r h,r a,r sigma,r laxness,gaussian_cross_kernel")
+    code.push("r w,r h,f 0.0,bloat")
+    code.push("u fft")
+    code.push("d kernel_f_domain")
+  end
 
   # ship out the image of the text, generate code to read it in and do prep work
   freak_prep_image(text,image_file) unless skip_file_prep
@@ -161,8 +169,8 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
     code.push("a -") # linear combination of black and white templates
     code.push("u fft") # combined template in frequency domain
     code.push("r signal_f_domain")
-    code.push("r kernel_f_domain")
-    code.push("a *,a *,u ifft")
+    if do_kernel then code.push("r kernel_f_domain,a *") end
+    code.push("a *,u ifft")
     code.push("f #{-nb*nb_fudge},s +") # constant term; image has already been normalized so dark ink is N=1, otherwise we'd need to multiply by N^2 here
     code.push("d score_#{count}")
     if not parallelizable then code.push("forget #{name_space['b']},forget #{name_space['w']}") end # for memory efficiency

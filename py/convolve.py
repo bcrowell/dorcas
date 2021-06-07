@@ -186,11 +186,12 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='gaussian_cross_kernel':
+      laxness = stack.pop()
       sigma = stack.pop()
       a = stack.pop()
       h = stack.pop()
       w = stack.pop()
-      z = do_gaussian_cross_kernel(w,h,a,sigma)
+      z = do_gaussian_cross_kernel(w,h,a,sigma,laxness)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
       stack.append(z[1])
@@ -397,10 +398,10 @@ def search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,max_peaks):
     hits = hits[:max_peaks]
   return [0,hits]
 
-def do_gaussian_cross_kernel(w,h,a,sigma):
+def do_gaussian_cross_kernel(w,h,a,sigma,laxness):
   if not (isinstance(a,int)):
     return (1,f"a={a} should be an integer")
-  ker = gaussian_cross_kernel(w,h,a,sigma)
+  ker = gaussian_cross_kernel(w,h,a,sigma,laxness)
   return (0,ker)
 
 def unary_array(key,op,x):
