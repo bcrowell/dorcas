@@ -27,101 +27,87 @@ class Match
   end
 
   attr_reader :scripts,:characters
-  attr_accessor :meta_threshold
+  attr_accessor :meta_threshold,:hits
+  attr_accessor :pars,:monitor_file # private methods
 
-  def execute(page,set,verbosity:2,batch_code:'')
-    # caller can get set from job.set. Page must have .stats containing an 'x_height' key, which
-    # is used to estimate parameters for peak detection kernel and maximum number of hits.
+  def execute(page,set,batch_code:'',if_monitor_file:true)
+    # Three-stage matching consisting of freak, simple correlation, and squirrel.
+    # Page must have .stats containing an 'x_height' key, which is used to estimate parameters for peak detection kernel and maximum number of hits.
     # Stats should also contain keys 'background', 'dark', and 'threshold'.
 
-    unless ['x_height','background','dark','threshold'].to_set.subset?(page.stats.keys.to_set) then
-      die("stats has keys #{stats.keys}, does not contain the required ones")
-    end
+    die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
+    die("set is nil") if set.nil?
 
-    stats = page.stats
-    text = page.image
-    text_ink = page.ink
+    self.three_stage_prep(page,self.characters,set,page.stats,batch_code,self.meta_threshold,if_monitor_file:if_monitor_file)
+    self.hits = self.three_stage_complete(page,self.characters,set,page.stats,batch_code,self.meta_threshold)
+    self.three_stage_cleanup()
 
-    if true then
-      monitor_file = temp_file_name_short(prefix:"mon")+".png"
-      monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
-      monitor_image = text.clone.grayscale
-      monitor_image.save(monitor_file)
-      print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
-      # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
-    end
+    return self.hits
+  end
 
-    if set.nil? then die("set is nil") end
-    hits = three_stage(page,self.characters,set,stats,batch_code,self.meta_threshold,monitor_file:monitor_file)
-
-    if true then
-      print "monitor file #{monitor_file} not being deleted for convenience ---\n"
-      #FileUtils.rm_f(monitor_file)
-    end
-
-    return hits
+  def three_stage_prep(page,chars,set,stats,batch_code,meta_threshold,if_monitor_file:true)
+    self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
+    xheight = stats['x_height']
+    self.pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
+    threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
 
   end
-end
 
-def three_stage(page,chars,set,stats,batch_code,meta_threshold,monitor_file:nil)
-  xheight = stats['x_height']
+  def three_stage_complete(page,chars,set,stats,batch_code,meta_threshold)
+    threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
 
-  pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
-  threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = pars
+    # Input image stats are all in ink units. See comments at top of function about why it's OK
+    # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
+    # is defined so that black is 0.
+    stats = page.stats
 
-  # Input image stats are all in ink units. See comments at top of function about why it's OK
-  # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
-  # is defined so that black is 0.
-  stats = page.stats
+    outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
+    hits,files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:batch_code)
+  
+    bw = {}
+    red = {}
+    sdp = {}
+    pat_by_name = {}
+    chars.chars.each { |c|
+      n = char_to_short_name(c)
+      p = set.pat(c)
+      pat_by_name[n] = p
+      bw[n] = image_to_ink_array(p.bw)
+      red[n] = image_to_ink_array(p.red)
+      pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
+      sdp[n] = pat_stats['sd']
+    }
 
-  # Three-stage matching consisting of freak, simple correlation, and squirrel.
-  outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-  hits,files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:batch_code)
+    make_scatterplot = false
 
-  bw = {}
-  red = {}
-  sdp = {}
-  pat_by_name = {}
-  chars.chars.each { |c|
-    n = char_to_short_name(c)
-    p = set.pat(c)
-    pat_by_name[n] = p
-    bw[n] = image_to_ink_array(p.bw)
-    red[n] = image_to_ink_array(p.red)
-    pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
-    sdp[n] = pat_stats['sd']
-  }
+    hits2 = []
+    bg = stats['background']
+    if make_scatterplot then scatt=[] end
+    hits.each { |x|
+      co1,i,j,misc = x
+      short_name = misc['label']
+      norm = sdp[short_name]*stats['sd_in_text']
+      co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
+      debug=nil
+      co3,garbage = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
+      if make_scatterplot then scatt.push([co1,co3]) end
+      #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}\n" end
+      if co2<threshold2 then next end
+      if co3<threshold3 then next end
+      hits2.push(x)
+    }
+    print "filtered #{hits.length} to #{hits2.length}\n"
+    hits = hits2
 
-  make_scatterplot = false
+    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits,chars,set,verbosity:2) end
+    if make_scatterplot then print ascii_scatterplot(hits,save_to_file:'scatt.txt') end
 
-  hits2 = []
-  bg = stats['background']
-  if make_scatterplot then scatt=[] end
-  hits.each { |x|
-    co1,i,j,misc = x
-    short_name = misc['label']
-    norm = sdp[short_name]*stats['sd_in_text']
-    co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
-    debug=nil
-    co3,garbage = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
-    if make_scatterplot then scatt.push([co1,co3]) end
-    #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}\n" end
-    if co2<threshold2 then next end
-    if co3<threshold3 then next end
-    hits2.push(x)
-  }
-  print "filtered #{hits.length} to #{hits2.length}\n"
-  hits = hits2
+    files_to_delete.each { |f|
+      FileUtils.rm_f(f)
+    }
 
-  unless monitor_file.nil? then png_report(monitor_file,page.image,hits,chars,set,verbosity:2) end
-  if make_scatterplot then print ascii_scatterplot(hits,save_to_file:'scatt.txt') end
-
-  files_to_delete.each { |f|
-    FileUtils.rm_f(f)
-  }
-
-  return hits2
+    return hits2
+  end
 end
 
 def swatches(hits,text,pat,stats,char,cluster_threshold)
@@ -188,4 +174,25 @@ def correlate_swatches(images,char)
   print "correlation matrix for character '#{char}' swatches 0-#{n-1}:\n"
   print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round}),"\n"
   return c
+end
+
+def match_prep_monitor_file_helper(if_monitor_file,page)
+  if !if_monitor_file then return nil end
+  monitor_file = temp_file_name_short(prefix:"mon")+".png"
+  monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
+  monitor_image = page.image.clone.grayscale
+  monitor_image.save(monitor_file)
+  print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
+  # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
+  return monitor_file
+end
+
+def three_stage_cleanup()
+  match_clean_monitor_file_helper(!(self.monitor_file.nil?),self.monitor_file)
+end
+
+def match_clean_monitor_file_helper(if_monitor_file,monitor_file)
+  if !if_monitor_file then return end
+  print "monitor file #{monitor_file} not being deleted for convenience ---\n"
+  #FileUtils.rm_f(monitor_file)
 end

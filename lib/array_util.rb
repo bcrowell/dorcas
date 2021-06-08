@@ -1,3 +1,8 @@
+def array_subset?(a,b)
+  # is a a subset of b?
+  return a.to_set.subset?(b.to_set)
+end
+
 def extract_subarray(a,i_lo,i_hi,j_lo,j_hi)
   # crops, then pads with nil if necessary
   w,h = [i_hi-i_lo+1,j_hi-j_lo+1]
