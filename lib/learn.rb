@@ -9,9 +9,16 @@ def learn_pats(job,page,report_dir)
   return pats
 end
 
-def match_characters_to_image(job,page,report_dir)
+def match_characters_to_image(job,page,report_dir,verbosity:2)
   from_seed = job.set.nil?
   if from_seed then Fset.grow_from_seed(job,page) end
+  if verbosity>=2 then
+    if from_seed then
+      print "  Generating new character from seed font.\n"
+    else
+      print "  Taking pattern from previous run\n"
+    end
+  end
   all_fonts,script_and_case_to_font_name = load_fonts(job)
   all_chars = job.characters.map {|x| x[2]}.inject('') {|all,these| all = all+these}
   match = Match.new(characters:all_chars,meta_threshold:job.threshold,force_loc:job.force_location)
@@ -41,17 +48,17 @@ end
 
 def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed,verbosity:2)
   if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
-  print "Searching for character #{char} in text file #{page.png_filename}\n"
+  print "Searching for character #{char} in image file #{page.png_filename}\n"
   pat = job.set.pat(char)
   match_character_messages_helper(!from_seed,force_cl,job.force_location,verbosity)
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 
-  match.hits = match.three_stage_finish(page,job.set)
+  hits = match.three_stage_finish(page,job.set,chars:char)
   match.three_stage_cleanup(page)
   # ...consider using squirrel only, esp. if using force_loc
 
-  composites = swatches(match.hits,page.image,pat,page.stats,char,job.cluster_threshold)
+  composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold)
   if force_cl.nil? then
     composite = composites[0]
   else
@@ -60,10 +67,10 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   end
   if composite.nil? then print "  no matches found for #{char}\n"; return end
   char_name = char_to_short_name(char)
-  matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,match.hits,composites)
+  matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,hits,composites)
   pat.transplant(composite)
   pat.save(Pat.char_to_filename(job.output,char))
-  return [pat,match.hits,composites]
+  return [pat,hits,composites]
 end
 
 def create_pats_no_matching(job,page)
@@ -154,13 +161,6 @@ def match_character_messages_helper(pat_from_prev,force_cl,force_loc,verbosity)
     warn("A pattern exists in the input pattern set for character #{char}, but force_loc is set to #{force_loc}.\n"+
          "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+
          "Normally the force_location feature is used with the seed font, not with a previously constructed pattern.\n")
-  end
-  if verbosity>=2 then
-    if pat_from_prev then
-      print "  Taking pattern from previous run\n"
-    else
-      print "  Generating new character from seed font.\n"
-    end
   end
 end
 

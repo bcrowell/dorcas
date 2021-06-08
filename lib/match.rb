@@ -72,6 +72,7 @@ class Match
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     stats = page.stats
   
+    want_these_chars = {}
     bw = {}
     red = {}
     sdp = {}
@@ -79,6 +80,7 @@ class Match
     chars.chars.each { |c|
       n = char_to_short_name(c)
       p = set.pat(c)
+      want_these_chars[n] = true
       pat_by_name[n] = p
       bw[n] = image_to_ink_array(p.bw)
       red[n] = image_to_ink_array(p.red)
@@ -94,6 +96,7 @@ class Match
     self.hits.each { |x|
       co1,i,j,misc = x
       short_name = misc['label']
+      unless want_these_chars.has_key?(short_name) then next end
       norm = sdp[short_name]*stats['sd_in_text']
       co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
       debug=nil
