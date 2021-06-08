@@ -26,7 +26,7 @@ class Match
     end
     @characters = characters
     @meta_threshold = meta_threshold
-    if !(force_loc.nil?) then die("force_log not implemented") end
+    if !(force_loc.nil?) then die("force_loc not implemented") end
   end
 
   attr_reader :scripts,:characters
@@ -111,6 +111,14 @@ class Match
 
     return hits2
   end
+
+  def three_stage_cleanup(page)
+    self.files_to_delete.each { |f|
+      FileUtils.rm_f(f)
+    }
+    match_clean_monitor_file_helper(!(self.monitor_file.nil?),self.monitor_file)
+ end
+
 end
 
 def swatches(hits,text,pat,stats,char,cluster_threshold)
@@ -188,13 +196,6 @@ def match_prep_monitor_file_helper(if_monitor_file,page)
   print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
   return monitor_file
-end
-
-def three_stage_cleanup(page)
-  self.files_to_delete.each { |f|
-    FileUtils.rm_f(f)
-  }
-  match_clean_monitor_file_helper(!(self.monitor_file.nil?),self.monitor_file)
 end
 
 def match_clean_monitor_file_helper(if_monitor_file,monitor_file)

@@ -10,9 +10,11 @@ def learn_pats(job,page,report_dir)
 end
 
 def match_characters_to_image(job,page,report_dir)
+  from_seed = job.set.nil?
+  if from_seed then Fset.grow_from_seed(job,page) end
   all_fonts,script_and_case_to_font_name = load_fonts(job)
-
-  match = Match.new(characters:char,meta_threshold:job.threshold,force_loc:job.force_location)
+  all_chars = job.characters.map {|x| x[2]}.inject('') {|all,these| all = all+these}
+  match = Match.new(characters:all_chars,meta_threshold:job.threshold,force_loc:job.force_location)
   # ... force_loc not yet reimplemented
   match.batch_code = Process.pid.to_s
   match.three_stage_prep(page,job.set)
@@ -20,13 +22,7 @@ def match_characters_to_image(job,page,report_dir)
   pats = []
   job.characters.each { |x|
     # x looks like ["greek","lowercase","αβγδε"]. The string of characters at the end has already been filled in by initializer, if necessary.
-    script_name,c,chars = x 
-    font_name = script_and_case_to_font_name["#{script_name}***#{c}"]
-    seed_font = all_fonts[font_name]
-    script = Script.new(script_name)
-    page.dpi = match_seed_font_scale(seed_font,page.stats,script,job.adjust_size)
-    print "  #{script_name} #{c} #{chars} #{font_name} #{page.dpi} dpi\n"
-    print "  metrics: #{seed_font.metrics(page.dpi,script)}\n"
+    script_name,c,chars = x
     chars.chars.each { |char|
       force_cl = nil
       if (not job.prefer_cluster.nil?) and job.prefer_cluster.has_key?(char) then force_cl=job.prefer_cluster[char] end
@@ -34,29 +30,20 @@ def match_characters_to_image(job,page,report_dir)
       if (not job.force_location.nil?) and job.force_location.has_key?(char) then force_loc=job.force_location[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
-      pat,hits,composites = match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl)
+      script = Script.new(script_name)
+      pat,hits,composites = match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }
 
   return pats
-
 end
 
-def match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl)
+def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed,verbosity:2)
   if page.dpi<=0 or page.dpi>2000 then die("page.dpi=#{page.dpi} fails sanity check") end
-  verbosity = 2
-  # returns nil if there's no match
   print "Searching for character #{char} in text file #{page.png_filename}\n"
-  pat_from_prev = false
-  if !(job.set.nil?) then pat_from_prev=job.set.pat(char) end
-  match_character_messages_helper(pat_from_prev,force_cl,force_loc,verbosity)
-  if pat_from_prev then
-    pat = job.set.pat(char)
-  else
-    pat = char_to_pat(char,job.output,seed_font,page.dpi,script)
-    job.set = Fset.new([pat],{}) # qwe -- will it be a problem that data is empty?
-  end
+  pat = job.set.pat(char)
+  match_character_messages_helper(!from_seed,force_cl,job.force_location,verbosity)
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 

@@ -92,4 +92,28 @@ class Fset
     return Fset.new(l,data)
   end
 
+  def Fset.grow_from_seed(job,page,verbosity:2)
+    # Construct a set from scratch using a seed font.
+    # Mutates both job and page.
+    all_fonts,script_and_case_to_font_name = load_fonts(job)
+    if verbosity>=1 then print "Growing pattern set from seed.\n" end
+    job.characters.each { |x|
+      # x looks like ["greek","lowercase","αβγδε"]. The string of characters at the end has already been filled in by initializer, if necessary.
+      script_name,c,chars = x
+      font_name = script_and_case_to_font_name["#{script_name}***#{c}"]
+      seed_font = all_fonts[font_name]
+      script = Script.new(script_name)
+      page.dpi = match_seed_font_scale(seed_font,page.stats,script,job.adjust_size)
+      if verbosity>=2 then
+        print "  #{script_name} #{c} #{chars} #{font_name} #{page.dpi} dpi\n"
+        print "  metrics: #{seed_font.metrics(page.dpi,script)}\n"
+      end
+      pats = []
+      chars.chars.each { |char|
+        pats.push(char_to_pat(char,job.output,seed_font,page.dpi,script))
+      }
+      job.set = Fset.new(pats,{}) # qwe -- will it be a problem that data is empty?
+    }
+  end
+
 end
