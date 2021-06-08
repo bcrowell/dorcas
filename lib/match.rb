@@ -40,14 +40,14 @@ class Match
 
     self.batch_code = batch_code
 
-    self.three_stage_prep(page,set,self.meta_threshold,if_monitor_file:if_monitor_file)
+    self.three_stage_prep(page,set,if_monitor_file:if_monitor_file)
     self.hits = self.three_stage_finish(page,set)
     self.three_stage_cleanup(page)
 
     return self.hits
   end
 
-  def three_stage_prep(page,set,meta_threshold,if_monitor_file:true)
+  def three_stage_prep(page,set,if_monitor_file:true)
     # This runs the first of the three stages, using fft convolution. This is the part that parallelizes well to multiple cores, and for
     # performance should be called with many characters at once in self.characters.
     # It stores all the hits from the first stage in self.hits, and these can
@@ -57,7 +57,7 @@ class Match
     die("batch_code is nil") if self.batch_code.nil?
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
     xheight = page.stats['x_height']
-    self.pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
+    self.pars = three_stage_guess_pars(page,xheight,meta_threshold:self.meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
     self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:self.batch_code)
