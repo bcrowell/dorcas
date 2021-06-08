@@ -43,6 +43,8 @@ class Match
   end
 
   def three_stage_prep(page,chars,set,stats,batch_code,meta_threshold,if_monitor_file:true)
+    # This runs the first of the three stages, using fft convolution. This is the part that parallelizes well to multiple cores, and for
+    # performance should be called with many characters at once.
     die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
@@ -54,11 +56,12 @@ class Match
   end
 
   def three_stage_complete(page,chars,set,stats,batch_code,meta_threshold)
-    threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
-
+    # This can be called on one character at a time or on any subset of the characters used in three_stage_prep().
     # Input image stats are all in ink units. See comments at top of function about why it's OK
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
     # is defined so that black is 0.
+
+    threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     stats = page.stats
   
     bw = {}
@@ -94,12 +97,11 @@ class Match
       hits2.push(x)
     }
     print "filtered #{self.hits.length} to #{hits2.length}\n"
-    self.hits = hits2
 
-    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,self.hits,chars,set,verbosity:2) end
-    if make_scatterplot then print ascii_scatterplot(self.hits,save_to_file:'scatt.txt') end
+    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits2,chars,set,verbosity:2) end
+    if make_scatterplot then print ascii_scatterplot(hits2,save_to_file:'scatt.txt') end
 
-    return self.hits
+    return hits2
   end
 end
 
