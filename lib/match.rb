@@ -37,16 +37,18 @@ class Match
 
     self.batch_code = batch_code
 
-    self.three_stage_prep(page,self.characters,set,self.meta_threshold,if_monitor_file:if_monitor_file)
-    self.hits = self.three_stage_complete(page,self.characters,set)
+    self.three_stage_prep(page,set,self.meta_threshold,if_monitor_file:if_monitor_file)
+    self.hits = self.three_stage_complete(page,set)
     self.three_stage_cleanup(page)
 
     return self.hits
   end
 
-  def three_stage_prep(page,chars,set,meta_threshold,if_monitor_file:true)
+  def three_stage_prep(page,set,meta_threshold,if_monitor_file:true)
     # This runs the first of the three stages, using fft convolution. This is the part that parallelizes well to multiple cores, and for
-    # performance should be called with many characters at once.
+    # performance should be called with many characters at once in self.characters.
+    # It stores all the hits from the first stage in self.hits, and these can
+    # then be run through the later stages using three_stage_complete(), which can be called one character at a time if desired.
     die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
@@ -54,10 +56,10 @@ class Match
     self.pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-    self.hits,self.files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:self.batch_code)
+    self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
 
-  def three_stage_complete(page,chars,set)
+  def three_stage_complete(page,set,chars:self.characters)
     # This can be called on one character at a time or on any subset of the characters used in three_stage_prep().
     # Input image stats are all in ink units. See comments at top of function about why it's OK
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
