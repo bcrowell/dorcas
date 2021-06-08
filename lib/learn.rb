@@ -67,9 +67,10 @@ def match_character(char,job,page,seed_font,script,report_dir,matches_svg_file,n
     composite = composites[force_cl]
   end
   if composite.nil? then print "  no matches found for #{char}\n"; return end
+  char_name = char_to_short_name(char)
   matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,hits,composites)
   pat.transplant(composite)
-  pat.save(Pat.char_to_filename(output_dir,char))
+  pat.save(Pat.char_to_filename(job.output,char))
   return [pat,hits,composites]
 end
 
