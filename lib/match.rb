@@ -54,6 +54,7 @@ class Match
     # then be run through the later stages using three_stage_complete(), which can be called one character at a time if desired.
     die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
+    die("batch_code is nil") if self.batch_code.nil?
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
     xheight = page.stats['x_height']
     self.pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)

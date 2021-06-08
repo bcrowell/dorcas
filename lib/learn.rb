@@ -56,11 +56,15 @@ def match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_
     job.set = Fset.new([pat],{}) # qwe -- will it be a problem that data is empty?
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
-
   if job.set.nil? then die("job.set is nil") end
-  hits = match.execute(page,job.set,batch_code:Process.pid.to_s)
+
+  match.batch_code = batch_code:Process.pid.to_s
+  match.three_stage_prep(page,job.set,match.meta_threshold,if_monitor_file:if_monitor_file)
+  match.hits = match.three_stage_finish(page,job.set)
+  match.three_stage_cleanup(page)
   # ...consider using squirrel only, esp. if using force_loc
-  composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold)
+
+  composites = swatches(match.hits,page.image,pat,page.stats,char,job.cluster_threshold)
   if force_cl.nil? then
     composite = composites[0]
   else
@@ -69,10 +73,10 @@ def match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_
   end
   if composite.nil? then print "  no matches found for #{char}\n"; return end
   char_name = char_to_short_name(char)
-  matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,hits,composites)
+  matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,match.hits,composites)
   pat.transplant(composite)
   pat.save(Pat.char_to_filename(job.output,char))
-  return [pat,hits,composites]
+  return [pat,match.hits,composites]
 end
 
 def create_pats_no_matching(job,page)
