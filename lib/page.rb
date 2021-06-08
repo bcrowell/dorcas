@@ -58,5 +58,5 @@ def match_seed_font_scale(font,stats,script,fudge_size)
   dpi = 300 # initial guess
   dpi = (dpi*text_line_spacing.to_f/font.line_spacing_pixels(dpi,script).to_f).round
 
-  return dpi
+  return dpi.round
 end

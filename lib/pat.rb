@@ -175,10 +175,12 @@ end
 
 #---------- end of class Pat
 
-def char_to_pat(c,dir,font,dpi,script,char)
-  bw,red,line_spacing,baseline,bbox = char_to_pat_without_cropping(c,dir,font,dpi,script)
+def char_to_pat(c,output_dir,seed_font,dpi,script)
+  if dpi<=0 or dpi>2000 then die("dpi=#{dpi} fails sanity check") end
+  # Seed_font is a Font object.
+  bw,red,line_spacing,baseline,bbox = char_to_pat_without_cropping(c,output_dir,seed_font,dpi.to_i,script)
   bw,red,line_spacing,bbox = crop_pat(bw,red,line_spacing,bbox)
-  return Pat.new(bw,red,line_spacing,baseline,bbox,char)
+  return Pat.new(bw,red,line_spacing,baseline,bbox,c)
 end
 
 def crop_pat(bw,red,line_spacing,bbox)
@@ -303,6 +305,8 @@ def string_to_image(s,dir,font,side,dpi,script)
   point_size = font_size_and_dpi_to_size_for_gd(font.size,dpi)
   ttf_file_path = font.file_path
 
+  if point_size<=0 or point_size>200 then die("point size #{point_size} fails sanity check") end
+
   # The following is not inefficient, because font.metrics() is memoized.
   metrics = font.metrics(dpi,script)
   hpheight = metrics['hpheight']
@@ -315,10 +319,11 @@ def string_to_image(s,dir,font,side,dpi,script)
   image = ChunkyPNG::Image.from_file(temp_file)
   FileUtils.rm_f(temp_file)
 
-  if side==1 then
+  if side==1 then # right-aligned
     # Because GD doesn't support drawing right-aligned text, we have to scooch it over.
     # In the following, I'm afraid to use methods like crop! and replace! because in the past those have crashed.
     offset = image.width-right
+    if offset<0 then die("negative offset; this can happen if the renderer overflows the size allocated for the image") end
     image4 = image.crop(0,0,image.width-offset,image.height) # make it narrower, otherwise the replace method complains
     image2 = ChunkyPNG::Image.new(image.width,image.height,ChunkyPNG::Color::WHITE)
     image3 = image2.replace(image4,offset_x=offset)

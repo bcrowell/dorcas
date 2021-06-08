@@ -1,6 +1,6 @@
 =begin
 Low-level interface to truetype fonts.
-Opentype is a superser of truetype.
+Opentype is a superset of truetype.
 Currently I'm doing this with Perl's GD library, but because that seems to be
 buggy and no longer actively maintained, I've tried to isolate that interface
 here so that it will be easy to switch to somethig else later if I need to.
@@ -14,6 +14,7 @@ it, and instead outputs a little bit of whitespace
 =end
 
 def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descender,margin,em)
+  # Renders the text to a file.
   # Returns baseline and bounding box in the format [baseline,left,right,top,bottom].
   # Rendered text is aligned vertically in such a way that the descenders, if any, are at the bottom of the image,
   # and ascenders are at the top, except that a margin is added at the top and bottom as well.
@@ -23,19 +24,27 @@ def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descen
   baseline = font_height-margin-descender
   verbosity = 2
   max_width = 3*em # making this too big incurs a big performance hit
+  sq = escape_double_quotes(s)
+  if point_size<=0 or point_size>200 then die("point size #{point_size} fails sanity check") end
   code = <<-"PERL"
     use strict;
     use GD;
-    my $w = #{max_width};
-    my $h = #{image_height};
-    my $image = new GD::Image($w,$h);
-    my $black = $image->colorAllocate(0,0,0);
-    my $white = $image->colorAllocate(255,255,255);
-    $image->filledRectangle(0,0,$w-1,$h-1,$white);
+    my @bounds;
+    my ($black,$white);
     my $ttf_path = "#{escape_double_quotes(ttf_file_path)}";
     my $ptsize = #{point_size};
+    my $dummy_image = new GD::Image(1,1);
+    $black = $dummy_image->colorAllocate(0,0,0);
+    $white = $dummy_image->colorAllocate(255,255,255);
     my %options = {'resolution'=>"#{dpi},#{dpi}"}; # has little or no effect by itself, is just hinting
-    my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,#{baseline},"#{escape_double_quotes(s)}",\%options);
+    my @bounds = GD::Image->stringFT($black,$ttf_path,$ptsize,0,10,#{baseline},"#{sq}",\%options); # trial run for size; is supposed to be cheap
+    my $w = $bounds[2];
+    my $h = #{image_height};
+    my $image = new GD::Image($w,$h);
+    $black = $image->colorAllocate(0,0,0);
+    $white = $image->colorAllocate(255,255,255);
+    $image->filledRectangle(0,0,$w-1,$h-1,$white);
+    my @bounds = $image->stringFT($black,$ttf_path,$ptsize,0,10,#{baseline},"#{sq}",\%options);
     open(F, '>', "#{escape_double_quotes(out_file)}") or die $!;
     binmode F;
     print F $image->png;
