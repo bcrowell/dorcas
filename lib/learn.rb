@@ -58,7 +58,7 @@ def match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 
-  match.batch_code = batch_code:Process.pid.to_s
+  match.batch_code = Process.pid.to_s
   match.three_stage_prep(page,job.set,match.meta_threshold,if_monitor_file:if_monitor_file)
   match.hits = match.three_stage_finish(page,job.set)
   match.three_stage_cleanup(page)
