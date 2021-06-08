@@ -28,29 +28,29 @@ class Match
 
   attr_reader :scripts,:characters
   attr_accessor :meta_threshold,:hits
-  attr_accessor :pars,:monitor_file # private methods
+  attr_accessor :pars,:monitor_file,:files_to_delete # private methods
 
   def execute(page,set,batch_code:'',if_monitor_file:true)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
     # Page must have .stats containing an 'x_height' key, which is used to estimate parameters for peak detection kernel and maximum number of hits.
     # Stats should also contain keys 'background', 'dark', and 'threshold'.
 
-    die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
-    die("set is nil") if set.nil?
-
     self.three_stage_prep(page,self.characters,set,page.stats,batch_code,self.meta_threshold,if_monitor_file:if_monitor_file)
     self.hits = self.three_stage_complete(page,self.characters,set,page.stats,batch_code,self.meta_threshold)
-    self.three_stage_cleanup()
+    self.three_stage_cleanup(page)
 
     return self.hits
   end
 
   def three_stage_prep(page,chars,set,stats,batch_code,meta_threshold,if_monitor_file:true)
+    die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
+    die("set is nil") if set.nil?
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
     xheight = stats['x_height']
     self.pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
-
+    outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
+    self.hits,self.files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:batch_code)
   end
 
   def three_stage_complete(page,chars,set,stats,batch_code,meta_threshold)
@@ -60,9 +60,6 @@ class Match
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
     # is defined so that black is 0.
     stats = page.stats
-
-    outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-    hits,files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:batch_code)
   
     bw = {}
     red = {}
@@ -83,7 +80,7 @@ class Match
     hits2 = []
     bg = stats['background']
     if make_scatterplot then scatt=[] end
-    hits.each { |x|
+    self.hits.each { |x|
       co1,i,j,misc = x
       short_name = misc['label']
       norm = sdp[short_name]*stats['sd_in_text']
@@ -96,17 +93,13 @@ class Match
       if co3<threshold3 then next end
       hits2.push(x)
     }
-    print "filtered #{hits.length} to #{hits2.length}\n"
-    hits = hits2
+    print "filtered #{self.hits.length} to #{hits2.length}\n"
+    self.hits = hits2
 
-    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits,chars,set,verbosity:2) end
-    if make_scatterplot then print ascii_scatterplot(hits,save_to_file:'scatt.txt') end
+    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,self.hits,chars,set,verbosity:2) end
+    if make_scatterplot then print ascii_scatterplot(self.hits,save_to_file:'scatt.txt') end
 
-    files_to_delete.each { |f|
-      FileUtils.rm_f(f)
-    }
-
-    return hits2
+    return self.hits
   end
 end
 
@@ -187,7 +180,10 @@ def match_prep_monitor_file_helper(if_monitor_file,page)
   return monitor_file
 end
 
-def three_stage_cleanup()
+def three_stage_cleanup(page)
+  self.files_to_delete.each { |f|
+    FileUtils.rm_f(f)
+  }
   match_clean_monitor_file_helper(!(self.monitor_file.nil?),self.monitor_file)
 end
 
