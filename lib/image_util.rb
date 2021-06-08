@@ -14,9 +14,25 @@ def image_from_file_to_grayscale(filename)
   #     about normalization, never provide color images to PIL.
 end
 
-def pad_image(image,w,h,background)
+def pad_image_right(image,w,h,background:0.0)
   # Given a ChunkyPNG object, returns a new copy that has been padded to the indicated size, using a background color given in ink units.
   return ChunkyPNG::Image.new(w,h,bg_color=ink_to_color(background)).replace(image,offset_x=0,offset_y=0)
+end
+
+def pad_image_left(image,w,h,background:0.0)
+  # like pad_image_right
+  return ChunkyPNG::Image.new(w,h,bg_color=ink_to_color(background)).replace(image,offset_x=w-image.width,offset_y=0)
+end
+
+def pad_image(image,w,h,background,side)
+  # like pad_image_right and pad_image_left; side==0 to pad on right, 1 to pad on left
+  if side==0 then return pad_image_right(image,w,h,background:background) else return pad_image_left(image,w,h,background:background) end
+end
+
+def reconcile_widths(images,side,background:0.0)
+  w = images.map { |i| i.width}.max
+  h = images[0].height
+  return images.map { |i| pad_image(i,w,h,background,side)}
 end
 
 def ink_array_to_image(ink,transpose:false,grayscale:true)
@@ -131,6 +147,10 @@ def ink_to_color(ink) # inverse of color_to_ink
   return ChunkyPNG::Color.rgb(gray,gray,gray)
 end
 
+def inside_image(image,i,j)
+  return (i>=0 && i<=image.width-1 && j>=0 && j<=image.height-1)
+end
+
 def compose_safe(a,b,i,j)
   # ChunkyPNG crashes if b hangs outside of a. In that situation, just silently fail.
   # Some of the ! functions like compose! seem to crash, so don't use them.
@@ -175,6 +195,7 @@ def image_or(image,image2)
   # This function seems to be a bit of a bottleneck in terms of performance, and when I hit control-C and look at a stack trace, it
   # seems like the issue is simply accessing pixels in the image. Unfortunately, I don't know how to improve that.
   # I tried converting both images to grayscale first, but that was slower.
+  # If the widths may be unequal, can use reconcile_widths() if appropriate.
   return image_bitwise(image,image2,lambda { |x,y| x or y})
 end
 
@@ -213,6 +234,10 @@ end
 
 def image_empty_copy(image)
   w,h = image.width,image.height
+  return ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
+end
+
+def image_empty(w,h)
   return ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
 end
 

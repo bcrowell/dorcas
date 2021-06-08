@@ -85,8 +85,8 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   w = boost_for_no_large_prime_factors(image.width+kernel.width)
   h = boost_for_no_large_prime_factors(image.height+kernel.height)
   if verbosity>=3 then print "padding\n" end
-  image_padded  = pad_image(image,w,h,background)
-  kernel_padded = pad_image(kernel,w,h,0.0)
+  image_padded  = pad_image_right(image,w,h,background)
+  kernel_padded = pad_image_right(kernel,w,h,0.0)
   image_file = temp_file_name()+".png"
   kernel_file = temp_file_name()+".png"
   output_file = temp_file_name()+".png"

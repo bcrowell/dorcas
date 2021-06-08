@@ -232,42 +232,35 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
     bboxes.push(bbox)
     red.push(red_one_side(c,dir,font,side,image[side],dpi,script))
   }
-  #print "bounding boxes=#{bboxes}\n"
-  box_w = bboxes[0][1]-bboxes[0][0]
-  w = dpi*font.size/20
+  w = red[0].width+red[1].width-image[0].width # (RL+I)+(RR+I)-I
   h = image[0].height
-  image_final = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
-  red_final = ChunkyPNG::Image.new(w,h,ChunkyPNG::Color::WHITE)
-  slide_to = (w-box_w)/2 # put them so the left side of the bounding box is here
+  image_final = pad_image_right(pad_image_left(image[0],red[0].width,h),w,h)
+  red_left_full_width = pad_image_right(red[1],w,h)
+  red_right_full_width = pad_image_left(red[0],w,h)
+  red_final = image_or(red_left_full_width,red_right_full_width)
   final_bbox = bboxes[0].clone
-  final_bbox[0] = slide_to
-  final_bbox[1] = slide_to+bboxes[0][1]-bboxes[0][0]
-  0.upto(1) { |side|
-    dx = slide_to-bboxes[side][0]
-    0.upto(w-1) { |i|
-      i0 = i-dx
-      if i0<0 || i0>image[0].width-1 then next end
-      0.upto(h-1) {  |j|
-        if side==0 then image_final[i,j] = image[side][i0,j] end
-        red_final[i,j] = red[side][i0,j]
-      }
-    }
-  }
+  scoot = red[1].width-image[0].width
+  final_bbox[0] += scoot  
+  final_bbox[1] += scoot  
   pat_line_spacing = image_final.height # this may be wrong, but it seems like pango sets the height of the image to the line height
+  #image_final.save("debug_image.png"); red_final.save("debug_red.png"); die("qwe") # qwe
   return [image_final,red_final,pat_line_spacing,my_baseline,final_bbox]
 end
 
-def red_one_side(c,dir,font,side,image,dpi,script)
-  red = image_empty_copy(image)
+def red_one_side(c,dir,font,side,image_orig,dpi,script)
   script = Script.new(c)
   # To find out how much white "personal space" the character has around it, we render various other "guard-rail" characters
   # to the right and left of it. The logical "or" of these is space that we know can be occupied by other characters. I visualize
   # this as red.
   # side=0 means guard-rail chars will be on the right of our character, 1 means left
+  # As we go through the loop, the images can grow, but we don't mutate image_orig.
+  red = image_empty_copy(image_orig)
+  image = image_orig.clone
   other = script.guard_rail_chars(side)
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
     trash1,trash2,image2 = string_to_image(s,dir,font,side,dpi,script)
+    image,image2,red = reconcile_widths([image,image2,red],side)
     red = image_or(red,image_minus(image2,image))
   }
   bbox = bounding_box(image)
@@ -285,6 +278,7 @@ def red_one_side(c,dir,font,side,image,dpi,script)
     erase_inside_box(red,bigger_bbox) 
   end
 
+  # If a pixel is red, fill in everything farther away to the side with red as well.
   w,h = image.width,image.height
   0.upto(h-1) { |j|
     started = false
