@@ -12,6 +12,9 @@ end
 def match_characters_to_image(job,page,report_dir)
   all_fonts,script_and_case_to_font_name = load_fonts(job)
 
+  match = Match.new(characters:char,meta_threshold:job.threshold,force_loc:job.force_location)
+  # ... force_loc not yet reimplemented
+
   pats = []
   job.characters.each { |x|
     # x looks like ["greek","lowercase","αβγδε"]. The string of characters at the end has already been filled in by initializer, if necessary.
@@ -29,7 +32,7 @@ def match_characters_to_image(job,page,report_dir)
       if (not job.force_location.nil?) and job.force_location.has_key?(char) then force_loc=job.force_location[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
-      pat,hits,composites = match_character(char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl,force_loc)
+      pat,hits,composites = match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }
@@ -38,7 +41,7 @@ def match_characters_to_image(job,page,report_dir)
 
 end
 
-def match_character(char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl,force_loc)
+def match_character(match,char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl)
   if page.dpi<=0 or page.dpi>2000 then die("page.dpi=#{page.dpi} fails sanity check") end
   verbosity = 2
   # returns nil if there's no match
@@ -54,10 +57,8 @@ def match_character(char,job,page,seed_font,script,report_dir,matches_svg_file,n
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
-  m = Match.new(characters:char,meta_threshold:job.threshold,force_loc:job.force_location)
-  # ... force_loc not yet reimplemented
   if job.set.nil? then die("job.set is nil") end
-  hits = m.execute(page,job.set,batch_code:Process.pid.to_s)
+  hits = match.execute(page,job.set,batch_code:Process.pid.to_s)
   # ...consider using squirrel only, esp. if using force_loc
   composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold)
   if force_cl.nil? then

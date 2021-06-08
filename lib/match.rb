@@ -5,6 +5,9 @@ class Match
   # options such as forcing a character to be matched near a certain location on the page.
   # Forcing location is not yet implemented.
   # Meta_threshold is meant to go from 0 to 1. See tuning.rb for details.
+  # Simplest use is through m=Match.new(), hits=m.execute().
+  # Instead of m.execute, can also do m.three_stage_prep, m.three_stage_finish, ..., m.three_stage_cleanup, which
+  # allows the fft stage to be parallelized while the characters are processed one at a time in m.three_stage_finish.
   def initialize(scripts:nil,characters:nil,meta_threshold:0.5,force_loc:nil)
     # Scripts is a list of script names or Script objects. Characters is a string containing the characters to be matched.
     # Either or both can be left to be set by default.
@@ -38,7 +41,7 @@ class Match
     self.batch_code = batch_code
 
     self.three_stage_prep(page,set,self.meta_threshold,if_monitor_file:if_monitor_file)
-    self.hits = self.three_stage_complete(page,set)
+    self.hits = self.three_stage_finish(page,set)
     self.three_stage_cleanup(page)
 
     return self.hits
@@ -59,7 +62,7 @@ class Match
     self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
 
-  def three_stage_complete(page,set,chars:self.characters)
+  def three_stage_finish(page,set,chars:self.characters)
     # This can be called on one character at a time or on any subset of the characters used in three_stage_prep().
     # Input image stats are all in ink units. See comments at top of function about why it's OK
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
