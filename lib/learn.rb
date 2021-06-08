@@ -38,9 +38,6 @@ def match_characters_to_image(job,page,report_dir)
 
 end
 
-  # figure out from job object: text_file(=job.image), text, spacing_multiple, threshold, cluster_threshold, output_dir(=job.output), prev_set(=job.set)
-  # fudge_size(=job.adjust_size), stats(=page.stats), peak_to_bg(=page....), dpi(=page...)
-
 def match_character(char,job,page,seed_font,script,report_dir,matches_svg_file,name,force_cl,force_loc)
   if page.dpi<=0 or page.dpi>2000 then die("page.dpi=#{page.dpi} fails sanity check") end
   verbosity = 2
@@ -53,11 +50,13 @@ def match_character(char,job,page,seed_font,script,report_dir,matches_svg_file,n
     pat = job.set.pat(char)
   else
     pat = char_to_pat(char,job.output,seed_font,page.dpi,script)
+    job.set = Fset.new([pat],{}) # qwe -- will it be a problem that data is empty?
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
   m = Match.new(characters:char,meta_threshold:job.threshold,force_loc:job.force_location)
   # ... force_loc not yet reimplemented
+  if job.set.nil? then die("job.set is nil") end
   hits = m.execute(page,job.set,batch_code:Process.pid.to_s)
   # ...consider using squirrel only, esp. if using force_loc
   composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold)

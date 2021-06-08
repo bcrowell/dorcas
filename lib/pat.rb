@@ -243,7 +243,7 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
   final_bbox[0] += scoot  
   final_bbox[1] += scoot  
   pat_line_spacing = image_final.height # this may be wrong, but it seems like pango sets the height of the image to the line height
-  #image_final.save("debug_image.png"); red_final.save("debug_red.png"); die("qwe") # qwe
+  #image_final.save("debug_image.png"); red_final.save("debug_red.png"); die("qwe")
   return [image_final,red_final,pat_line_spacing,my_baseline,final_bbox]
 end
 

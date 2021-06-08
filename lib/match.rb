@@ -5,7 +5,7 @@ class Match
   # options such as forcing a character to be matched near a certain location on the page.
   # Forcing location is not yet implemented.
   # Meta_threshold is meant to go from 0 to 1. See tuning.rb for details.
-  def initialize(scripts:nil,characters:nil,meta_threshold:0.5)
+  def initialize(scripts:nil,characters:nil,meta_threshold:0.5,force_loc:nil)
     # Scripts is a list of script names or Script objects. Characters is a string containing the characters to be matched.
     # Either or both can be left to be set by default.
     if scripts.nil? then
@@ -23,6 +23,7 @@ class Match
     end
     @characters = characters
     @meta_threshold = meta_threshold
+    if !(force_loc.nil?) then die("force_log not implemented") end
   end
 
   attr_reader :scripts,:characters
@@ -50,6 +51,7 @@ class Match
       # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
     end
 
+    if set.nil? then die("set is nil") end
     hits = three_stage(page,self.characters,set,stats,batch_code,self.meta_threshold,monitor_file:monitor_file)
 
     if true then
