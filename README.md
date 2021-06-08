@@ -86,7 +86,7 @@ The input file is a JSON hash with keys and values described below. Comments are
           specified in the form "foo.pdf[37]", then page q37 of the pdf file will be rendered at 500 dpi, converted to grayscale, saved
           in the current working directory as foo_037.png, and used as the input. (This feature requires imagemagick and qpdf.)
 
-* prev - Name of a directory or .set file containing output from a previous run. Default: null.
+* set - Name of a directory or .set file containing output from a previous run. Default: null.
 
 * output - Name of a directory in which to place accumulated results after this run. Default: "output".
             If this directory already exists, it is removed and recreated.

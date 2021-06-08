@@ -40,7 +40,7 @@ def match_characters_to_image(job,page,report_dir)
 end
 
 def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed,verbosity:2)
-  if page.dpi<=0 or page.dpi>2000 then die("page.dpi=#{page.dpi} fails sanity check") end
+  if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
   print "Searching for character #{char} in text file #{page.png_filename}\n"
   pat = job.set.pat(char)
   match_character_messages_helper(!from_seed,force_cl,job.force_location,verbosity)

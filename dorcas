@@ -56,9 +56,8 @@ def main()
   report_dir = dir_and_file_to_path(job.output,"_reports")
   job.output = create_directories(job.output,report_dir)
   create_text_file(dir_and_file_to_path(job.output,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
-  if job.prev!=nil then
-    prev_set = Fset.from_file_or_directory(job.prev)
-    copy_all_pat_files(prev_set,job.output) # copy pat files from previous run; these may get overwritten later
+  if !(job.set.nil?) then
+    copy_all_pat_files(job.set,job.output) # copy pat files from previous run; these may get overwritten later
   end
 
   page = Page.from_file(job.image) # handles extracting a page from a pdf, if that syntax was used

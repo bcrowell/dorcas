@@ -4,7 +4,6 @@ class Job
     @keys = []
     init_helper(data,'verb',nil)
     init_helper(data,'image',nil)
-    init_helper(data,'prev',nil)
     init_helper(data,'output',"output")
     init_helper(data,'characters',nil)
     init_helper(data,'seed_fonts',[["Times"]])
@@ -21,17 +20,20 @@ class Job
     if @verb.nil? then die("no verb specified") end
     if !(@verb=='ocr' || @verb=='learn') then die("unrecognized verb: #{verb}") end
     if @image.nil? then die("no image specified") end
-    if (not @prev.nil?) and @prev==@output then die("prev and output must not be the same") end
+    if (not set_filename.nil?) and set_filename==@output then die("set and output must not be the same") end
     if not @characters.nil? then characters_helper() end
     bogus_keys = data.keys-@keys
     if bogus_keys.length>0 then die("bogus keys: #{bogus_keys}") end
   end
 
-  attr_accessor :verb,:image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:prev,:output,:characters,
+  attr_accessor :verb,:image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:output,:characters,
           :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching,:set
+  attr_accessor :set_filename
 
   def to_s
-    return self.to_hash.to_s
+    x = self.to_hash
+    x['set'] = self.set_filename
+    return x.to_s
   end
 
   def to_hash
@@ -52,7 +54,6 @@ class Job
     recognized = false
     if key=='verb' then @verb = value; recognized=true end
     if key=='image' then @image = value; recognized=true end
-    if key=='prev' then @prev = value; recognized=true end
     if key=='output' then @output = value; recognized=true end
     if key=='seed_fonts' then @seed_fonts = value; recognized=true end
     if key=='spacing_multiple' then @spacing_multiple = value.to_f; recognized=true end
@@ -65,7 +66,11 @@ class Job
     if key=='prefer_cluster' then @prefer_cluster = prefer_cluster_helper(value); recognized=true end
     if key=='force_location' then @force_location = force_location_helper(value); recognized=true end
     if key=='no_matching' then @no_matching = value.to_s.downcase=="true"; recognized=true end
-    if key=='set' then @set = value; recognized=true end
+    if key=='set' then
+      set_filename=value
+      @set = Fset.from_file_or_directory(value)
+      recognized=true
+    end
     if !recognized then die("illegal key #{key}") end # We normally don't even call this helper except on known keys. Bogus keys are checked elsewhere.
   end
 
