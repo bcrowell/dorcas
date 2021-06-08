@@ -28,34 +28,36 @@ class Match
 
   attr_reader :scripts,:characters
   attr_accessor :meta_threshold,:hits
-  attr_accessor :pars,:monitor_file,:files_to_delete # private methods
+  attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code # private methods
 
   def execute(page,set,batch_code:'',if_monitor_file:true)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
     # Page must have .stats containing an 'x_height' key, which is used to estimate parameters for peak detection kernel and maximum number of hits.
     # Stats should also contain keys 'background', 'dark', and 'threshold'.
 
-    self.three_stage_prep(page,self.characters,set,page.stats,batch_code,self.meta_threshold,if_monitor_file:if_monitor_file)
-    self.hits = self.three_stage_complete(page,self.characters,set,page.stats,batch_code,self.meta_threshold)
+    self.batch_code = batch_code
+
+    self.three_stage_prep(page,self.characters,set,self.meta_threshold,if_monitor_file:if_monitor_file)
+    self.hits = self.three_stage_complete(page,self.characters,set)
     self.three_stage_cleanup(page)
 
     return self.hits
   end
 
-  def three_stage_prep(page,chars,set,stats,batch_code,meta_threshold,if_monitor_file:true)
+  def three_stage_prep(page,chars,set,meta_threshold,if_monitor_file:true)
     # This runs the first of the three stages, using fft convolution. This is the part that parallelizes well to multiple cores, and for
     # performance should be called with many characters at once.
     die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
-    xheight = stats['x_height']
+    xheight = page.stats['x_height']
     self.pars = three_stage_guess_pars(page,xheight,meta_threshold:meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-    self.hits,self.files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:batch_code)
+    self.hits,self.files_to_delete = freak(page,chars,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
 
-  def three_stage_complete(page,chars,set,stats,batch_code,meta_threshold)
+  def three_stage_complete(page,chars,set)
     # This can be called on one character at a time or on any subset of the characters used in three_stage_prep().
     # Input image stats are all in ink units. See comments at top of function about why it's OK
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
