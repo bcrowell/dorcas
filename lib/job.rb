@@ -68,7 +68,7 @@ class Job
     if key=='no_matching' then @no_matching = value.to_s.downcase=="true"; recognized=true end
     if key=='set' then
       set_filename=value
-      @set = Fset.from_file_or_directory(value)
+      if !(value.nil?) then @set = Fset.from_file_or_directory(value) end
       recognized=true
     end
     if !recognized then die("illegal key #{key}") end # We normally don't even call this helper except on known keys. Bogus keys are checked elsewhere.
