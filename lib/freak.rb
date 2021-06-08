@@ -30,13 +30,15 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,x
     count += 1
   }
   print "μοῖραι=#{μοῖραι}\n"
+  write_debugging_images = false
+  if write_debugging_images then print "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
 
   μοῖραι.each { |chars|
     if chars=='' then next end
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
     code,killem = freak_generate_code_and_prep_files(outfile,batch_code,page.image,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
-           threshold1,max_hits,laxness:laxness)
+           threshold1,max_hits,laxness:laxness,write_debugging_images:write_debugging_images)
     files_to_delete.concat(killem)
     all_codes.push(code)
   }
@@ -50,7 +52,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,x
 end
 
 def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,
-                       max_hits,parallelizable:false,laxness:0.0)
+                       max_hits,parallelizable:false,laxness:0.0,write_debugging_images:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
   # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
@@ -88,7 +90,6 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   w = boost_for_no_large_prime_factors(text.width+max_pat_width+2*a+1)
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
-  write_debugging_images = true
   want_clipping = false
   want_filtering = !(high_pass.nil?)
   if want_filtering then  

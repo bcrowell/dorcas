@@ -54,7 +54,7 @@ def main()
   print "Parameters for this job:#{job}\n"
 
   report_dir = dir_and_file_to_path(job.output,"_reports")
-  temp_dir,job.output = create_directories(job.output,report_dir)
+  job.output = create_directories(job.output,report_dir)
   create_text_file(dir_and_file_to_path(job.output,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
   if job.prev!=nil then
     prev_set = Fset.from_file_or_directory(job.prev)
@@ -65,13 +65,13 @@ def main()
   job.image = page.png_filename
   page.analyze(job.spacing_multiple,job.guess_dpi,job.guess_font_size)
 
-  run_job(job,page)
+  run_job(job,page,report_dir)
 
   finish = Time.now
   print "Total time for this entire run = #{finish-start} seconds.\n"
 end
 
-def run_job(job,page)
+def run_job(job,page,report_dir)
   if job.verb=='ocr' then
     # Fixme: should look at job.characters.
     #m = Match.new(characters:'h',meta_threshold:job.threshold)
@@ -81,7 +81,7 @@ def run_job(job,page)
     m.execute(page,set,batch_code:Process.pid.to_s)
   end
   if job.verb=='learn' then
-    pats = learn_pats(job,page,report_dir,temp_dir)
+    pats = learn_pats(job,page,report_dir)
     write_svg_reports(job,report_dir,pats)
   end
 end

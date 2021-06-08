@@ -1,15 +1,15 @@
 # coding: utf-8
 
-def learn_pats(job,page,report_dir,temp_dir)
+def learn_pats(job,page,report_dir)
   if job.no_matching then
     pats = create_pats_no_matching(job,page)
   else
-    pats = match_characters_to_image(job,page,report_dir,temp_dir)
+    pats = match_characters_to_image(job,page,report_dir)
   end
   return pats
 end
 
-def match_characters_to_image(job,page,report_dir,temp_dir)
+def match_characters_to_image(job,page,report_dir)
   all_fonts,script_and_case_to_font_name = load_fonts(job)
 
   pats = []
@@ -29,7 +29,7 @@ def match_characters_to_image(job,page,report_dir,temp_dir)
       if (not job.force_location.nil?) and job.force_location.has_key?(char) then force_loc=job.force_location[char] end
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
-      pat,hits,composites = match_character(char,job,page,temp_dir,seed_font,dpi,script,report_dir,matches_svg_file,name,force_cl,force_loc)
+      pat,hits,composites = match_character(char,job,page,seed_font,dpi,script,report_dir,matches_svg_file,name,force_cl,force_loc)
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }
@@ -41,7 +41,7 @@ end
   # figure out from job object: text_file(=job.image), text, spacing_multiple, threshold, cluster_threshold, output_dir(=job.output), prev_set(=job.set)
   # fudge_size(=job.adjust_size), stats(=page.stats), peak_to_bg(=page....), dpi(=page...)
 
-def match_character(char,job,page,temp_dir,seed_font,dpi,script,report_dir,matches_svg_file,name,force_cl,force_loc)
+def match_character(char,job,page,seed_font,dpi,script,report_dir,matches_svg_file,name,force_cl,force_loc)
   verbosity = 2
   # returns nil if there's no match
   print "Searching for character #{char} in text file #{text_file}\n"
@@ -51,7 +51,7 @@ def match_character(char,job,page,temp_dir,seed_font,dpi,script,report_dir,match
   if pat_from_prev then
     pat = job.set.pat(char)
   else
-    pat = char_to_pat(char,temp_dir,f,page.dpi,script,char)
+    pat = char_to_pat(char,f,page.dpi,script,char)
   end
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
 
@@ -128,12 +128,10 @@ def load_fonts(job)
 end
 
 def create_directories(output_dir,report_dir)
-  temp_dir = 'temp'
   if File.exists?(output_dir) then FileUtils.rm_rf(output_dir) end # has safety features, https://stackoverflow.com/a/12335711
-  if not File.exists?(temp_dir) then Dir.mkdir(temp_dir) end
   if not File.exists?(output_dir) then Dir.mkdir(output_dir) end
   if not File.exists?(report_dir) then Dir.mkdir(report_dir) end
-  return [temp_dir,output_dir]
+  return output_dir
 end
 
 def copy_all_pat_files(set,output_dir)
