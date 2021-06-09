@@ -23,14 +23,14 @@ def three_stage_guess_pars(page,xheight,meta_threshold:0.5)
   #   If you leave the earlier stages wide open (threshold1=-1, max_hits very high), then setting
   #   threshold3=-0.2 gives many obviously bad matches, 0 gives only a few false positives. If early stages are
   #   set much tighter, then threshold3 can be set as low as -0.5 with very few false positives.
-  threshold1,threshold2,threshold3,laxness = [0.2,0.4,0.0,0.0]
+  threshold1,threshold2,threshold3,laxness = [0.2,0.4,0.85,0.0]
   tighten = meta_threshold-0.5
   if tighten<0 then
-    a1,a2,a3,al = [0.8,1.8,1.4,-2.0]
+    a1,a2,a3,al = [0.8,1.8,0.75,-2.0]
     x = 10**(-2*tighten)
     if x>30 then x=30 end
   else
-    a1,a2,a3,al = [0.8,0.6,1.0,0.0]
+    a1,a2,a3,al = [0.8,0.6,0.17,0.0]
     x = 1
   end
   threshold1,threshold2,threshold3,laxness = [threshold1+a1*tighten,threshold2+a2*tighten,threshold3+a3*tighten,laxness+al*tighten]
