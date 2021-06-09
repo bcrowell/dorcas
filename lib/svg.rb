@@ -113,7 +113,7 @@ def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits,composites
   dpi = 300.0 # fixme
   scale = 25.4/dpi # to convert from pixels to mm
   labels = []
-  x_offset,y_offset = 0,10 # mm
+  x_offset,y_offset = 0,9.7 # mm
   h = 0.7 # mm
   hits.each { |hit|
     c,x,y = hit

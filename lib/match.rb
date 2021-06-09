@@ -33,7 +33,7 @@ class Match
   attr_accessor :meta_threshold,:hits
   attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code # private methods
 
-  def execute(page,set,batch_code:'',if_monitor_file:true)
+  def execute(page,set,batch_code:'',if_monitor_file:true,verbosity:1)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
     # Page must have .stats containing an 'x_height' key, which is used to estimate parameters for peak detection kernel and maximum number of hits.
     # Stats should also contain keys 'background', 'dark', and 'threshold'.
@@ -41,6 +41,7 @@ class Match
     self.batch_code = batch_code
 
     self.three_stage_prep(page,set,if_monitor_file:if_monitor_file)
+    print "  Done with fft for #{self.characters}.\n" if verbosity>=1
     self.hits = self.three_stage_finish(page,set)
     self.three_stage_cleanup(page)
 
@@ -83,7 +84,7 @@ class Match
       want_these_chars[n] = true
       pat_by_name[n] = p
       bw[n] = image_to_ink_array(p.bw)
-      red[n] = image_to_ink_array(p.red)
+      red[n] = image_to_ink_array(p.pink)
       pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
       sdp[n] = pat_stats['sd']
     }

@@ -126,3 +126,15 @@ def array_ascii_art(a,fn:lambda { |c| c})
   }
   return result
 end
+
+def flip_array(a)
+  w,h = array_dimensions(a)
+  b = a.clone
+  0.upto(w-1) { |i|
+    ii = w-1-i
+    if i==ii then next end
+    b[i] = a[ii]
+    b[ii] = a[i]
+  }
+  return b
+end

@@ -30,7 +30,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,x
     count += 1
   }
   print "μοῖραι=#{μοῖραι}\n"
-  write_debugging_images = false
+  write_debugging_images = true
   if write_debugging_images then print "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
 
   μοῖραι.each { |chars|

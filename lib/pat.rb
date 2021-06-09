@@ -13,6 +13,7 @@ class Pat
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
+  attr_accessor :pink
 
   def width()
     return bw.width
@@ -43,13 +44,13 @@ class Pat
   end
 
   def white()
-    # A pattern where the part we conceptualize as white is set to black, and the red and white parts set to white.
+    # A pattern where the part we conceptualize as white is set to black, and the red, pink, and white parts set to white.
     # That is, this is a boolean mask that says where the conceptual white is.
     w = ChunkyPNG::Image.new(self.width,self.height,bg_color = ChunkyPNG::Color::BLACK)
     white_color = ChunkyPNG::Color::WHITE
     0.upto(w.width-1) { |i|
       0.upto(w.height-1) { |j|
-        if has_ink(@red[i,j]) then w[i,j]=white_color end # Turn all the red to white.
+        if has_ink(@pink[i,j]) then w[i,j]=white_color end # Turn all the red to white.
         if has_ink(@bw[i,j]) then w[i,j]=white_color end # Turn all the black to white
       }
     }
@@ -128,15 +129,28 @@ class Pat
     temp_files.each { |n| FileUtils.rm_f(n) }
     if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
     if data.has_key?('line_spacing') then line_spacing=data['line_spacing'] end
-    if if_fix_red then red=Pat.fix_red(red,data['baseline']) end
+    if if_fix_red then
+      if data.has_key?('line_spacing') then 
+        line_spacing_for_pink=data['line_spacing']
+      else
+        line_spacing_for_pink=72; warn("using default line spacing for pink")
+      end
+      red,pink=Pat.fix_red(bw,red,data['baseline'],line_spacing_for_pink,data['character'])
+    else
+      pink = red
+    end
     p = Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
+    p.pink = pink
     return p
   end
 
-  def Pat.fix_red(red,baseline)
+  def Pat.fix_red(bw,red,baseline,line_spacing,c)
     # It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
     # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
     # down into ε's whitespace.
+    # The argument c is used only for debugging.
+    # Note that if there are flyspecks in bw, it will have an effect on this.
+    # Returns chunkypng objects [red,pink].
     r = image_to_boolean_ink_array(red)
     #print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) 
     w,h = ink_array_dimensions(r)
@@ -167,10 +181,79 @@ class Pat
         }
       end
     }
-    #print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) 
-    return boolean_ink_array_to_image(r)
+    r_with_baseline_fix = r.clone
+    #if c=='ε' then print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) end
+
+    pink_radius = (0.042*line_spacing).round  # the magic constant gives 3 pixels for Giles, which worked well
+    r = pinkify(image_to_boolean_ink_array(bw),r,pink_radius,c)
+    #if c=='ε' then print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) end
+
+    return [boolean_ink_array_to_image(r_with_baseline_fix),boolean_ink_array_to_image(r)]
   end
 
+end
+
+def pinkify(b,r,x,c)
+  # Return a new version of the red in which additional pixels are deemed honorary red pixels. See pinkify_right_side() for details.
+  # b and r are boolean ink arrays; returns a modified version of r
+  # c is used only for debugging
+  m = pinkify_right_side(b,r,x,c)
+  return flip_array(pinkify_right_side(flip_array(b),flip_array(m),x,''))
+end
+
+def pinkify_right_side(b,r,x,c)
+  # c is used only for debugging
+  w,h = ink_array_dimensions(r)
+  center = w/2 # possibly inaccurate
+  m = r.clone
+  center.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      # Decide whether (i,j) deserves honorary red status according to criterion #1, which
+      # is to remove concavities <=x in depth and <=2x in height.
+      if nearest_right(r,i,j)<=x and nearest_above(r,i,j)+nearest_below(r,i,j)<2*x then m[i][j]=true end
+    }
+  }
+  m2 = m.clone
+  center.upto(w-1) { |i|
+    0.upto(h-1) { |j|
+      # Now, cumulatively, apply criterion #2, which is to pinkify points whose horizontal distance from 
+      # previously established red/pink is <=x and whose horizontal distance from black is >x.
+      if nearest_right(m,i,j)<=x and nearest_left(b,i,j)>x then m2[i][j]=true end
+    }
+  }
+  return m2
+end
+
+def nearest_left(a,i,j)
+  w,h = ink_array_dimensions(a)
+  i.downto(0) { |ii|
+    if a[ii][j] then return i-ii end
+  }
+  return i
+end
+
+def nearest_right(a,i,j)
+  w,h = ink_array_dimensions(a)
+  i.upto(w-1) { |ii|
+    if a[ii][j] then return ii-i end
+  }
+  return w-1-i
+end
+
+def nearest_below(a,i,j)
+  w,h = ink_array_dimensions(a)
+  j.upto(h-1) { |jj|
+    if a[i][jj] then return jj-j end
+  }
+  return h-1-j
+end
+
+def nearest_above(a,i,j)
+  w,h = ink_array_dimensions(a)
+  j.downto(0) { |jj|
+    if a[i][jj] then return j-jj end
+  }
+  return j
 end
 
 #---------- end of class Pat

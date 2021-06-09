@@ -1,4 +1,4 @@
-def three_stage_guess_pars(page,xheight,meta_threshold:0.5)
+def three_stage_guess_pars(page,xheight,meta_threshold:0.5,verbosity:1)
   # Returns all the necessary parameters for a three-stage match consisting of freak, simple correlation, and squirrel.
   est_max_chars = 0.3*page.width*page.height/(xheight*xheight)
   # ... The 0.3 was estimated from some sample text.
@@ -43,7 +43,9 @@ def three_stage_guess_pars(page,xheight,meta_threshold:0.5)
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well; varying sigma mainly just renormalizes scores
   a = (xheight/3.0).round # gives 10 for Giles; reducing it by a factor of 2 breaks peak detection; doubling it has little effect
 
-  #print "threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits=#{[threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]}\n"
+  if verbosity>=1 then
+    print "threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits=#{[threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]}\n"
+  end
 
   return [threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]
 end
