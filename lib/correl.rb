@@ -43,39 +43,24 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
-def improve_hits_using_squirrel(hits,text_ink,bw_ink,red_ink,stats,threshold)
-  controls = []
-  w,h = ink_array_dimensions(text_ink)
-  wp,hp = ink_array_dimensions(bw_ink)  
-  1.upto(100) { |i|
-    i = wp+rand(w-2*wp)
-    j = hp+rand(h-2*hp)
-    s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
-    #print sprintf("    squirrel: i,j=%4d,%4d       s=%5.2f    control\n",i,j,s)
-    controls.push(s)
+def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil)
+  # returns [score,data,scooch_x,scooch_y]
+  scores = []
+  other = []
+  (-max_scooch).upto(max_scooch) { |scooch_x|
+    (-max_scooch).upto(max_scooch) { |scooch_y|
+      s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,debug)
+      scores.push(s)
+      other.push([data,scooch_x,scooch_y])
+    }
   }
-  mean,sd = find_mean_sd(controls)
-
-  cooked = []
-  hits.each { |x|
-    c,i,j = x
-    s,info = squirrel(text_ink,bw_ink,red_ink,i,j,stats)
-    s = (s-mean)/(1.0-mean) # normalize so that a perfect match is 1 and a real-world uncorrelated result is about 0
-    s = s*1.23-0.08 
-    # ... Adjust so that  we can use the same threshold as with the basic correlation algorithm.
-    #     The multiplicative constant is derived by making good matches be about the same. We then apply the -0.08 so that
-    #     an optimal threshold is about the same.
-    next if s<threshold
-    print sprintf("    squirrel: i,j=%4d,%4d  c=%5.2f   s=%5.2f    %s\n",i,j,c,s,info['image'])
-    cooked.push([s,i,j])
-  }
-
-  cooked.sort! {|a,b| b[0] <=> a[0]} # sort in descending order by score
-
-  return cooked
+  i,s = greatest(scores)
+  x = [i]
+  x.concat(other[i])
+  return x
 end
 
-def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,smear:2,debug:nil)
+def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,smear,debug)
   # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
   # text_raw, pat_raw, and red_raw are ink arrays
   # dx,dy are offsets of pat within text
