@@ -45,6 +45,9 @@ end
 
 def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil)
   # returns [score,data,scooch_x,scooch_y]
+  # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
+  # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
+  # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
   scores = []
   other = []
   (-max_scooch).upto(max_scooch) { |scooch_x|
@@ -55,7 +58,7 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil
     }
   }
   i,s = greatest(scores)
-  x = [i]
+  x = [scores[i]]
   x.concat(other[i])
   return x
 end

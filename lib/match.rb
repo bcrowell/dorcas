@@ -102,7 +102,7 @@ class Match
       debug=nil
       co3,garbage,scooch_x,scooch_y = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
       if make_scatterplot then scatt.push([co1,co3]) end
-      #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}\n" end
+      #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end
       if co2<threshold2 then next end
       if co3<threshold3 then next end
       hits2.push([co3,i+scooch_x,j+scooch_y,misc])

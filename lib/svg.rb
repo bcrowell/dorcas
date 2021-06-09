@@ -110,15 +110,23 @@ def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits,composites
   filename = dir_and_file_to_path(dir,"matches_#{char_name}.png")
   pat.visual.save(filename)
   images.push([text_file,0,0,text.width,text.height,0.4])
+  dpi = 300.0 # fixme
+  scale = 25.4/dpi # to convert from pixels to mm
+  labels = []
+  x_offset,y_offset = 0,10 # mm
+  h = 0.7 # mm
   hits.each { |hit|
-    c,i,j = hit
-    images.push([filename,i,j,pat.bw.width,pat.bw.height,0.8])
+    c,x,y = hit
+    images.push([filename,x,y,pat.bw.width,pat.bw.height,0.8])
+    score_string = (c*100).round.to_s
+    labels.push(svg_text(score_string,x*scale+x_offset,y*scale+y_offset,h))
   }
-  svg = svg_code_matches(char_name,dir,images,300.0,composites)
+  labels_svg = labels.join("\n")
+  svg = svg_code_matches(char_name,dir,images,dpi,composites,labels_svg)
   File.open(svg_filename,'w') { |f| f.print svg }
 end
 
-def svg_code_matches(char_name,dir,image_info,dpi,composites)
+def svg_code_matches(char_name,dir,image_info,dpi,composites,labels_svg)
   images = []
   labels = []
   scale = 25.4/dpi # to convert from pixels to mm
@@ -143,7 +151,7 @@ def svg_code_matches(char_name,dir,image_info,dpi,composites)
   }
   images_svg = images.join("\n")
   text_svg = labels.join("\n")
-  svg = "#{svg_header()}  #{images_svg} #{text_svg} </svg>"
+  svg = "#{svg_header()}  #{images_svg} #{text_svg} #{labels_svg} </svg>"
   return svg
 end
 

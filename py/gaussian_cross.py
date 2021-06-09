@@ -16,7 +16,9 @@ import math,numpy
 # is a poor match, the real peaks can be smeared out horizontally or vertically,
 # which then makes the kernel reject them completely. To deal with this, I added
 # the parameter laxness, which, if nonzero, lets through some fraction of the
-# "ridges" as well as the peak.
+# "ridges" as well as the peak. Also, for characters like - and l, it seems that
+# the peaks are too ridge-like, and the algorithm breaks completely unless I
+# set a nonzero laxness.
 
 def gaussian_cross_kernel(w,h,a,sigma,laxness):
   # a should be an integer

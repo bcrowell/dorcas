@@ -35,6 +35,7 @@ def three_stage_guess_pars(page,xheight,meta_threshold:0.5)
   end
   threshold1,threshold2,threshold3,laxness = [threshold1+a1*tighten,threshold2+a2*tighten,threshold3+a3*tighten,laxness+al*tighten]
   max_hits = (max_hits*x).round
+  if laxness<0.4 then laxness=0.4 end # otherwise kernel screws up on letters like "l," see comments at top of py/gaussian_cross.py
 
   smear = 2 # used in Pat.fix_red()
 
@@ -42,6 +43,7 @@ def three_stage_guess_pars(page,xheight,meta_threshold:0.5)
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well; varying sigma mainly just renormalizes scores
   a = (xheight/3.0).round # gives 10 for Giles; reducing it by a factor of 2 breaks peak detection; doubling it has little effect
 
+  #print "threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits=#{[threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]}\n"
 
   return [threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]
 end

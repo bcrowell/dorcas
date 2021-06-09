@@ -154,7 +154,7 @@ end
 def compose_safe(a,b,i,j)
   # ChunkyPNG crashes if b hangs outside of a. In that situation, just silently fail.
   # Some of the ! functions like compose! seem to crash, so don't use them.
-  if i+b.width>a.width or j+b.height>a.height then
+  if i+b.width>a.width or j+b.height>a.height or i<0 or j<0 then
     #warn("failing")
     return a
   end
