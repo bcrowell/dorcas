@@ -33,26 +33,29 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,x
   write_debugging_images = true
   if write_debugging_images then print "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
 
+  semaphore_files = []
   μοῖραι.each { |chars|
     if chars=='' then next end
     pats = chars.chars.map{ |c| set.pat(c) }
     char_names = chars.chars.map { |c| char_to_short_name(c) }
+    semaphore_file = temp_file_name()
     code,killem = freak_generate_code_and_prep_files(outfile,batch_code,page.image,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
-           threshold1,max_hits,laxness:laxness,write_debugging_images:write_debugging_images)
+           threshold1,max_hits,semaphore_file,laxness:laxness,write_debugging_images:write_debugging_images)
     files_to_delete.concat(killem)
     all_codes.push(code)
+    semaphore_files.push(semaphore_file)
   }
 
   #print all_codes[0] 
 
   # run it
-  hits = convolve(all_codes,[outfile],batch_code)
+  hits = convolve(all_codes,[outfile],batch_code,semaphore_files)
   return [hits,files_to_delete]
 
 end
 
 def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,
-                       max_hits,parallelizable:false,laxness:0.0,write_debugging_images:false)
+                       max_hits,semaphore_file,parallelizable:false,laxness:0.0,write_debugging_images:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
   # correctly getting rid of DC. Ink darker than image_ampl is clipped, and negative values are also clipped.
@@ -72,6 +75,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   files_to_delete = []
   image_file = temp_file_name()
   files_to_delete.push(image_file)
+  files_to_delete.push(semaphore_file)
   code = []
 
   skip_file_prep = false # if true, then for testing of code generation, don't bother writing and deleting files
@@ -183,16 +187,20 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
       code.push("write")
     end
     norm = 1.0/nb
-    code.push("r score_#{count},f #{threshold1},i #{a},i #{max_hits},c #{outfile},c a,c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},peaks")
+    box = json_armored([0,text.width-1,0,text.height-1])
+    code.push("r score_#{count},f #{threshold1},i #{a},i #{max_hits},c #{outfile},c a")
+    code.push("c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},c #{box},peaks")
     count = count+1
   }
+  code.push("c #{semaphore_file},c done,write_to_file")
 
   #-----------
 
   # postprocess code
   code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")+"\n"
+  code = code.gsub(/__COMMA__/,',')
 
-  #print code
+  print code
 
   return [code,files_to_delete]
 end
@@ -218,3 +226,10 @@ def freak_gen_get_image(label,filename,image_bg,image_ampl,w,h,rot:false,debug:n
   code.push("d #{label}")
   return code
 end
+
+def json_armored(x)
+  # In the rpn code I generate, I use commas temporarily as statement separators, then later convert them to newlines.
+  # In JSON code, we need to protect the commas. At the end we change them back to commas.
+  return JSON.generate(x).gsub(/,/,'__COMMA__')
+end
+

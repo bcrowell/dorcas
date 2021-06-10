@@ -2,7 +2,7 @@
 #    2-dimensional fft
 #-------------------------------------------------------------------------
 
-def convolve(code_array,retrieve_hits_from_files,batch_code)
+def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
   # Spawns a set of processes to do a job in parallel.
   # Code_array contains code for each of the n processes.
   # Retrieve_hits_from_files contains a list of file names from which to retrieve input. (Can be just one.)
@@ -16,6 +16,28 @@ def convolve(code_array,retrieve_hits_from_files,batch_code)
     pid = Process.spawn("python3","py/convolve.py",{:in=>temp})
     pids.push(pid)
   }
+  # The following allows us to do other things while the child processes are running, such as print status messages
+  # or update a monitor image. However, if a child dies without writing the semaphore file, this will never exit.
+  # There doesn't seem to be any platform-independent way to do this in ruby: 
+  #   https://stackoverflow.com/questions/10589935/get-process-status-by-pid-in-ruby
+  #   https://apidock.com/ruby/Process/kill/class
+  #   https://stackoverflow.com/questions/141162/how-can-i-determine-if-a-different-process-id-is-running-using-java-or-jruby-on/200568#200568
+  while true
+    sleep 5 # seconds
+    i = 0
+    ndone = 0
+    semaphore_files.each { |sem|
+      pid = pids[i]
+      #status = `ps -o state -p #{pid}`.chomp # posix, https://stackoverflow.com/a/10592618/1142217
+      #print "process #{pid} has status #{process_running?(pid)}\n"
+      if File.exists?(sem) then
+        print "Process #{pid} has finished.\n"
+        ndone += 1
+      end
+      i += 1
+    }
+    if ndone>=pids.length then break end
+  end
   pids.each { |pid|
     Process.wait(pid)
   }
@@ -34,6 +56,22 @@ def convolve(code_array,retrieve_hits_from_files,batch_code)
     }
   }
   return hits
+end
+
+def process_running?(pid)
+  # This doesn't actually seem to work, returns true even if the process is done.
+  begin
+    Process.kill(0, pid)
+    return true
+  rescue Errno::EPERM                     # changed uid
+    # puts "No permission to query #{pid}!";
+    return nil
+  rescue Errno::ESRCH
+    return false      # we also get this if it's a zombie
+  rescue
+    return nil
+    #puts "Unable to determine status for #{pid} : #{$!}"
+  end
 end
 
 def test_convolve(code,to_int:true,human_input:true)

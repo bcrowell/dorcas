@@ -109,7 +109,7 @@ def parse(key,data):
     else:
       die(f"unrecognized unary operator: {data}")
   if key in ('o','read','read_rot','write','rpn','stack','bloat','bloat_rot','exit','print_stderr','index','high_pass','noneg','clip','dup','swap',
-                   'gaussian_cross_kernel','peaks'):
+                   'gaussian_cross_kernel','peaks','write_to_file'):
     return (key,None)
   die(f"unrecognized key: {key}")
 
@@ -171,6 +171,7 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='peaks':
+      box = stack.pop() # json character string describing box to which to restrict matches, [left,right,top,bottom]
       batch_code = stack.pop()
       th = stack.pop()
       tw = stack.pop()
@@ -182,9 +183,14 @@ def execute(rpn):
       radius = stack.pop()
       threshold = stack.pop()
       array = stack.pop()
-      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code)
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code,json.loads(box))
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
+    if key=='write_to_file':
+      x = stack.pop()
+      filename = stack.pop()
+      with open(filename,mode) as f:
+        print(json.dumps(x),file=f)
     if key=='gaussian_cross_kernel':
       laxness = stack.pop()
       sigma = stack.pop()
@@ -301,7 +307,7 @@ def write_op(im,filename):
   write_image(im,filename)
   return (0,None)
 
-def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code):
+def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code,box):
   # Look for array elements that are the greatest within a square with a certain radius and that are above
   # a certain threshold. Sort them by descending order of score, and then write the first max_peaks candidates
   # to the given file.
@@ -314,7 +320,7 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
   h,w = array.shape
   threshold = threshold_raw/norm
   #sys.stderr.write(f"h,w={h},{w} threshold={threshold}\n")
-  hits = search_for_peaks(array,w,h,tw,th,threshold,numpy.Inf,radius,norm,max_peaks,0)
+  hits = search_for_peaks(array,w,h,tw,th,threshold,numpy.Inf,radius,norm,max_peaks,box,0)
   n = len(hits)
   if n>max_peaks:
     n=max_peaks
@@ -331,8 +337,11 @@ def peaks_op(array,threshold_raw,radius,max_peaks,filename,mode,label,norm,tw,th
       # https://unix.stackexchange.com/a/42564/39248
   return (0,None)
 
-def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm,max_peaks,depth):
-  err,hits = search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,max_peaks)
+def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm,max_peaks,box,depth):
+  # When searching with a low threshold, we may be limited by max_peaks, so that the effective threshold becomes higher.
+  # We don't know in advance how much higher, so we do a binary search using recursion. This is actually pretty efficient
+  # because we can collect more hits (see overdo below) and winnow afterwards. But overdo can't be infinite.
+  err,hits = search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,box,max_peaks)
   if err==0:
     return hits
   # too many hits
@@ -340,20 +349,20 @@ def search_for_peaks(array,w,h,tw,th,lo,hi,radius,norm,max_peaks,depth):
     mid = lo+1.0/norm
   else:
     mid = (lo+hi)*0.5
-  hits1 = search_for_peaks(array,w,h,tw,th,mid,hi,radius,norm,max_peaks,depth+1)
+  hits1 = search_for_peaks(array,w,h,tw,th,mid,hi,radius,norm,max_peaks,box,depth+1)
   if len(hits1)==max_peaks:
     return hits1
-  hits2 = search_for_peaks(array,w,h,tw,th,lo,mid,radius,norm,max_peaks-len(hits1),depth+1)
+  hits2 = search_for_peaks(array,w,h,tw,th,lo,mid,radius,norm,max_peaks-len(hits1),box,depth+1)
   return hits1+hits2
 
-def search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,max_peaks):
+def search_for_peaks_low_level(array,w,h,tw,th,lo,hi,radius,norm,box,max_peaks):
   # Returns [err,hits].
   # If there were going to be too many hits by more than the amount defined by overdo, returns with an error.
   # If the number of hits is greater than max_peaks but less than overdo, returns the highest ones as requested.
   overdo = max_peaks*2+10000
   hits = []
-  for i in range(w):
-    for j in range(h):
+  for i in range(box[0],box[1]+1):
+    for j in range(box[2],box[3]+1):
       x = array[j,i].real
       # ... Even when not using high-pass filtering, results have small imaginary parts.
       #     Note that numpy.complex64 will not throw an error on comparison: https://stackoverflow.com/q/67840584/1142217
