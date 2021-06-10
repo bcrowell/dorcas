@@ -18,6 +18,10 @@ class Page
     return self.image.height
   end
 
+  def box
+    return Box.new(0,self.width-1,0,self.height-1)
+  end
+
   def Page.from_file(filename_raw)
     # The filename can be the name of a png file or can have the syntax foo.pdf[37] for page 37 of foo.pdf. In
     # that case, the png_filename attribute is the name of the temp file.

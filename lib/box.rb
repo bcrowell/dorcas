@@ -28,4 +28,14 @@ class Box
   def Box.from_a(a)
     return Box.new(a[0],a[1],a[2],a[3])
   end
+
+  def intersection(q)
+    horiz = intersection_of_intervals([@left,@right],[q.left,q.right])
+    vert  = intersection_of_intervals([@top,@bottom],[q.top,q.bottom])
+    return Box.new(horiz[0],horiz[1],vert[0],vert[1])
+  end
+end
+
+def intersection_of_intervals(a,b)
+  return [    [a[0],b[0]].max , [a[1],b[1]].min     ]
 end

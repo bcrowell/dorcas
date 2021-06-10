@@ -26,22 +26,16 @@ class Match
     end
     @characters = characters
     @meta_threshold = meta_threshold
-    boxes = {} # a hash whose keys are names of characters and whose values are Box objects or empty arrays
-    characters.chars.each { |c| boxes[char_to_short_name(c)] = []} # to be filled in later, either here from force_loc or later when we know size of page
-    if !(force_loc.nil?) then 
-      # at this point, force_loc looks like {"Ψ"=>[493, 190]}
-      force_loc.each { |c,p|
-        x,y = p
-        dx,dy = 70,70 # fixme -- hardcoded
-        boxes[char_to_short_name(c)] = Box.new(x-dx,x+dx,y-dy,y+dy)
-      }
-    end
-    @boxes = boxes
+    # Force_location stuff. In the following, force_locs, if present, has already been converted into the form {'Ψ'=>[123,456]}.
+    # We can't convert this into boxes yet because we don't have page dimensions or font metrics.
+    @locs = {} # a hash whose keys are names of characters and whose values are points [x,y] or empty arrays []
+    characters.chars.each { |c| @locs[char_to_short_name(c)] = []} # fill in defaults
+    if !(force_loc.nil?) then force_loc.each { |c,p| @locs[char_to_short_name(c)] = p } end # overwrite defaults with actual values
   end
 
   attr_reader :scripts,:characters
   attr_accessor :meta_threshold,:hits
-  attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code,:boxes # private methods
+  attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code,:locs,:boxes # private methods
 
   def execute(page,set,batch_code:'',if_monitor_file:true,verbosity:1)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
@@ -66,11 +60,16 @@ class Match
     die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     die("batch_code is nil") if self.batch_code.nil?
-    @boxes.each { |char_name,box|
-      if box.kind_of?(Array) and box.length==0 then # a placeholder value of [], to be filled in now that we know the page size
-        @boxes[char_name] = [0,page.width-1,0,page.height-1]
-        # fixme -- take intersection of this box with the page
+    @boxes = {}
+    @locs.each { |char_name,p|
+      if p.length==0 then 
+        b=page.box
+      else
+        x,y = p
+        dx1,dx2,dy1,dy2 = -200,140,-70,30 # fixme -- hardcoded
+        b=Box.new(x+dx1,x+dx2,y+dy1,y+dy2)
       end
+      @boxes[char_name] = b.intersection(page.box)
     }
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
     xheight = page.stats['x_height']
