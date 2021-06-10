@@ -43,7 +43,7 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
-def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil)
+def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil,k:3.0)
   # returns [score,data,scooch_x,scooch_y]
   # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
@@ -52,7 +52,7 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil
   other = []
   (-max_scooch).upto(max_scooch) { |scooch_x|
     (-max_scooch).upto(max_scooch) { |scooch_y|
-      s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,debug)
+      s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,k,debug)
       scores.push(s)
       other.push([data,scooch_x,scooch_y])
     }
@@ -63,10 +63,11 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil
   return x
 end
 
-def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,smear,debug)
+def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,smear,k,debug)
   # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
   # text_raw, pat_raw, and red_raw are ink arrays
   # dx,dy are offsets of pat within text
+  # k = multiplier to the penalty when image!=template
   # stats should include the keys background, dark, and threshold, which refer to text
   # If debug is not nil, it should be a Pat object.
   w,h = ink_array_dimensions(pat_raw)
@@ -107,7 +108,7 @@ def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,sme
       wt=0.0
       score=0.0
       mismatch = ((!tn) && pp) || ((!pn) && tt)
-      if mismatch then wt=1.0; score= -3.0 end      # we care a lot if one has ink and the other doesn't
+      if mismatch then wt=1.0; score= -k end      # we care a lot if one has ink and the other doesn't
       if pp and tt then wt=1.0; score= 1.0 end      # they both have ink in the same place
       if debug then terms[i][j]=wt*score end
       norm += wt

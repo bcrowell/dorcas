@@ -57,7 +57,7 @@ class Match
     # performance should be called with many characters at once in self.characters.
     # It stores all the hits from the first stage in self.hits, and these can
     # then be run through the later stages using three_stage_complete(), which can be called one character at a time if desired.
-    die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
+    die("stats= #{page.stats.keys}, does not contain required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     die("batch_code is nil") if self.batch_code.nil?
     @boxes = {}
@@ -66,7 +66,8 @@ class Match
         b=page.box
       else
         x,y = p
-        dx1,dx2,dy1,dy2 = -200,140,-70,30 # fixme -- hardcoded
+        l = page.stats['x_height'] # just get some idea of the scale; this could be refined by using more specific font metrics, line spacing
+        dx1,dx2,dy1,dy2 = -2*l,l,-2*l,l # asymmetric ranges, because the pattern's defining point is the upper left corner
         b=Box.new(x+dx1,x+dx2,y+dy1,y+dy2)
       end
       @boxes[char_name] = b.intersection(page.box)
@@ -117,7 +118,8 @@ class Match
       norm = sdp[short_name]*stats['sd_in_text']
       co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
       debug=nil
-      co3,garbage,scooch_x,scooch_y = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,smear:smear,debug:debug)
+      if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
+      co3,garbage,scooch_x,scooch_y = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,k:k,smear:smear,debug:debug)
       if make_scatterplot then scatt.push([co1,co3]) end
       #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end
       if co2<threshold2 then next end

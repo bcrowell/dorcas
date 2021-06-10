@@ -1,6 +1,10 @@
 class Box
-  def initialize(left,right,top,bottom)
-    @left,@right,@top,@bottom = left,right,top,bottom
+  def initialize(left,right,top,bottom,force_ints:true)
+    if force_ints then
+      @left,@right,@top,@bottom = left.round,right.round,top.round,bottom.round
+    else
+      @left,@right,@top,@bottom = left,right,top,bottom
+    end
   end
 
   attr_accessor :left,:right,:top,:bottom
