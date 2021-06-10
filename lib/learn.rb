@@ -50,7 +50,7 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
   print "Searching for character #{char} in image file #{page.png_filename}\n"
   pat = job.set.pat(char)
-  match_character_messages_helper(!from_seed,force_cl,job.force_location,verbosity)
+  match_character_messages_helper(char,!from_seed,force_cl,job.force_location,verbosity)
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 
@@ -151,7 +151,7 @@ def copy_all_pat_files(set,output_dir)
   }
 end
 
-def match_character_messages_helper(pat_from_prev,force_cl,force_loc,verbosity)
+def match_character_messages_helper(char,pat_from_prev,force_cl,force_loc,verbosity)
   if pat_from_prev and not force_cl.nil? then
     warn("The pattern #{prev_pat_filename} exists for character #{char}, but prefer_cluster is set to #{force_cl+1}.\n"+
          "Typically this is a mistake, and the pattern file should have been deleted from the input directory.\n"+

@@ -51,7 +51,7 @@ images are always converted to grayscale before passing them to this code.
 If things go wrong, note that there are special opcodes for debugging.
 
 opcodes:
-i,f,c -- integer, float, or character string; push the literal value onto the stack
+i,f,c,j -- integer, float, or character string; push the literal value onto the stack; j parses a json string
 d,r -- define and refer to symbols (includes a pop or a push, respectively)
 b,s,a -- binary operation on atomic types, scalar with array, or array with array; operations are +, -, *, /, max
 u -- unary operation on array: fft, ifft, max, sum_sq; these all eat the array
@@ -96,6 +96,8 @@ def parse(key,data):
     return (key,int(data))
   if key=='f':
     return (key,float(data))
+  if key=='j':
+    return (key,json.loads(data))
   if key=='c' or key=='d' or key=='r' or key=='forget':
     return (key,data)
   if key=='b' or key=='s' or key=='a':
@@ -127,7 +129,7 @@ def execute(rpn):
       print(rpn)
     if key=='stack':
       print(stack)
-    if key=='i' or key=='f' or key=='c':
+    if key=='i' or key=='f' or key=='c' or key=='j':
       stack.append(data)
     if key=='d': # d=define: pop and define a symbol as that value
       symbol = data
@@ -171,7 +173,7 @@ def execute(rpn):
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='peaks':
-      box = stack.pop() # json character string describing box to which to restrict matches, [left,right,top,bottom]
+      box = stack.pop() # box to which to restrict matches, [left,right,top,bottom]
       batch_code = stack.pop()
       th = stack.pop()
       tw = stack.pop()
@@ -183,7 +185,7 @@ def execute(rpn):
       radius = stack.pop()
       threshold = stack.pop()
       array = stack.pop()
-      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code,json.loads(box))
+      z = peaks_op(array,threshold,radius,max_peaks,filename,mode,label,norm,tw,th,batch_code,box)
       if z[0]!=0:
         die(f"error: {z[1]}, line={line}")
     if key=='write_to_file':

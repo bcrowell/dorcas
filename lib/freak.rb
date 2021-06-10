@@ -1,10 +1,11 @@
 # coding: utf-8
-def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,xheight:30,verbosity:2,batch_code:'')
+def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_hits,xheight:30,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
   # units is the obvious, trivial one of multiplying or dividing by 255.
-  # stats should contain keys 'background', 'dark', and 'threshold'
+  # Stats should contain keys 'background', 'dark', and 'threshold'
+  # Boxes is a hash with keys that are character names and values that are Box objects to restrict searching to.
 
   image_bg = ink_to_png_8bit_grayscale(stats['background'])
   image_ampl = ink_to_png_8bit_grayscale(stats['background'])-ink_to_png_8bit_grayscale(stats['dark']) # positive
@@ -40,7 +41,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,x
     char_names = chars.chars.map { |c| char_to_short_name(c) }
     semaphore_file = temp_file_name()
     code,killem = freak_generate_code_and_prep_files(outfile,batch_code,page.image,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,
-           threshold1,max_hits,semaphore_file,laxness:laxness,write_debugging_images:write_debugging_images)
+           threshold1,boxes,max_hits,semaphore_file,laxness:laxness,write_debugging_images:write_debugging_images)
     files_to_delete.concat(killem)
     all_codes.push(code)
     semaphore_files.push(semaphore_file)
@@ -54,7 +55,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,sigma,a,laxness,max_hits,x
 
 end
 
-def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,
+def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,image_ampl,image_bg,image_thr,high_pass,char_names,threshold1,boxes,
                        max_hits,semaphore_file,parallelizable:false,laxness:0.0,write_debugging_images:false)
   # Image_ampl,image_bg, and image_thr are all positive ints with black=0. Image_ampl is used to normalize the data, so that
   # scores are easy to interpret. Image_bg is subtracted out, although this shouldn't matter if the peak-detection kernel is
@@ -65,7 +66,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   # Image_thr could be used to binary-ize the data, but I'm currently not doing that. It could have the advantage of making the
   # algorithm treat faint or faded ink the same as full-darkness ink, but it could have the disadvantage of misbehaving if
   # the image parameters were estimated incorrectly.
-  # Char_names is used only for things like picking readable names for debugging files.
+  # Char_names are used for (1) things like picking readable names for debugging files, (2) hash keys of boxes.
   # If you don't want high-pass filtering, supply nil for this input.
   # The parallelizable flag would be set to true if we were going to hypothetically do parallelization *inside* convolve.py.
   verbosity=2
@@ -187,9 +188,9 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
       code.push("write")
     end
     norm = 1.0/nb
-    box = json_armored([0,text.width-1,0,text.height-1])
+    box = json_armored(boxes[char_names[count]].to_a)
     code.push("r score_#{count},f #{threshold1},i #{a},i #{max_hits},c #{outfile},c a")
-    code.push("c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},c #{box},peaks")
+    code.push("c #{char_names[count]},f #{norm},i #{text.width},i #{text.height},c #{batch_code},j #{box},peaks")
     count = count+1
   }
   code.push("c #{semaphore_file},c done,write_to_file")
@@ -200,7 +201,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")+"\n"
   code = code.gsub(/__COMMA__/,',')
 
-  print code
+  #print code
 
   return [code,files_to_delete]
 end

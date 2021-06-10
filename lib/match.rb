@@ -26,12 +26,22 @@ class Match
     end
     @characters = characters
     @meta_threshold = meta_threshold
-    if !(force_loc.nil?) then die("force_loc not implemented") end
+    boxes = {} # a hash whose keys are names of characters and whose values are Box objects or empty arrays
+    characters.chars.each { |c| boxes[char_to_short_name(c)] = []} # to be filled in later, either here from force_loc or later when we know size of page
+    if !(force_loc.nil?) then 
+      # at this point, force_loc looks like {"Ψ"=>[493, 190]}
+      force_loc.each { |c,p|
+        x,y = p
+        dx,dy = 70,70 # fixme -- hardcoded
+        boxes[char_to_short_name(c)] = Box.new(x-dx,x+dx,y-dy,y+dy)
+      }
+    end
+    @boxes = boxes
   end
 
   attr_reader :scripts,:characters
   attr_accessor :meta_threshold,:hits
-  attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code # private methods
+  attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code,:boxes # private methods
 
   def execute(page,set,batch_code:'',if_monitor_file:true,verbosity:1)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
@@ -56,12 +66,19 @@ class Match
     die("stats= #{stats.keys}, does not contain the required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     die("batch_code is nil") if self.batch_code.nil?
+    @boxes.each { |char_name,box|
+      if box.kind_of?(Array) and box.length==0 then # a placeholder value of [], to be filled in now that we know the page size
+        @boxes[char_name] = [0,page.width-1,0,page.height-1]
+        # fixme -- take intersection of this box with the page
+      end
+    }
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
     xheight = page.stats['x_height']
     self.pars = three_stage_guess_pars(page,xheight,meta_threshold:self.meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
-    self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,sigma,a,laxness,max_hits,batch_code:self.batch_code)
+    self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,@boxes,
+                    sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
 
   def three_stage_finish(page,set,chars:self.characters)
