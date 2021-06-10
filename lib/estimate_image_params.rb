@@ -36,8 +36,12 @@ def ink_stats_1(image,ink_array)
   threshold,dark = dark_ink(sample,median,submedian,supermedian,max)
   background = submedian
   if dark<threshold+0.3 then dark=threshold+0.3 end # Happens when the page is almost completely empty but does contain some text.
+  coverage = fraction_over_trigger_level(sample,threshold)
+  w = 0.7
+  threshold2 = w*background+(1.0-w)*dark # an independent estimate, w was derived from some faded text so as to give a reasonable threshold
+  if threshold>threshold2 then threshold=threshold2 end # try to make sure it's not too low, which is really bad
   return {'background'=>background,'median'=>median,'min'=>min,'max'=>max,'mean'=>mean,'sd'=>sd,
-        'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark}
+        'submedian'=>submedian,'supermedian'=>supermedian,'threshold'=>threshold,'dark'=>dark,'coverage'=>coverage}
 end
 
 def ink_stats_2(image,ink_array,stats,scale)
@@ -63,6 +67,6 @@ def dark_ink(sample,median,submedian,supermedian,max)
   # On perfect monochrome data, it should be equal to the upper peak value.
   garbage,result1 = find_sup_sub_median(sample,x)
   garbage,result2 = find_sup_sub_median(sample,result1)
-  return [x,result2]
+  return [trough,result2]
 end
 

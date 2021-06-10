@@ -117,8 +117,12 @@ class Match
       unless want_these_chars.has_key?(short_name) then next end
       norm = sdp[short_name]*stats['sd_in_text']
       co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
-      debug=nil
       if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
+      if false then # for ascii art debugging output
+        debug=[true,pat_by_name[short_name]] 
+      else
+        debug=[false,nil]
+      end
       co3,garbage,scooch_x,scooch_y = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,k:k,smear:smear,debug:debug)
       if make_scatterplot then scatt.push([co1,co3]) end
       #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end

@@ -62,3 +62,11 @@ def greatest_in_range(a,i_lo,i_hi,filter:lambda {|x| x},flip:1)
   if g.nil? then return [nil,nil] end
   return [ii,g*flip]
 end
+
+def fraction_over_trigger_level(a,threshold)
+  n = 0
+  a.each { |x|
+    if x>threshold then n += 1 end
+  }
+  return n.to_f/(a.length.to_f)
+end

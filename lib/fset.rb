@@ -112,7 +112,7 @@ class Fset
       chars.chars.each { |char|
         pats.push(char_to_pat(char,job.output,seed_font,page.dpi,script))
       }
-      job.set = Fset.new(pats,{}) # qwe -- will it be a problem that data is empty?
+      job.set = Fset.new(pats,{}) # fixme -- will it be a problem that data is empty?
     }
   end
 

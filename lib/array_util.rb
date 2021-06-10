@@ -120,7 +120,12 @@ def array_ascii_art(a,fn:lambda { |c| c})
   w,h = array_dimensions(a)
   0.upto(h-1) { |j|
     0.upto(w-1) { |i|
-      result = result + fn.call(a[i][j])
+      #print "going in, display.class=#{display.class}\n"
+      display = fn.call(a[i][j])
+      #if i==19 && (j-31).abs<=3 then display='*' end
+      #print "display.class=#{display.class}\n"
+      if not display.kind_of?(String) then die("string not returned from user function") end
+      result = result + display
     }
     result = result + "\n"
   }

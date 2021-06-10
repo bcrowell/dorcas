@@ -48,11 +48,14 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil
   # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
   # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
+  # If debug is not nil, then it should be of the form [true,pat] or [false,...]. The place to set debug is in match.rb.
+  if_debug = !(debug.nil? || !debug[0])
+  if if_debug then debug_pat=debug[1] else debug_pat=nil end
   scores = []
   other = []
   (-max_scooch).upto(max_scooch) { |scooch_x|
     (-max_scooch).upto(max_scooch) { |scooch_y|
-      s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,k,debug)
+      s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,k,nil)
       scores.push(s)
       other.push([data,scooch_x,scooch_y])
     }
@@ -60,6 +63,10 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil
   i,s = greatest(scores)
   x = [scores[i]]
   x.concat(other[i])
+  if if_debug then 
+    # Rerun it once, with the optimum registration, just to get debugging output as requested.
+    squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+other[i][1],dy+other[i][2],stats,smear,k,debug_pat)
+  end
   return x
 end
 
@@ -101,9 +108,10 @@ def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,sme
       p = pat[i][j]
       t = text[i][j]
       wt = 1
-      pp,tt = (p==1),(t==1) # boolean versions
+      pp,tt = [(p==1),(t==1)] # boolean versions
       pn = squirrel_helper_has_neighbor(pat,w,h,i,j,smear)
       tn = squirrel_helper_has_neighbor(text,w,h,i,j,smear)
+      #if debug && i==19 && (j-31).abs<=3 then print "i=#{i} j=#{j} pp=#{pp} tt=#{tt} pn=#{pn} tn=#{tn}, smear=#{smear}\n" end
       # We don't care if they're both whitespace. Default to doing nothing unless something more special happens.
       wt=0.0
       score=0.0
@@ -115,8 +123,15 @@ def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,sme
       total += wt*score
     }
   }
-  if debug then print array_ascii_art(terms,fn:lambda {|x| {0=>' ',1=>'+',-3=>'-'}[x.round]}) end
+  if debug then print array_ascii_art(terms,fn:lambda { |x| squirrel_ascii_art_helper(x) }) end
   return [total/norm,{"image"=>filename}]
+end
+
+def squirrel_ascii_art_helper(x)
+  r = x.round
+  if r==0 then return ' ' end
+  if r>0 then return '+' end
+  if r<0 then return '-' end
 end
 
 def squirrel_helper_has_neighbor(x,w,h,i,j,radius)
