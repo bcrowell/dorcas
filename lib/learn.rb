@@ -1,11 +1,16 @@
 # coding: utf-8
 
 def learn_pats(job,page,report_dir)
-  if job.no_matching then
+  recognized = false
+  if job.verb=='seed' then
     pats = create_pats_no_matching(job,page)
-  else
-    pats = match_characters_to_image(job,page,report_dir)
+    recognized = true
   end
+  if job.verb=='learn' then
+    pats = match_characters_to_image(job,page,report_dir)
+    recognized = true
+  end
+  if !recognized then die("unrecognized verb: #{job.verb}") end
   return pats
 end
 
@@ -82,7 +87,7 @@ def create_pats_no_matching(job,page)
     font_name = script_and_case_to_font_name["#{script_name}***#{c}"]
     seed_font = all_fonts[font_name]
     script = Script.new(script_name)
-    page.dpi = match_seed_font_scale(seed_font,stats,script,fudge_size)
+    page.dpi = match_seed_font_scale(seed_font,page.stats,script,job.adjust_size)
     print "  #{script_name} #{c} #{chars} #{font_name} #{page.dpi} dpi, #{job.guess_font_size} pt\n"
     print "  metrics: #{seed_font.metrics(page.dpi,script)}\n"
     chars.chars.each { |char|
@@ -91,7 +96,7 @@ def create_pats_no_matching(job,page)
       pat = char_to_pat(char,job.output,seed_font,page.dpi,script)
       if pat.nil? then die("    ...nil result") end
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
-      file = Pat.char_to_filename(output_dir,char)
+      file = Pat.char_to_filename(job.output,char)
       print "    ...Written to #{file}\n"
       pat.save(file)
     }

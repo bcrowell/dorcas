@@ -18,7 +18,7 @@ class Job
     init_helper(data,'no_matching',false)
     init_helper(data,'set',nil)
     if @verb.nil? then die("no verb specified") end
-    if !(@verb=='ocr' || @verb=='learn') then die("unrecognized verb: #{verb}") end
+    if !(@verb=='ocr' || @verb=='learn' || @verb=='seed') then die("unrecognized verb: #{verb}") end
     if @image.nil? then die("no image specified") end
     if (not set_filename.nil?) and set_filename==@output then die("set and output must not be the same") end
     if not @characters.nil? then characters_helper() end

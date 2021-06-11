@@ -49,7 +49,7 @@ A series of passes, each with the possible need for human tweaking.
 five or six lines of text. The software estimates the line spacing, which the user should check; if it's
 way off, put in a different value for guess_dpi or guess_font_size.
 The software tries to find a particular character chosen by the user, say "e."
-The user evaluates whether the seed font is a good match; fine-tunes spacing_multiple and fudge_size;
+The user evaluates whether the seed font is a good match; fine-tunes spacing_multiple and adjust_size;
 and fiddles with the threshold for matching.
 
 2. Initial matching: Run the software on an image that's big enough to have most of the common letters of the
@@ -79,14 +79,18 @@ To edit a pattern:
 
 The input file is a JSON hash with keys and values described below. Comments are allowed using javascript syntax ("// ...").
 
-* verb - To do the initial learning of the set of character shapes for a certain font, use "learn." To use an existing set
+* verb - To do the initial learning of the set of character shapes for a certain font, use "seed" or "learn." The former generates
+          patterns from a seed font and generates a set of templates for the first time. The latter takes the preexisting set and
+          uses it to search a scanned text, creating new versions of the templates from that text.  To use an existing set
           to OCR text, use "ocr."
+          Even when using the seed verb, an input image must still be provided in order to fix the size of the font.
 
 * image - Name of a PNG file containing the text that we want to do OCR on. As a convenience feature, if this is
           specified in the form "foo.pdf[37]", then page q37 of the pdf file will be rendered at 500 dpi, converted to grayscale, saved
           in the current working directory as foo_037.png, and used as the input. (This feature requires imagemagick and qpdf.)
 
-* set - Name of a directory or .set file containing output from a previous run. Default: null.
+* set - Name of a directory or .set file containing output from a previous run. When running with the seed verb, this
+          parameter is optional. If it is supplied, then preexisting templates are copied over at the start. Default: null.
 
 * output - Name of a directory in which to place accumulated results after this run. Default: "output".
             If this directory already exists, it is removed and recreated.
@@ -98,8 +102,9 @@ The input file is a JSON hash with keys and values described below. Comments are
           The case argument defaults to both.
 
 * characters - An array of arrays, each of which is of the form [script name,(lowercase|uppercase|both),string].
-          If the third element is absent, then every character from this string is searched for in the text;
-          otherwise the string is taken as a list of characters to search for.
+          If the third element is present, it is taken as a list of characters to search for.
+          Otherwise, we search for every plain letter of the alphabet in this script. In the case of Greek, a short list of
+          accented characters is automatically included as well, but most such characters need to be specified by hand in a separate run.
           Default: [["latin","lowercase"]]
 
 * spacing_multiple - Set to 2 if double-spaced. Default: 1. Setting this appropriately helps the software to guess the right scaling for the seed font.
@@ -129,11 +134,6 @@ The input file is a JSON hash with keys and values described below. Comments are
         case you will need to set the threshold to a very low value as well. The need to do these things may
         actually indicate a problem with a red mask that is not close enough to the character, i.e., the kerning
         in the real document is tighter than estimated by the software.
-
-* no_matching - Doing `"no_matching":true` means that the necessary patterns will be created simply be rendering
-        the seed font, not by looking for matches to the seed font in an actual image of text. This can be used if
-        you simply can't find an example of a certain character in your text. An input image must still be provided
-        in order to fix the size of the font.
 
 # Pattern sets
 
