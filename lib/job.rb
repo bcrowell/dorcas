@@ -21,7 +21,7 @@ class Job
     if !(@verb=='ocr' || @verb=='learn' || @verb=='seed') then die("unrecognized verb: #{verb}") end
     if @image.nil? then die("no image specified") end
     if (not set_filename.nil?) and set_filename==@output then die("set and output must not be the same") end
-    if not @characters.nil? then characters_helper() end
+    characters_helper()
     bogus_keys = data.keys-@keys
     if bogus_keys.length>0 then die("bogus keys: #{bogus_keys}") end
   end
@@ -76,7 +76,10 @@ class Job
 
   def characters_helper()
     # Flesh out the input list of characters so that if they only specified an alphabet, we put in the whole alphabet.
+    # If they didn't give characters at all, put in a default.
+    if @characters.nil? then @characters = [['latin','lowercase'],['greek','lowercase']]end
     processed_chars = []
+    if @characters.nil? then die("no characters specified in job file") end
     @characters.each { |x|
       if x.length!=2 and x.length!=3 then die("illegal value in characters, #{x}, should have 2 or 3 elements") end
       script,c,string = x # if x has 2 elements then string is nil
@@ -88,7 +91,6 @@ class Job
 
   def all_characters()
     # Note that this has already been made explicit by the initializer (in characters_helper()) if the user gave a blank for the whole alphabet.
-    # Returns nil if the user hasn't explicitly given a characters[] data structure.
     result = ''
     @characters.each { |x|
       if x.length!=3 then die("illegal value in characters, #{x}, should have 3 elements at this point") end
