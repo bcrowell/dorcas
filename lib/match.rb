@@ -81,7 +81,7 @@ class Match
                     sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
 
-  def three_stage_finish(page,set,chars:self.characters)
+  def three_stage_finish(page,set,chars:self.characters,verbosity:2)
     # This can be called on one character at a time or on any subset of the characters used in three_stage_prep().
     # Input image stats are all in ink units. See comments at top of function about why it's OK
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
@@ -111,12 +111,15 @@ class Match
     hits2 = []
     bg = stats['background']
     if make_scatterplot then scatt=[] end
+    count_after_pass_2 = 0
     self.hits.each { |x|
       co1,i,j,misc = x
       short_name = misc['label']
       unless want_these_chars.has_key?(short_name) then next end
       norm = sdp[short_name]*stats['sd_in_text']
       co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
+      if co2<threshold2 then next end
+      count_after_pass_2 += 1
       if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
       if false then # for ascii art debugging output
         debug=[true,pat_by_name[short_name]] 
@@ -126,11 +129,10 @@ class Match
       co3,garbage,scooch_x,scooch_y = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,k:k,smear:smear,debug:debug)
       if make_scatterplot then scatt.push([co1,co3]) end
       #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end
-      if co2<threshold2 then next end
       if co3<threshold3 then next end
       hits2.push([co3,i+scooch_x,j+scooch_y,misc])
     }
-    print "filtered #{self.hits.length} to #{hits2.length}\n"
+    if verbosity>=1 then print "Filtered #{self.hits.length} to #{count_after_pass_2} after pass 2, then to #{hits2.length} after pass 3.\n" end
 
     unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits2,chars,set,verbosity:2) end
     if make_scatterplot then print ascii_scatterplot(hits2,save_to_file:'scatt.txt') end
