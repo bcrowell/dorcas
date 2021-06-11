@@ -1,6 +1,12 @@
 def char_to_code_block(c)
   # returns greek, latin, hebrew
   # for	punctuation or whitespace, returns latin
+  # For speed:
+  cd = c.downcase
+  if cd=~/[abcdefghijklmnopqrstuvwxyz]/ then return 'latin' end
+  if cd=~/[αβγδεζηθικλμνξοπρστυφχψως]/ then return 'greek' end
+  if c=~/[אבגדהוזחטילמנסעפצקרשתםןףץ]/ then return 'hebrew' end
+  # If we fall through to here, then it will be really slow.
   b = char_unicode_property(c,'opt_unicode_block_desc')
   if b=~/(Latin|Greek|Hebrew)/ then return $1.downcase end
   return b
@@ -15,6 +21,16 @@ def char_to_name(c)
   #   HEBREW LETTER ALEF
   # The official name of lambda is spelled LAMDA, so that's what we return.
   return char_unicode_property(c,'name').upcase
+end
+
+def matches_case(c,the_case)
+  script = char_to_code_block(c)
+  if script=='hebrew' then return true end
+  if the_case=='both' then return true end
+  is_lowercase = (c.downcase==c)
+  if is_lowercase && the_case=='lowercase' then return true end
+  if !is_lowercase && the_case=='uppercase' then return true end
+  return false
 end
 
 def char_to_short_name(c)
@@ -45,8 +61,19 @@ def char_to_short_name_from_table(c)
   json = <<-"JSON"
 {"a":"a","b":"b","c":"c","d":"d","e":"e","f":"f","g":"g","h":"h","i":"i","j":"j","k":"k","l":"l","m":"m","n":"n","o":"o","p":"p","q":"q","r":"r","s":"s","t":"t","u":"u","v":"v","w":"w","x":"x","y":"y","z":"z","A":"A","B":"B","C":"C","D":"D","E":"E","F":"F","G":"G","H":"H","I":"I","J":"J","K":"K","L":"L","M":"M","N":"N","O":"O","P":"P","Q":"Q","R":"R","S":"S","T":"T","U":"U","V":"V","W":"W","X":"X","Y":"Y","Z":"Z","α":"alpha","β":"beta","γ":"gamma","δ":"delta","ε":"epsilon","ζ":"zeta","η":"eta","θ":"theta","ι":"iota","κ":"kappa","λ":"lambda","μ":"mu","ν":"nu","ξ":"xi","ο":"omicron","π":"pi","ρ":"rho","σ":"sigma","τ":"tau","υ":"upsilon","φ":"phi","χ":"chi","ψ":"psi","ω":"omega","ς":"final_sigma","Α":"Alpha","Β":"Beta","Γ":"Gamma","Δ":"Delta","Ε":"Epsilon","Ζ":"Zeta","Η":"Eta","Θ":"Theta","Ι":"Iota","Κ":"Kappa","Λ":"Lambda","Μ":"Mu","Ν":"Nu","Ξ":"Xi","Ο":"Omicron","Π":"Pi","Ρ":"Rho","Σ":"Sigma","Τ":"Tau","Υ":"Upsilon","Φ":"Phi","Χ":"Chi","Ψ":"Psi","Ω":"Omega","ἡ":"eta_rough","ῥ":"rho_rough","ὑ":"upsilon_rough","ὁ":"omicron_rough","ἱ":"iota_rough","ϊ":"iota_diar","א":"alef","ב":"bet","ג":"gimel","ד":"dalet","ה":"he","ו":"vav","ז":"zayin","ח":"het","ט":"tet","י":"yod","ל":"lamed","מ":"mem","נ":"nun","ס":"samekh","ע":"ayin","פ":"pe","צ":"tsadi","ק":"qof","ר":"resh","ש":"shin","ת":"tav","ם":"final_mem","ן":"final_nun","ף":"final_pe","ץ":"final_tsadi"}
   JSON
-  return JSON.parse(json)[c]
+  return char_to_short_name_hash()[c]
   end
+
+def short_name_to_char(n)
+  return char_to_short_name_hash().invert()[n]
+end
+
+def char_to_short_name_hash()
+  json = <<-"JSON"
+{"a":"a","b":"b","c":"c","d":"d","e":"e","f":"f","g":"g","h":"h","i":"i","j":"j","k":"k","l":"l","m":"m","n":"n","o":"o","p":"p","q":"q","r":"r","s":"s","t":"t","u":"u","v":"v","w":"w","x":"x","y":"y","z":"z","A":"A","B":"B","C":"C","D":"D","E":"E","F":"F","G":"G","H":"H","I":"I","J":"J","K":"K","L":"L","M":"M","N":"N","O":"O","P":"P","Q":"Q","R":"R","S":"S","T":"T","U":"U","V":"V","W":"W","X":"X","Y":"Y","Z":"Z","α":"alpha","β":"beta","γ":"gamma","δ":"delta","ε":"epsilon","ζ":"zeta","η":"eta","θ":"theta","ι":"iota","κ":"kappa","λ":"lambda","μ":"mu","ν":"nu","ξ":"xi","ο":"omicron","π":"pi","ρ":"rho","σ":"sigma","τ":"tau","υ":"upsilon","φ":"phi","χ":"chi","ψ":"psi","ω":"omega","ς":"final_sigma","Α":"Alpha","Β":"Beta","Γ":"Gamma","Δ":"Delta","Ε":"Epsilon","Ζ":"Zeta","Η":"Eta","Θ":"Theta","Ι":"Iota","Κ":"Kappa","Λ":"Lambda","Μ":"Mu","Ν":"Nu","Ξ":"Xi","Ο":"Omicron","Π":"Pi","Ρ":"Rho","Σ":"Sigma","Τ":"Tau","Υ":"Upsilon","Φ":"Phi","Χ":"Chi","Ψ":"Psi","Ω":"Omega","ἡ":"eta_rough","ῥ":"rho_rough","ὑ":"upsilon_rough","ὁ":"omicron_rough","ἱ":"iota_rough","ϊ":"iota_diar","א":"alef","ב":"bet","ג":"gimel","ד":"dalet","ה":"he","ו":"vav","ז":"zayin","ח":"het","ט":"tet","י":"yod","ל":"lamed","מ":"mem","נ":"nun","ס":"samekh","ע":"ayin","פ":"pe","צ":"tsadi","ק":"qof","ר":"resh","ש":"shin","ת":"tav","ם":"final_mem","ן":"final_nun","ף":"final_pe","ץ":"final_tsadi"}
+  JSON
+  return JSON.parse(json)
+end
 
 def char_to_short_name_helper(c)
   # Don't call this directly. Call char_to_short_name() or char_to_short_name_slow().

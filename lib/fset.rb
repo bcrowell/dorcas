@@ -25,6 +25,7 @@ class Fset
   end
 
   def all_char_names
+    # returns a list of short names
     return @index2.keys
   end
 
