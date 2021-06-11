@@ -132,7 +132,7 @@ class Match
       if co3<threshold3 then next end
       hits2.push([co3,i+scooch_x,j+scooch_y,misc])
     }
-    if verbosity>=1 then print "Filtered #{self.hits.length} to #{count_after_pass_2} after second pass, then to #{hits2.length} after the third.\n" end
+    if verbosity>=1 then print "Filtered #{self.hits.length} to #{count_after_pass_2} to #{hits2.length} after second and third passes.\n" end
 
     unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits2,chars,set,verbosity:2) end
     if make_scatterplot then print ascii_scatterplot(hits2,save_to_file:'scatt.txt') end

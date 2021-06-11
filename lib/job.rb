@@ -86,6 +86,19 @@ class Job
     @characters = processed_chars
   end
 
+  def all_characters()
+    # Note that this has already been made explicit by the initializer (in characters_helper()) if the user gave a blank for the whole alphabet.
+    # Returns nil if the user hasn't explicitly given a characters[] data structure.
+    result = ''
+    @characters.each { |x|
+      if x.length!=3 then die("illegal value in characters, #{x}, should have 3 elements at this point") end
+      script,c,string = x
+      result = result + string
+    }
+    if result=='' then return nil end
+    return result
+  end
+
   def prefer_cluster_helper(list)
     # Convert the list of lists to a hash. Convert numbers to 0-based.
     if list.nil? then return nil end

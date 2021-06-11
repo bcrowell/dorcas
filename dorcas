@@ -73,13 +73,24 @@ end
 def run_job(job,page,report_dir)
   if job.verb=='ocr' then
     # Fixme: should look at job.characters.
-    m = Match.new(characters:'ε',meta_threshold:job.threshold)
-    #m = Match.new(scripts:['latin','greek'],meta_threshold:job.threshold)
+    all_chars = job.all_characters
+    if all_chars.nil? then
+      m = Match.new(scripts:['latin','greek'],meta_threshold:job.threshold)
+    else
+      m = Match.new(characters:all_chars,meta_threshold:job.threshold)
+    end
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
     m.execute(page,job.set,batch_code:Process.pid.to_s)
   end
   if job.verb=='seed' || job.verb=='learn' then
     pats = learn_pats(job,page,report_dir)
+    pats.each { |x|
+      if_matched,pat = x
+      next unless if_matched
+      filename = Pat.char_to_filename(job.output,pat.c)
+      print "Writing newly created pattern to #{filename}\n"
+      pat.save(filename)
+    }
     write_svg_reports(job,report_dir,pats)
   end
 end

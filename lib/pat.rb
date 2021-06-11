@@ -141,7 +141,7 @@ class Pat
     # On the fly, fix two possible problems with red mask:
     # (1) It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
     # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
-    # down into ε's whitespace. This operation is nilpotent, so although could be done for once and for all, it's OK to do it every time.
+    # down into ε's whitespace. This operation is idempotent, so although could be done for once and for all, it's OK to do it every time.
     # (2) Fill in concavities in the shape of the red mask, and let it diffuse outward by a few pixels (variable pink_radius below).
     # This is something we want to do on the fly, because the amount of smearing is something we might want to adjust.
     # The argument c is used only for debugging.

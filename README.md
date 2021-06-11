@@ -139,7 +139,7 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 Treating them as zip files:
 
-Create _data.json that looks like this: `{"size":12,"dpi":300}`
+Create _data.json that looks like this: `{"size":12,"dpi":300}` and put it in the directory, e.g., pass46.
 
 `zip -j giles46.set pass46/* -i \*.pat \*_data.json` (backslashes necessary on unix, not on windows)
 
