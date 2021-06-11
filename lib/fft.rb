@@ -48,7 +48,9 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
   retrieve_hits_from_files.each { |file|
     File.open(file,'r') { |f|
       f.each_line {|line|
-        score,x,y,misc = JSON.parse(line)
+        next if line=~/^\s*$/ # nothing but whitespace
+        score,x,y,misc = parse_json_or_warn(line,"The following line could not be parsed as valid JSON:\n#{line}\n")
+        next if score.nil? # happens when there is an error
         if ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
         misc.delete('batch')
         hits.push([score,x,y,misc])

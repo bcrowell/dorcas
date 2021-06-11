@@ -43,3 +43,13 @@ def create_text_file(filename,text)
     f.print text
   }
 end
+
+def parse_json_or_warn(json,warning)
+  # Occasionally it happens that the peaks file gets one line of garbled data in it. We don't just want to crash in that situation.
+  begin
+    return JSON.parse(json)
+  rescue JSON::ParserError
+    warn(warning)
+    return nil
+  end
+end

@@ -22,7 +22,11 @@ def char_to_short_name(c)
   # so it's appropriate for a filename.
   # Examples of returned values: a, A, alpha, Alpha, alef
   # Since this is meant to be human-readable, we change the spelling of lamda to lambda.
-  return char_to_short_name_from_table(c)
+  x = char_to_short_name_from_table(c)
+  if !(x.nil?) then return x end
+  x = char_to_short_name_slow(c)
+  warn("Short name #{x} was inferred for #{c}. This will be slow.")
+  return x
 end
 
 def char_to_short_name_slow(c)
@@ -41,18 +45,33 @@ def char_to_short_name_from_table(c)
   end
 
 def char_to_short_name_helper(c)
-  # Don't call this directly. Call char_to_short_name(), which follows up by verifying that we can reverse the mapping.
+  # Don't call this directly. Call char_to_short_name() or char_to_short_name_slow().
   long = char_to_name(c).gsub(/LAMDA/,'LAMBDA')
   if long=~/LATIN SMALL LETTER (.)/ then return $1.downcase end
   if long=~/LATIN CAPITAL LETTER (.)/ then return $1.upcase end
-  if long=~/GREEK SMALL LETTER (.*)/ then return lc_underbar($1) end
-  if long=~/GREEK CAPITAL LETTER (.*)/ then return lc_underbar($1).capitalize end
+  if long=~/GREEK SMALL LETTER (.*)/ then return clean_up_accent_name(lc_underbar($1)) end
+  if long=~/GREEK CAPITAL LETTER (.*)/ then return clean_up_accent_name(lc_underbar($1).capitalize) end
   if long=~/HEBREW LETTER (.*)/ then return lc_underbar($1) end
   return lc_underbar(long)
 end
 
 def lc_underbar(s)
   return s.downcase.gsub(/ /,'_')
+end
+
+def clean_up_accent_name(x)
+  # input is, e.g., RHO_with_dasia
+  # dasia=rough breathing, tonos,oxia=acute, varia=grave, perispomeni=circumflex, psili=smooth
+  if !(x=~/(.*)_with_(.*)/) then return x end
+  bare,y = $1,$2.downcase
+  stuff = []
+  stuff.push(bare)
+  if y=~/psili/ then stuff.push("smooth") end
+  if y=~/dasia/ then stuff.push("rough") end
+  if y=~/(tonos|oxia)/ then stuff.push("acute") end
+  if y=~/varia/ then stuff.push("grave") end
+  if y=~/perispomeni/ then stuff.push("circ") end
+  return stuff.join("_")
 end
 
 def short_name_to_long_name(name)
