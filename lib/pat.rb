@@ -138,9 +138,12 @@ class Pat
   end
 
   def Pat.fix_red(bw,red,baseline,line_spacing,c)
-    # It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
+    # On the fly, fix two possible problems with red mask:
+    # (1) It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
     # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
-    # down into ε's whitespace.
+    # down into ε's whitespace. This operation is nilpotent, so although could be done for once and for all, it's OK to do it every time.
+    # (2) Fill in concavities in the shape of the red mask, and let it diffuse outward by a few pixels (variable pink_radius below).
+    # This is something we want to do on the fly, because the amount of smearing is something we might want to adjust.
     # The argument c is used only for debugging.
     # Note that if there are flyspecks in bw, it will have an effect on this.
     # Returns chunkypng objects [red,pink].
@@ -203,6 +206,7 @@ def pinkify_right_side(b,r,x,c)
     0.upto(h-1) { |j|
       # Decide whether (i,j) deserves honorary red status according to criterion #1, which
       # is to remove concavities <=x in depth and <=2x in height.
+      next if b[i][j] # Never actually make the read spread on top of a black pixel.
       if nearest_right(r,i,j)<=x and nearest_above(r,i,j)+nearest_below(r,i,j)<2*x then m[i][j]=true end
     }
   }

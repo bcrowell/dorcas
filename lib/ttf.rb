@@ -20,6 +20,9 @@ def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descen
   # and ascenders are at the top, except that a margin is added at the top and bottom as well.
   # The purpose of the margin is that if the renderer puts gray pixels outside the nominal bounding box, we get those.
   # When calling GD, the vertical coordinate means the baseline.
+  # To test this routine:
+  #    ruby -e "c='ϊ'; require 'fileutils'; load 'lib/ttf.rb'; load 'lib/string_util.rb'; load 'lib/other_interpreters.rb';
+  #                     load 'lib/tempfile.rb'; margin=0; ttf_render_string(c,'a.png','/usr/local/share/fonts/GFSPorson.ttf',600,48,68,30,margin,30)"
   image_height = font_height+2*margin
   baseline = font_height-margin-descender
   verbosity = 2
@@ -38,7 +41,7 @@ def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descen
     $white = $dummy_image->colorAllocate(255,255,255);
     my %options = {'resolution'=>"#{dpi},#{dpi}"}; # has little or no effect by itself, is just hinting
     my @bounds = GD::Image->stringFT($black,$ttf_path,$ptsize,0,10,#{baseline},"#{sq}",\%options); # trial run for size; is supposed to be cheap
-    my $w = $bounds[2];
+    my $w = $bounds[2]+#{(em/8.0).round}; # empirically, if I don't add the second term, then the right-hand dot in ϊ gets chopped in half
     my $h = #{image_height};
     my $image = new GD::Image($w,$h);
     $black = $image->colorAllocate(0,0,0);
