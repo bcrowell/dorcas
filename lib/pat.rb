@@ -10,6 +10,7 @@ class Pat
     # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
     # and is also used in the actual OCR'ing process.
+    garbage,@pink=Pat.fix_red(bw,red,baseline,line_spacing,c)
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
@@ -128,20 +129,12 @@ class Pat
     end
     temp_files.each { |n| FileUtils.rm_f(n) }
     if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
-    if data.has_key?('line_spacing') then line_spacing=data['line_spacing'] end
-    if if_fix_red then
-      if data.has_key?('line_spacing') then 
-        line_spacing_for_pink=data['line_spacing']
-      else
-        line_spacing_for_pink=72; warn("using default line spacing for pink")
-      end
-      red,pink=Pat.fix_red(bw,red,data['baseline'],line_spacing_for_pink,data['character'])
+    if data.has_key?('line_spacing') then 
+      line_spacing=data['line_spacing']
     else
-      pink = red
+      line_spacing=72; warn("using default line spacing for pink")
     end
-    p = Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
-    p.pink = pink
-    return p
+    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
   end
 
   def Pat.fix_red(bw,red,baseline,line_spacing,c)

@@ -73,8 +73,8 @@ end
 def run_job(job,page,report_dir)
   if job.verb=='ocr' then
     # Fixme: should look at job.characters.
-    #m = Match.new(characters:'l',meta_threshold:job.threshold)
-    m = Match.new(scripts:['latin','greek'],meta_threshold:job.threshold)
+    m = Match.new(characters:'ε',meta_threshold:job.threshold)
+    #m = Match.new(scripts:['latin','greek'],meta_threshold:job.threshold)
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
     m.execute(page,job.set,batch_code:Process.pid.to_s)
   end
