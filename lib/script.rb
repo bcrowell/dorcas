@@ -40,7 +40,9 @@ class Script
     ['latin','greek','hebrew'].each { |n|
       print "#{n}\n"
       script = Script.new(n)
-      script.all_letters().chars.each { |c|
+      l = script.all_letters()
+      if n=='greek' then l=l+"ἡῥὑὁἱϊ" end # fixme -- kludge, incomplete list
+      l.chars.uniq.each { |c|
         nn = char_to_short_name_slow(c)
         #print "  #{c} --> #{nn}\n"
         h[c] = nn

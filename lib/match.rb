@@ -145,6 +145,17 @@ class Match
     match_clean_monitor_file_helper(!(self.monitor_file.nil?),self.monitor_file)
  end
 
+  def count_candidates(c)
+    count = 0
+    n = char_to_short_name(c)
+    self.hits.each { |x|
+      co1,i,j,misc = x
+      short_name = misc['label']
+      if short_name==n then count +=1 end
+    }
+    return count
+  end
+
 end
 
 def swatches(hits,text,pat,stats,char,cluster_threshold)

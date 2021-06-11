@@ -48,7 +48,7 @@ end
 
 def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed,verbosity:2)
   if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
-  print "Examining #{match.hits.length} candidates for character #{char}.\n"
+  print "Examining #{match.count_candidates(char)} candidates from FFT for character #{char}.\n"
   pat = job.set.pat(char)
   match_character_messages_helper(char,!from_seed,force_cl,job.force_location,verbosity)
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
