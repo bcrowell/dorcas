@@ -50,7 +50,6 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
 
   images = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
   char_name = char_to_short_name(char)
-  matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,hits,composites)
   return [hits,images]
 end
 

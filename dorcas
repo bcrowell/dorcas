@@ -64,8 +64,10 @@ def main()
   end
 
   results = []
+  count = 0
   job_list.each { |one_page_job|
-    if job_list.length>1 then print "Processing page image #{one_page_job.image}, n=#{job_list.length}\n" end
+    count += 1
+    if job_list.length>1 then print "Processing page image #{one_page_job.image}, page #{count} of #{job_list.length}.\n" end
     page = Page.from_file(one_page_job.image) # handles extracting a page from a pdf, if that syntax was used
     one_page_job.image = page.png_filename
     page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size)
@@ -108,16 +110,36 @@ def postprocess(job,results,report_dir)
     return
   end
   if job.verb=='learn' then
-    # results is a hash whose keys are characters and whose values are of the form [hits,images].
-    results.each { |char,v|
-      hits,images = v
-      print "learn mode, would have done something with char=#{char}, number of matches = #{images.length}\n"
-    }
-    warn("write_svg_reports commented out ")
-    # write_svg_reports(job,report_dir,pats)
-    return
+    postprocess_learn(job,results,report_dir)
   end
   die("unrecognized verb #{job.verb}")
+end
+
+def postprocess_learn(job,results,report_dir)
+  # Results is a list, each of whose elements is a hash whose keys are characters and whose values are of the form [hits,images].
+  # Start by merging these into a single hash whose keys are characters and whose values are lists of elements of the form [pagenum,hits,images].
+  results2 = {}
+  count = 0
+  results.each { |results_one_page|
+    results_one_page.each |char,v|
+    hits,images = v                                                                                                                                       
+    if !(images.nil?) then 
+      if !(results2.has_key?(char)) then results2[char] = []
+      results2[char].push([count,hits,images])
+    end
+    count += 1
+  }
+  results2.each { |char,l|
+    # l should be a list of elements of the form [pagenum,hits,images].
+    if images.nil? then n_matches=0 else n_matches=images.length end
+    print "postprocessing character #{char}\n"
+    l.each { |p|
+      pagenum,hits,images = p
+      if images.nil? n_matches=0 else n_matches=images.length end
+      print "learn mode, would have done something with char=#{char}, pagenum=#{pagenum}, number of matches = #{n_matches}\n"
+    }
+  }
+  return
 end
 
 def die(message)
