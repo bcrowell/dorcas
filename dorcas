@@ -142,10 +142,10 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
       next if images.nil? || images.length==0
       all_images.concat(images)
     }
-    if verbosity>=1 then print "  learn mode, char=#{char}, number of matches = #{images.length}\n" end
+    if verbosity>=1 then print "  learn mode, char=#{char}, number of matches = #{all_images.length}\n" end
     next if all_images.length==0
-    if verbosity>=1 && images.length==1 then print "  only one match, nothing to do\n" end
-    next if images.length==1
+    if verbosity>=1 && all_images.length==1 then print "  only one match, nothing to do\n" end
+    next if all_images.length==1
     # Analyze them into clusters.
     clusters = find_clusters_of_swatches(all_images,char,job.cluster_threshold)
     cl_averages = make_composite_from_swatches(all_images,clusters)
