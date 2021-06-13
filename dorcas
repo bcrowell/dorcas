@@ -116,7 +116,7 @@ def postprocess(job,results,report_dir)
   die("unrecognized verb #{job.verb}")
 end
 
-def postprocess_learn(job,results,report_dir)
+def postprocess_learn(job,results,report_dir,verbosity:1)
   # Results is a list, each of whose elements is a hash whose keys are characters and whose values are of the form [hits,images].
   # Start by merging these into a single hash whose keys are characters and whose values are lists of elements of the form [pagenum,hits,images].
   results2 = {}
@@ -140,9 +140,30 @@ def postprocess_learn(job,results,report_dir)
       pagenum,hits,images = p
       if images.nil? then n_matches=0 else n_matches=images.length end
       print "learn mode, would have done something with char=#{char}, pagenum=#{pagenum+1}, number of matches = #{n_matches}\n"
+      # Analyze them into clusters.
+      clusters = find_clusters_of_swatches(images,char,job.cluster_threshold)
+      print "  clusters=#{clusters}\n"
+      cl_averages = make_composite_from_swatches(images,clusters)
+      composite = clustering_helper(job.prefer_cluster,composites,char,verbosity:verbosity)
+      print "Transplating composite into pat, #{char}.\n" # qwe
+      pat.transplant(composite)
+      pat.save(Pat.char_to_filename(job.output,char))
     }
   }
   return
+end
+
+def clustering_helper(force_cl,composites,char,verbosity:1)
+  if force_cl.nil? then
+    composite = composites[0]
+  else
+    composite = composites[force_cl]
+  end
+  if verbosity>=1 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
+  if force_cl<0 or force_cl>composites.length-1 then
+    die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
+  end
+  return composite
 end
 
 def die(message)

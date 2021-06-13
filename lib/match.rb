@@ -181,7 +181,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   return images
 end
 
-def find_clusters_of_swatches(images,char)
+def find_clusters_of_swatches(images,char,cluster_threshold)
   # Images is a list of cunkypng images. Char is just for informational output.
   c = correlate_swatches(images,char)
   clusters = find_clusters(c,cluster_threshold)
@@ -192,7 +192,7 @@ def find_clusters_of_swatches(images,char)
   return clusters
 end
 
-def make_composite_from_swatches(images,clusters)
+def make_composite_from_swatches(images,clusters,verbosity:1)
   # Returns a set of images and a list of lists of integers that specifies clusters of these images.
   # Returns a list in which each element is a composite of one cluster.
   cl_averages = []

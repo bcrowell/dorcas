@@ -131,10 +131,4 @@ def copy_all_pat_files(set,output_dir)
   }
 end
 
-def match_character_messages_helper2(verbosity,force_cl,composites,char)
-  if verbosity>=2 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
-  if force_cl<0 or force_cl>composites.length-1 then 
-    die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
-  end
-end
 
