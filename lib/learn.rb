@@ -1,26 +1,7 @@
 # coding: utf-8
 
-def learn_pats(job,page,report_dir)
-  # Returns a list whose items are of these two forms:
-  #   [true,pat] -- we have a new swatch for this character, and pat has had that swatch transplanted into it
-  #   [false,char] -- failed on this character
-  recognized = false
-  if job.verb=='seed' then
-    pats = create_pats_no_matching(job,page)
-    recognized = true
-  end
-  if job.verb=='learn' then
-    pats = match_characters_to_image(job,page,report_dir)
-    recognized = true
-  end
-  if !recognized then die("unrecognized verb: #{job.verb}") end
-  return pats
-end
-
-def match_characters_to_image(job,page,report_dir,verbosity:2)
-  # Returns a list whose items are of these two forms:
-  #   [true,pat] -- we have a new swatch for this character, and pat has had that swatch transplanted into it
-  #   [false,char] -- failed on this character
+def extract_matching_swatches(job,page,report_dir,verbosity:2)
+  # Returns a hash whose keys are characters and whose values are of the form [hits,images].
   from_seed = job.set.nil?
   if from_seed then Fset.grow_from_seed(job,page) end
   if verbosity>=2 then
@@ -37,7 +18,7 @@ def match_characters_to_image(job,page,report_dir,verbosity:2)
   match.batch_code = Process.pid.to_s
   match.three_stage_prep(page,job.set)
 
-  pats = []
+  results = {}
   job.characters.each { |x|
     # x looks like ["greek","lowercase","αβγδε"]. The string of characters at the end has already been filled in by initializer, if necessary.
     script_name,c,chars = x
@@ -49,16 +30,14 @@ def match_characters_to_image(job,page,report_dir,verbosity:2)
       name = char_to_short_name(char)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
       script = Script.new(script_name)
-      pat,hits,composites = match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed)
-      if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
+      results[char] = match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed)
     }
   }
-
-  return pats
+  return results
 end
 
 def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed,verbosity:2)
-  # Returns [pat,hits,composites], where, if appropriate, pat has had the correct swatch transplanted into it.
+  # Returns [hits,images].
   if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
   print "Examining #{match.count_candidates(char)} candidates from FFT for character #{char}.\n"
   pat = job.set.pat(char)
@@ -69,20 +48,10 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   match.three_stage_cleanup(page)
   # ...consider using squirrel only, esp. if using force_loc
 
-  composites = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
-  if force_cl.nil? then
-    composite = composites[0]
-  else
-    match_character_messages_helper2(verbosity,force_cl,composites,char)
-    composite = composites[force_cl]
-  end
-  if composite.nil? then print "  no matches found for #{char}\n"; return end
+  images = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
   char_name = char_to_short_name(char)
   matches_as_svg(report_dir,matches_svg_file,char_name,job.image,page.image,pat,hits,composites)
-  print "Transplating composite into pat, #{char}.\n" # qwe
-  pat.transplant(composite)
-  pat.save(Pat.char_to_filename(job.output,char))
-  return [pat,hits,composites]
+  return [hits,images]
 end
 
 def create_pats_no_matching(job,page)

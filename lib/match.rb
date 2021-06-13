@@ -163,7 +163,7 @@ end
 def swatches(hits,text,pat,stats,char,cluster_threshold)
   verbosity=2
   # Generates images for the best matches in the text for a particular pattern.
-  # Analyzes them into clusters. Returns a composite image (ChunkyPNG object) for the best-matching cluster.
+  # Analyzes them into clusters. Returns a list of chunkypng images for the swatches.
   nhits = hits.length
   wt,ht = text.width,text.height
   wp,hp = pat.width,pat.height
@@ -178,12 +178,23 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
     images.push(sw)
     if verbosity>=3 then sw.save("swatch#{k}.png") end
   }
+  return images
+end
+
+def find_clusters_of_swatches(images,char)
+  # Images is a list of cunkypng images. Char is just for informational output.
   c = correlate_swatches(images,char)
   clusters = find_clusters(c,cluster_threshold)
   print "clusters:\n"
   clusters.each { |cl|
     print "  #{cl}\n"
   }
+  return clusters
+end
+
+def make_composite_from_swatches(images,clusters)
+  # Returns a set of images and a list of lists of integers that specifies clusters of these images.
+  # Returns a list in which each element is a composite of one cluster.
   cl_averages = []
   clusters.each { |cl|
     member_images = cl.map {|i| images[i]}
@@ -201,6 +212,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
 end
 
 def correlate_swatches(images,char)
+  # Images is a list of cunkypng images. Char is just for informational output.
   flat = []
   images.each  { |image|
     flat.push(image_to_list_of_floats(image))
