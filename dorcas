@@ -136,19 +136,24 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
     pagenum,hits,images = l
     if images.nil? then n_matches=0 else n_matches=images.length end
     print "postprocessing character #{char}\n"
+    all_images = []
     l.each { |p|
       pagenum,hits,images = p
-      if images.nil? then n_matches=0 else n_matches=images.length end
-      print "learn mode, would have done something with char=#{char}, pagenum=#{pagenum+1}, number of matches = #{n_matches}\n"
-      # Analyze them into clusters.
-      clusters = find_clusters_of_swatches(images,char,job.cluster_threshold)
-      print "  clusters=#{clusters}\n"
-      cl_averages = make_composite_from_swatches(images,clusters)
-      composite = clustering_helper(job.prefer_cluster,composites,char,verbosity:verbosity)
-      print "Transplating composite into pat, #{char}.\n" # qwe
-      pat.transplant(composite)
-      pat.save(Pat.char_to_filename(job.output,char))
+      next if images.nil? || images.length==0
+      all_images.concat(images)
     }
+    if verbosity>=1 then print "  learn mode, char=#{char}, number of matches = #{images.length}\n" end
+    next if all_images.length==0
+    if verbosity>=1 && images.length==1 then print "  only one match, nothing to do\n" end
+    next if images.length==1
+    # Analyze them into clusters.
+    clusters = find_clusters_of_swatches(all_images,char,job.cluster_threshold)
+    cl_averages = make_composite_from_swatches(all_images,clusters)
+    composite = clustering_helper(job.prefer_cluster,cl_averages,char,verbosity:verbosity)
+    print "  Transplanting composite into pat, #{char}.\n" # qwe
+    pat = job.set.pat(char)
+    pat.transplant(composite)
+    pat.save(Pat.char_to_filename(job.output,char))
   }
   return
 end
@@ -157,11 +162,11 @@ def clustering_helper(force_cl,composites,char,verbosity:1)
   if force_cl.nil? then
     composite = composites[0]
   else
+    if force_cl<0 or force_cl>composites.length-1 then
+      die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
+    end
     composite = composites[force_cl]
-  end
-  if verbosity>=1 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
-  if force_cl<0 or force_cl>composites.length-1 then
-    die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
+    if verbosity>=1 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
   end
   return composite
 end
