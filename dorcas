@@ -67,7 +67,7 @@ def main()
   count = 0
   job_list.each { |one_page_job|
     count += 1
-    if job_list.length>1 then print "Processing page image #{one_page_job.image}, page #{count} of #{job_list.length}.\n" end
+    if job_list.length>1 then print "======\nProcessing page image #{one_page_job.image}, page #{count} of #{job_list.length}.\n======\n" end
     page = Page.from_file(one_page_job.image) # handles extracting a page from a pdf, if that syntax was used
     one_page_job.image = page.png_filename
     page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size)

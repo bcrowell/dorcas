@@ -1,6 +1,13 @@
-def write_svg_reports(job,dir,pats)
-  output_dir = job.output
-  write_svg_reports_helper(dir,output_dir,"swatches.svg","Writing a summary of new swatches to %s\n",pats)
+def write_svg_reports(job,dir,pats:nil)
+  # Dir is the directory in which to write the svg files, i.e., normally the reports directory.
+
+  output_dir = job.output # used in order to read back all the patterns
+
+  # Write a single svg file summarizing all the patterns in the list defined by pats (which can be
+  # either a string of characters or a list of patterns):
+  if !(pats.nil?) && pats.length>0 then
+    write_svg_reports_helper(dir,output_dir,"swatches.svg","Writing a summary of new swatches to %s\n",pats)
+  end
 
   all_chars_in_set = Fset.from_file_or_directory(job.output).all_char_names().map { |n| short_name_to_char(n) }.join('')
   # ... list of all short names in the set
@@ -18,7 +25,8 @@ def write_svg_reports(job,dir,pats)
 end
 
 def write_svg_reports_helper(dir,output_dir,file_base,info,data)
-  # data can be either a string of characters or a list of patterns
+  # Data can be either a string of characters or a list of patterns. For the characters defined by this list, write
+  # a single report.
   if data.class==String then
     pats = []
     data.chars.each { |c|
@@ -116,7 +124,6 @@ def summarize_composites_as_svg(report_dir,svg_filename,char_name,composites)
   dpi = 300.0 # fixme
   scale = 25.4/dpi # to convert from pixels to mm
   labels = []
-  h = 0.7 # mm
   count = 0
   images = []
   composites.each { |image|
@@ -129,7 +136,7 @@ def summarize_composites_as_svg(report_dir,svg_filename,char_name,composites)
   }
   images_svg = images.join("\n")
   svg = "#{svg_header()}  #{images_svg} </svg>"
-  print "  Writing summary of composites and clusters to #{svg_filename}"
+  print "  Writing summary of composites and clusters to #{svg_filename}\n"
   File.open(svg_filename,'w') { |f| f.print svg }
 end
 

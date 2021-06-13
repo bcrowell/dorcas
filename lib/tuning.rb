@@ -1,10 +1,10 @@
-def three_stage_guess_pars(page,xheight,meta_threshold:0.5,verbosity:1)
+def three_stage_guess_pars(page,xheight,n_chars,meta_threshold:0.5,verbosity:1)
   # Returns all the necessary parameters for a three-stage match consisting of freak, simple correlation, and squirrel.
   est_max_chars = 0.3*page.width*page.height/(xheight*xheight)
   # ... The 0.3 was estimated from some sample text.
   est_max_freq = 0.13 # frequency of 'e' in English text, https://en.wikipedia.org/wiki/Letter_frequency
   est_max_one_char = est_max_freq*est_max_chars # estimated maximum number of occurrences of any character
-  max_hits = (est_max_one_char*2).round # double the plausible number of occurrences
+  max_hits = (n_chars*est_max_one_char*2).round # double the plausible number of occurrences
   #print "est_max_chars=#{est_max_chars}, est_max_freq=#{est_max_freq}, est_max_one_char=#{est_max_one_char}, max_hits=#{max_hits}\n"
 
   # I used testing to try to figure out how much it was reasonable to change each threshold. The results are incorporated

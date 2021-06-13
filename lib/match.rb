@@ -37,6 +37,10 @@ class Match
   attr_accessor :meta_threshold,:hits
   attr_accessor :pars,:monitor_file,:files_to_delete,:batch_code,:locs,:boxes # private methods
 
+  def n_chars
+    return self.characters.length
+  end
+
   def execute(page,set,batch_code:'',if_monitor_file:true,verbosity:1)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
     # Page must have .stats containing an 'x_height' key, which is used to estimate parameters for peak detection kernel and maximum number of hits.
@@ -74,7 +78,7 @@ class Match
     }
     self.monitor_file=match_prep_monitor_file_helper(if_monitor_file,page)
     xheight = page.stats['x_height']
-    self.pars = three_stage_guess_pars(page,xheight,meta_threshold:self.meta_threshold)
+    self.pars = three_stage_guess_pars(page,xheight,self.n_chars,meta_threshold:self.meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
     self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,@boxes,
@@ -111,11 +115,13 @@ class Match
     hits2 = []
     bg = stats['background']
     if make_scatterplot then scatt=[] end
+    count_after_pass_1 = 0 # count only hits for the selected characters, so may be much less than hits.length
     count_after_pass_2 = 0
     self.hits.each { |x|
       co1,i,j,misc = x
       short_name = misc['label']
       unless want_these_chars.has_key?(short_name) then next end
+      count_after_pass_1 += 1
       norm = sdp[short_name]*stats['sd_in_text']
       co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
       if co2<threshold2 then next end
@@ -132,7 +138,7 @@ class Match
       if co3<threshold3 then next end
       hits2.push([co3,i+scooch_x,j+scooch_y,misc])
     }
-    if verbosity>=1 then print "Filtered #{self.hits.length} to #{count_after_pass_2} to #{hits2.length} after second and third passes.\n" end
+    if verbosity>=1 then print "  Filtered #{count_after_pass_1} to #{count_after_pass_2} to #{hits2.length} after second and third passes.\n" end
 
     unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits2,chars,set,verbosity:2) end
     if make_scatterplot then print ascii_scatterplot(hits2,save_to_file:'scatt.txt') end
@@ -241,14 +247,14 @@ def match_prep_monitor_file_helper(if_monitor_file,page)
   monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
   monitor_image = page.image.clone.grayscale
   monitor_image.save(monitor_file)
-  print "monitor file: #{monitor_file} (can be viewed live using okular)\n"
+  print "  monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
   return monitor_file
 end
 
 def match_clean_monitor_file_helper(if_monitor_file,monitor_file)
   if !if_monitor_file then return end
-  print "monitor file #{monitor_file} not being deleted for convenience ---\n"
+  print "  monitor file #{monitor_file} not being deleted for convenience ---\n"
   #FileUtils.rm_f(monitor_file)
 end
 

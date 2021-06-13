@@ -35,13 +35,13 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
     clusters = find_clusters_of_swatches(all_images,char,job.cluster_threshold)
     cl_averages = make_composite_from_swatches(pat,all_images,clusters)
     composite = clustering_helper(job.prefer_cluster,cl_averages,char,verbosity:verbosity)
-    print "  Transplanting composite into pat, #{char}.\n" # qwe
     pat.transplant(composite)
     pat.save(Pat.char_to_filename(job.output,char))
     char_name = char_to_short_name(char)
     svg_filename = dir_and_file_to_path(report_dir,"composites_#{char_name}.svg")
     summarize_composites_as_svg(report_dir,svg_filename,char_name,cl_averages)
   }
+  write_svg_reports(job,report_dir)
   return
 end
 
@@ -69,7 +69,6 @@ def extract_matching_swatches(job,page,report_dir,verbosity:2)
       print "  Taking pattern from previous run\n"
     end
   end
-  all_fonts,script_and_case_to_font_name = load_fonts(job)
   all_chars = job.characters.map {|x| x[2]}.inject('') {|all,these| all = all+these}
   match = Match.new(characters:all_chars,meta_threshold:job.threshold,force_loc:job.force_location)
   # ... force_loc not yet reimplemented
@@ -91,11 +90,11 @@ def extract_matching_swatches(job,page,report_dir,verbosity:2)
       results[char] = match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed)
     }
   }
-  print "extract_matching_swatches, returning with #{results['ε'].length}\n" # qwe
   return results
 end
 
 def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed,verbosity:2)
+  # Is called by extract_matching_swatches().
   # Returns [hits,images].
   if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
   print "Examining #{match.count_candidates(char)} candidates from FFT for character #{char}.\n"
@@ -109,7 +108,6 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
 
   images = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
   char_name = char_to_short_name(char)
-  print "  match_character returning, lengths=#{hits.length}, #{images.length}\n" # qwe
   return [hits,images]
 end
 
