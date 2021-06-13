@@ -173,15 +173,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
     c,i,j,misc = hits[k]
     if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n"; next end
     sw = text.crop(i,j,wp,hp)
-    scale = (stats['x_height']*0.09).round # rough measure of the scale of intercharacter spaces
-    fatten = scale # rough guess as to how much to fatten up the red mask so that we get everything
-    box_to_leave_alone = Box.from_a(pat.bbox).fatten(scale/2)
-    mask_to_background(sw,pat.red,stats['background'],fatten,box_to_leave_alone)
-    # This erases nearby characters, but can also have other effects. (1) Can erase part of a mismatched letter. For example,
-    # an ε in the seed font can match α in the text. Masking gets rid of the two "twigs" on the right side of the alpha
-    # and makes it look like an omicron. (2) Can erase part of a correctly matched letter. This happened with ϊ from p. 10 of Giles.
-    # Doing box_to_leave_alone is meant to prevent case 2 from happening. The bbox may not be perfectly correct (is probably left
-    # over from seed font), but is probably a reasonable guide. It's also possible for other characters to come into the bbox, due to kerning.
+    remove_impinging_flyspecks(sw,pat,stats)
     enhance_contrast(sw,stats['background'],stats['threshold'],stats['dark'])
     images.push(sw)
     if verbosity>=3 then sw.save("swatch#{k}.png") end
@@ -245,4 +237,19 @@ def match_clean_monitor_file_helper(if_monitor_file,monitor_file)
   if !if_monitor_file then return end
   print "monitor file #{monitor_file} not being deleted for convenience ---\n"
   #FileUtils.rm_f(monitor_file)
+end
+
+def remove_impinging_flyspecks(sw,pat,stats)
+  # Changes sw in place.
+  # Try to get rid of parts of other nearby characters that are impinging on this swatch and creating dots and glitches.
+  # This erases nearby characters, but can also have other effects. (1) Can erase part of a mismatched letter. For example,
+  # an ε in the seed font can match α in the text. Masking gets rid of the two "twigs" on the right side of the alpha
+  # and makes it look like an omicron. (2) Can erase part of a correctly matched letter. This happened with ϊ from p. 10 of Giles.
+  # Doing box_to_leave_alone is meant to prevent case 2 from happening. The bbox may not be perfectly correct (is probably left
+  # over from seed font), but is probably a reasonable guide. It's also possible for other characters to come into the bbox, due to kerning.
+  # A better way to do this would be to get enough matches so that impinging flyspecks go away simply through averagine in the composite.
+  scale = (stats['x_height']*0.09).round # rough measure of the scale of intercharacter spaces
+  fatten = scale # rough guess as to how much to fatten up the red mask so that we get everything
+  box_to_leave_alone = Box.from_a(pat.bbox).fatten(scale/2)
+  mask_to_background(sw,pat.red,stats['background'],fatten,box_to_leave_alone)
 end
