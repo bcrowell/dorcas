@@ -422,10 +422,13 @@ def average_images(images)
   return ink_array_to_image(avg)
 end
 
-def remove_flyspecks(image,threshold,radius)
+def remove_flyspecks(image,threshold,radius,mask:nil)
+  # If a pixel is below threshold and has no neighbors within radius that are above threshold, set it to white.
+  # If mask is not nil, then it should be a chunkypng image, and we restrict this operation to places where the mask has a black pixel.
   w,h = image.width,image.height
   radius.upto(w-1-radius) { |i|
     radius.upto(h-1-radius) { |j|
+      next if !(mask.nil?) && !(has_ink(mask[i,j]))
       x = color_to_ink(image[i,j])
       if x>threshold then next end
       dark_nearby = false

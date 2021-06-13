@@ -191,15 +191,17 @@ def find_clusters_of_swatches(images,char,cluster_threshold)
   return clusters
 end
 
-def make_composite_from_swatches(images,clusters,verbosity:1)
+def make_composite_from_swatches(pat,images,clusters,verbosity:1)
   # Returns a set of images and a list of lists of integers that specifies clusters of these images.
   # Returns a list in which each element is a composite of one cluster.
+  # Pat is optional. If not nil, it helps us to do more removal of glitches from pink areas.
   cl_averages = []
   clusters.each { |cl|
     member_images = cl.map {|i| images[i]}
     av = average_images(member_images)
     enhance_contrast(av,0.0,0.5,1.0,do_foreground:false,do_background:true)
     remove_flyspecks(av,0.25,1)
+    remove_flyspecks(av,0.5,1,mask:pat.pink)
     cl_averages.push(av)
   }
   i = 0

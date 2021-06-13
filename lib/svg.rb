@@ -129,6 +129,7 @@ def summarize_composites_as_svg(report_dir,svg_filename,char_name,composites)
   }
   images_svg = images.join("\n")
   svg = "#{svg_header()}  #{images_svg} </svg>"
+  print "  Writing summary of composites and clusters to #{svg_filename}"
   File.open(svg_filename,'w') { |f| f.print svg }
 end
 

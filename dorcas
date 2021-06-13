@@ -116,64 +116,6 @@ def postprocess(job,results,report_dir)
   die("unrecognized verb #{job.verb}")
 end
 
-def postprocess_learn(job,results,report_dir,verbosity:1)
-  # Results is a list, each of whose elements is a hash whose keys are characters and whose values are of the form [hits,images].
-  # Start by merging these into a single hash whose keys are characters and whose values are lists of elements of the form [pagenum,hits,images].
-  results2 = {}
-  count = 0
-  results.each { |results_one_page|
-    results_one_page.each { |char,v|
-      hits,images = v                                                                                                                                       
-      if !(images.nil?) then 
-        if !(results2.has_key?(char)) then results2[char] = [] end
-        results2[char].push([count,hits,images])
-      end
-    }
-    count += 1
-  }
-  results2.each { |char,l|
-    # l should be a list of elements of the form [pagenum,hits,images].
-    pagenum,hits,images = l
-    if images.nil? then n_matches=0 else n_matches=images.length end
-    print "postprocessing character #{char}\n"
-    all_images = []
-    l.each { |p|
-      pagenum,hits,images = p
-      next if images.nil? || images.length==0
-      all_images.concat(images)
-    }
-    if verbosity>=1 then print "  learn mode, char=#{char}, number of matches = #{all_images.length}\n" end
-    next if all_images.length==0
-    if verbosity>=1 && all_images.length==1 then print "  only one match, nothing to do\n" end
-    next if all_images.length==1
-    # Analyze them into clusters.
-    clusters = find_clusters_of_swatches(all_images,char,job.cluster_threshold)
-    cl_averages = make_composite_from_swatches(all_images,clusters)
-    composite = clustering_helper(job.prefer_cluster,cl_averages,char,verbosity:verbosity)
-    print "  Transplanting composite into pat, #{char}.\n" # qwe
-    pat = job.set.pat(char)
-    pat.transplant(composite)
-    pat.save(Pat.char_to_filename(job.output,char))
-    char_name = char_to_short_name(char)
-    svg_filename = dir_and_file_to_path(report_dir,"composites_#{char_name}.svg")
-    summarize_composites_as_svg(report_dir,svg_filename,char_name,cl_averages)
-  }
-  return
-end
-
-def clustering_helper(force_cl,composites,char,verbosity:1)
-  if force_cl.nil? then
-    composite = composites[0]
-  else
-    if force_cl<0 or force_cl>composites.length-1 then
-      die("illegal value in prefer_cluster, [\"#{char}\",#{force_cl+1}], only #{composites.length} clusters found")
-    end
-    composite = composites[force_cl]
-    if verbosity>=1 then print "  Forcing a match to cluster #{force_cl+1}.\n" end
-  end
-  return composite
-end
-
 def die(message)
   #  $stderr.print message,"\n"
   raise message # gives a stack trace
