@@ -112,6 +112,26 @@ svg =
 SVG
 end
 
+def summarize_composites_as_svg(report_dir,svg_filename,char_name,composites)
+  dpi = 300.0 # fixme
+  scale = 25.4/dpi # to convert from pixels to mm
+  labels = []
+  h = 0.7 # mm
+  count = 0
+  images = []
+  composites.each { |image|
+    x = 0
+    y = count*100
+    filename = dir_and_file_to_path(report_dir,"composite_#{char_name}_#{count}.png")
+    image.save(filename)
+    images.push(svg_image(filename,x*scale,y*scale,image.width*scale,image.height*scale,1.0))
+    count += 1 
+  }
+  images_svg = images.join("\n")
+  svg = "#{svg_header()}  #{images_svg} </svg>"
+  File.open(svg_filename,'w') { |f| f.print svg }
+end
+
 def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits,composites)
   print "Writing svg file #{svg_filename}\n"
   images = []

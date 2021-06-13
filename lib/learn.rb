@@ -33,6 +33,7 @@ def extract_matching_swatches(job,page,report_dir,verbosity:2)
       results[char] = match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed)
     }
   }
+  print "extract_matching_swatches, returning with #{results['ε'].length}\n" # qwe
   return results
 end
 
@@ -50,6 +51,7 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
 
   images = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
   char_name = char_to_short_name(char)
+  print "  match_character returning, lengths=#{hits.length}, #{images.length}\n" # qwe
   return [hits,images]
 end
 

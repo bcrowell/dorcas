@@ -167,7 +167,6 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   nhits = hits.length
   wt,ht = text.width,text.height
   wp,hp = pat.width,pat.height
-  if nhits>10 then nhits=10 end
   images = []
   0.upto(nhits-1) { |k|
     c,i,j,misc = hits[k]

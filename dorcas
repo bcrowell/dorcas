@@ -154,6 +154,9 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
     pat = job.set.pat(char)
     pat.transplant(composite)
     pat.save(Pat.char_to_filename(job.output,char))
+    char_name = char_to_short_name(char)
+    svg_filename = dir_and_file_to_path(report_dir,"composites_#{char_name}.svg")
+    summarize_composites_as_svg(report_dir,svg_filename,char_name,cl_averages)
   }
   return
 end
