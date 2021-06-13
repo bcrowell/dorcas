@@ -11,6 +11,7 @@ class Pat
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
     # and is also used in the actual OCR'ing process.
     garbage,@pink=Pat.fix_red(bw,red,baseline,line_spacing,c)
+    # @pink=@red
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c

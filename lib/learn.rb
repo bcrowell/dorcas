@@ -50,7 +50,6 @@ def match_characters_to_image(job,page,report_dir,verbosity:2)
       matches_svg_file = dir_and_file_to_path(report_dir,"matches_#{name}.svg")
       script = Script.new(script_name)
       pat,hits,composites = match_character(match,char,job,page,script,report_dir,matches_svg_file,name,force_cl,from_seed)
-      print "returning from match_character for #{char}, pat.nil?=#{pat.nil?}, composites.length=#{composites.length}, should have been transplanted\n"
       if not (pat.nil?) then pats.push([true,pat]) else pats.push([false,char]) end
     }
   }

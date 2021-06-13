@@ -38,6 +38,24 @@ class Box
     vert  = intersection_of_intervals([@top,@bottom],[q.top,q.bottom])
     return Box.new(horiz[0],horiz[1],vert[0],vert[1])
   end
+
+  def empty?
+    return self.left>self.right || self.top>self.bottom
+  end
+
+  def contains?(x,y)
+    return (x>=self.left and x<=self.right and y>=self.top and y<=self.bottom)
+  end
+
+  def fatten(h)
+    # returns a new object
+    x = self.clone
+    x.left -= h
+    x.right += h
+    x.top -=h
+    x.bottom +=h
+    return x
+  end
 end
 
 def intersection_of_intervals(a,b)

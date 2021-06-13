@@ -199,7 +199,7 @@ def image_or(image,image2)
   return image_bitwise(image,image2,lambda { |x,y| x or y})
 end
 
-def mask_to_background(image,mask,background,fatten)
+def mask_to_background(image,mask,background,fatten,box_to_leave_alone)
   # changes the image in place
   # background is an ink value
   # fatten is an amount by which to beef up the mask
@@ -207,6 +207,7 @@ def mask_to_background(image,mask,background,fatten)
   w,h = assert_same_size(image,mask)
   0.upto(w-1) { |i|
     0.upto(h-1) { |j|
+      next if box_to_leave_alone.contains?(i,j)
       done = false
       (-fatten).upto(fatten) { |di|
         ii = i+di
