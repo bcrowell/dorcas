@@ -125,8 +125,37 @@ class Job
     return result
   end
 
-  def Job.from_file(filename)
-    return Job.new(json_from_file_or_stdin_or_die(filename)) # automatically does unicode_normalize(:nfc)
+  def Job.list_from_file(filename)
+    # If the user specified a list of files or a pdf file with a range of pages, process that correctly and
+    # return a list of Job objects.
+    data = json_from_file_or_stdin_or_die(filename) # automatically does unicode_normalize(:nfc)
+    unless data.has_key?('image') then die("input data do not contain an image key") end
+    image_stuff = data['image']
+    if image_stuff.kind_of?(Array) then filespec_list=image_stuff else filespec_list=[image_stuff] end
+    image_list = []
+    filespec_list.each { |s|
+      if s=~/(.*\.pdf)\[(\d+)-(\d+)\]$/ then # page range
+        file,p1,p2 = $1,$2.to_i,$3.to_i
+        p1.upto(p2) { |page_number| image_list.push("#{file}[#{page_number}]") }
+      else
+        image_list.push(s)
+      end
+    }
+    jobs = []
+    image_list.each { |im|
+      d = data.clone
+      d['image'] = im
+      jobs.push(Job.new(d))
+    }
+    return jobs
+  end
+
+  def without_image_info
+    # Make a generic version of the job object that doesn't have the info about what specific page image we're looking at.
+    # Returns a new object.
+    j = self.clone
+    j.image = nil
+    return j
   end
 
   def Job.font_string_is_full_path(s)
