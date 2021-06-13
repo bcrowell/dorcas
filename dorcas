@@ -111,6 +111,7 @@ def postprocess(job,results,report_dir)
   end
   if job.verb=='learn' then
     postprocess_learn(job,results,report_dir)
+    return
   end
   die("unrecognized verb #{job.verb}")
 end
@@ -121,22 +122,24 @@ def postprocess_learn(job,results,report_dir)
   results2 = {}
   count = 0
   results.each { |results_one_page|
-    results_one_page.each |char,v|
-    hits,images = v                                                                                                                                       
-    if !(images.nil?) then 
-      if !(results2.has_key?(char)) then results2[char] = []
-      results2[char].push([count,hits,images])
-    end
+    results_one_page.each { |char,v|
+      hits,images = v                                                                                                                                       
+      if !(images.nil?) then 
+        if !(results2.has_key?(char)) then results2[char] = [] end
+        results2[char].push([count,hits,images])
+      end
+    }
     count += 1
   }
   results2.each { |char,l|
     # l should be a list of elements of the form [pagenum,hits,images].
+    pagenum,hits,images = l
     if images.nil? then n_matches=0 else n_matches=images.length end
     print "postprocessing character #{char}\n"
     l.each { |p|
       pagenum,hits,images = p
-      if images.nil? n_matches=0 else n_matches=images.length end
-      print "learn mode, would have done something with char=#{char}, pagenum=#{pagenum}, number of matches = #{n_matches}\n"
+      if images.nil? then n_matches=0 else n_matches=images.length end
+      print "learn mode, would have done something with char=#{char}, pagenum=#{pagenum+1}, number of matches = #{n_matches}\n"
     }
   }
   return
