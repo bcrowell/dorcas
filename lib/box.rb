@@ -49,7 +49,7 @@ class Box
 
   def fatten(h)
     # returns a new object
-    x = self.clone
+    x = clown(self)
     x.left -= h
     x.right += h
     x.top -=h

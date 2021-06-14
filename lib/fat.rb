@@ -37,7 +37,6 @@ module Fat
     end
     # Recurse:
     w,h = self.width,self.height
-    #rn = @memoized[0].clone # just make another boolean array with the same shape
     rn = generate_array(w,h,lambda { |i,j| false})
     0.upto(w-1) { |x|
       0.upto(h-1) { |y|

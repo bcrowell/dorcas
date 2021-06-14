@@ -241,7 +241,7 @@ def match_prep_monitor_file_helper(if_monitor_file,page)
   if !if_monitor_file then return nil end
   monitor_file = temp_file_name_short(prefix:"mon")+".png"
   monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
-  monitor_image = page.image.clone.grayscale
+  monitor_image = clown(page.image).grayscale
   monitor_image.save(monitor_file)
   #print "  monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change

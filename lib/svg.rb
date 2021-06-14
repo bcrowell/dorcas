@@ -234,7 +234,7 @@ end
 
 def png_report(monitor_file,text,hits,chars,set,verbosity:2)
   if monitor_file.nil? then die("no filename set for monitor file") end
-  monitor_image = text.clone.grayscale
+  monitor_image = clown(text).grayscale
   overlays = {}
   v = {}
   chars.chars.each { |c|

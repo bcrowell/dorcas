@@ -134,7 +134,7 @@ end
 
 def flip_array(a)
   w,h = array_dimensions(a)
-  b = a.clone
+  b = clown(a)
   0.upto(w-1) { |i|
     ii = w-1-i
     if i==ii then next end

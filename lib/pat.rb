@@ -180,7 +180,7 @@ class Pat
       red_below_baseline.push(n>0 && nr/n.to_f>0.25)
     }
     smear = (w*0.07).round
-    smeared_red_below_baseline = red_below_baseline.clone
+    smeared_red_below_baseline = clown(red_below_baseline)
     0.upto(w-1) { |i|
       (i-smear).upto(i+smear) { |ii|
         if ii>=0 and ii<=w-1 and red_below_baseline[ii] then smeared_red_below_baseline[i]=true end
@@ -194,7 +194,7 @@ class Pat
         }
       end
     }
-    r_with_baseline_fix = r.clone
+    r_with_baseline_fix = clown(r)
     #if c=='ε' then print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) end
 
     pink_radius = (0.042*line_spacing).round  # the magic constant gives 3 pixels for Giles, which worked well
@@ -218,7 +218,7 @@ def pinkify_right_side(b,r,x,c)
   # c is used only for debugging
   w,h = ink_array_dimensions(r)
   center = w/2 # possibly inaccurate
-  m = r.clone
+  m = clown(r)
   center.upto(w-1) { |i|
     0.upto(h-1) { |j|
       # Decide whether (i,j) deserves honorary red status according to criterion #1, which
@@ -227,7 +227,7 @@ def pinkify_right_side(b,r,x,c)
       if nearest_right(r,i,j)<=x and nearest_above(r,i,j)+nearest_below(r,i,j)<2*x then m[i][j]=true end
     }
   }
-  m2 = m.clone
+  m2 = clown(m)
   center.upto(w-1) { |i|
     0.upto(h-1) { |j|
       # Now, cumulatively, apply criterion #2, which is to pinkify points whose horizontal distance from 
@@ -335,7 +335,7 @@ def char_to_pat_without_cropping(c,dir,font,dpi,script)
   red_left_full_width = pad_image_right(red[1],w,h)
   red_right_full_width = pad_image_left(red[0],w,h)
   red_final = image_or(red_left_full_width,red_right_full_width)
-  final_bbox = bboxes[0].clone
+  final_bbox = clown(bboxes[0])
   scoot = red[1].width-image[0].width
   final_bbox[0] += scoot  
   final_bbox[1] += scoot  
@@ -351,7 +351,7 @@ def red_one_side(c,dir,font,side,image_orig,dpi,script)
   # side=0 means guard-rail chars will be on the right of our character, 1 means left
   # As we go through the loop, the images can grow, but we don't mutate image_orig.
   red = image_empty_copy(image_orig)
-  image = image_orig.clone
+  image = clown(image_orig)
   other = script.guard_rail_chars(side)
   other.chars.each { |c2|
     if side==0 then s=c+c2 else s=c2+c end
@@ -367,7 +367,7 @@ def red_one_side(c,dir,font,side,image_orig,dpi,script)
   # be only 1 pixel. But it does happen, and this causes the red pattern to contain glitches at the left and right edges of
   # the main character. Remove these glitches.
   if side==1 then
-    bigger_bbox = bbox.clone
+    bigger_bbox = clown(bbox)
     max_kern = font.metrics(dpi,script)['max_kern'] # efficient because memoized
     bigger_bbox[0] -= 1
     bigger_bbox[1] += 1

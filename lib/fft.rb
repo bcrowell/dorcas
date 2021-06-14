@@ -192,7 +192,7 @@ end
 #-------------------------------------------------------------------------
 def windowing_and_padding(y,window,desired_length,value_for_padding)
   n = y.length
-  y2 = y.clone
+  y2 = clown(y)
   while (y2.length<desired_length) do y2.push(value_for_padding) end
   0.upto(y2.length-1) { |j|
     x = 2.0*Math::PI*j.to_f/y.length

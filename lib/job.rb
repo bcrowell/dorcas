@@ -143,7 +143,7 @@ class Job
     }
     jobs = []
     image_list.each { |im|
-      d = data.clone
+      d = clown(data)
       d['image'] = im
       jobs.push(Job.new(d))
     }
@@ -153,7 +153,7 @@ class Job
   def without_image_info
     # Make a generic version of the job object that doesn't have the info about what specific page image we're looking at.
     # Returns a new object.
-    j = self.clone
+    j = clown(self)
     j.image = nil
     return j
   end
