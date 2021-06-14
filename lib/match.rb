@@ -128,7 +128,7 @@ class Match
       if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
       pat = pat_by_name[short_name]
       debug = false
-      co3,garbage,scooch_x,scooch_y = squirrel(page.image,pat,i,j,stats,k:k,smear:smear,debug:debug)
+      co3,garbage,scooch_x,scooch_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
       if make_scatterplot then scatt.push([co1,co3]) end
       #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end
       if co3<threshold3 then next end
