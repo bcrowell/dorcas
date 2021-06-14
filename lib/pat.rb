@@ -11,7 +11,11 @@ class Pat
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
     # and is also used in the actual OCR'ing process.
     garbage,@pink=Pat.fix_red(bw,red,baseline,line_spacing,c)
-    # @pink=@red
+    @threshold = 0.5 # once this has been set, don't change it without deleting all memoized data by calling set_threshold on everything that has a Fat mixin
+    # Mix in Fat methods for all objects, memoizing for speed:
+    Fat.bless(@bw,@threshold)
+    Fat.bless(@red,@threshold)
+    Fat.bless(@pink,@threshold)
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
@@ -30,13 +34,20 @@ class Pat
   end
 
   def transplant_from_file(filename)
+    # Checks that the dimensions are the same, and deletes any memoized data.
     my new_pat = Pat.from_file(filename)
     self.transplant(new_pat.bw)
   end
 
   def transplant(new_bw)
+    # Checks that the dimensions are the same, and deletes any memoized data.
     if new_bw.width!=self.width or new_bw.height!=self.height then die("error transplanting swatch into pattern, not the same dimensions") end
-    @bw = new_bw
+    write_bw(new_bw)
+  end
+
+  def write_bw(bw)
+    @bw = bw
+    Fat.bless(@bw,@threshold) # eliminates any old memoized data
   end
 
   def Pat.char_to_filename(dir,c)

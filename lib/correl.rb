@@ -43,14 +43,20 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
-def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil,k:3.0)
+def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,pat,max_scooch:1,smear:2,debug:nil,k:3.0)
   # returns [score,data,scooch_x,scooch_y]
   # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
   # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
   # If debug is not nil, then it should be of the form [true,pat] or [false,...]. The place to set debug is in match.rb.
+  # Pat is a new addition to args, to allow memoization.
   if_debug = !(debug.nil? || !debug[0])
   if if_debug then debug_pat=debug[1] else debug_pat=nil end
+  if false then
+    # try out new memoizing
+    iii,jjj = rand(pat.bw.width),rand(pat.bw.height)
+    print "in squirrel, at #{[iii,jjj]}, pat.bw.ink?(...)=#{pat.bw.ink?(iii,jjj)}, pat_raw=#{pat_raw[iii][jjj]}, at radius 1, #{pat.bw.ink?(iii,jjj,radius:1)}\n"
+  end
   scores = []
   other = []
   (-max_scooch).upto(max_scooch) { |scooch_x|
