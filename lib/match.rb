@@ -247,14 +247,14 @@ def match_prep_monitor_file_helper(if_monitor_file,page)
   monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
   monitor_image = page.image.clone.grayscale
   monitor_image.save(monitor_file)
-  print "  monitor file: #{monitor_file} (can be viewed live using okular)\n"
+  #print "  monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
   return monitor_file
 end
 
 def match_clean_monitor_file_helper(if_monitor_file,monitor_file)
   if !if_monitor_file then return end
-  print "  monitor file #{monitor_file} not being deleted for convenience ---\n"
+  #print "  monitor file #{monitor_file} not being deleted for convenience ---\n"
   #FileUtils.rm_f(monitor_file)
 end
 

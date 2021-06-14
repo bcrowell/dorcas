@@ -92,7 +92,7 @@ def run_job(job,page,report_dir)
     return
   end
   if job.verb=='seed' then
-    return_pats_no_matching(job,page)
+    return create_pats_no_matching(job,page)
   end
   if job.verb=='learn' then
     return extract_matching_swatches(job,page,report_dir) # a hash whose keys are characters and whose values are of the form [hits,images]
@@ -106,7 +106,7 @@ def postprocess(job,results,report_dir)
     return
   end
   if job.verb=='seed' then
-    die("do I need protprocessing for seed verb? are there applicable svg reports?")
+    write_svg_reports(job,report_dir)
     return
   end
   if job.verb=='learn' then

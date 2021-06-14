@@ -41,6 +41,7 @@ class Fset
     # The files containing characters have names that end in .pat. In addition there should
     # be a file called _data.json that looks like this:
     #   {"size":12,"dpi":300}
+    # The product of these two numbers, divided by 72, is the nominal line spacing.
     # Other files are harmless but ignored.
     if File.directory?(file_or_dir) then
       return Fset.from_directory_helper(file_or_dir)

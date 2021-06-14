@@ -187,6 +187,9 @@ def copy_all_pat_files(set,output_dir)
     destination = dir_and_file_to_path(output_dir,name)
     set.pat(char_name).save(destination)
   }
+  # Copy _data.json:
+  out_data_file = dir_and_file_to_path(output_dir,"_data.json")
+  create_text_file(out_data_file,JSON.generate({'dpi'=>set.dpi,'size'=>set.size}))
 end
 
 
