@@ -28,8 +28,6 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
     }
     if verbosity>=1 then print "  learn mode, char=#{char}, number of matches = #{all_images.length}\n" end
     next if all_images.length==0
-    if verbosity>=1 && all_images.length==1 then print "  only one match, nothing to do\n" end
-    next if all_images.length==1
     pat = job.set.pat(char)
     # Analyze them into clusters.
     clusters = find_clusters_of_swatches(all_images,char,job.cluster_threshold)

@@ -63,17 +63,47 @@ If matches aren't being found at all, use force_location and/or adjust_size.
 to the swatch, not to the seed font. Once the patterns are in good shape, it works better to use a high
 value for the threshold (~0.6) and a lower value for the cluster_threshold (~0.7).
 
-### Editing data
+### Editing .set files
+
+These can exist either as directories or as files with the .set extension, which are zip files. They
+contain one .pat file for each character, plus a file  _data.json that looks like this: 
+`{"size":12,"dpi":300}`. The size is in points, and dpi is the resolution.
+
+Linux systems have a GUI utility called file-roller for working with zip files.
+
+To delete a bad pattern from a .set file: `zip -d foo.set alpha.pat`
+
+To pack a directory up into a .set file: `zip -q -r -j foo.set foo/*.pat foo/_data.json`
+
+To unpack a .set file into a directory: `unzip -q -d foo foo.set`
+
+To see the contents of a set: `zipinfo foo.set`
+
+# Editing a single character from a .set file:
+
+Utilities for making this easier:
+
+dorcas extract old.set ρ bw.png
+
+... edit bw.png
+
+dorcas insert old.set ρ bw.png new.set
+
+For a reminder of usage on these utilities, do "dorcas insert help", etc.
+
+### Editing .pat files
 
 To delete a bad pattern, simply remove the .pat file.
 
-To edit a pattern:
+If the .pat file is inside a .set file, use dorcas extract and dorcas insert (see above).
+
+If the .pat file is not inside a .set file:
 
 1. `unzip -jo a.pat bw.png` (unzips the file into the current working directory)
 
 2. Use software such as GIMP to edit bw.png.
 
-3. `zip a.pat bw.png` ... no, fails because a.pat doesn't have the magic .zip extension
+3. `jar -uf a.pat bw.png` (jar is packaged as part of openjdk)
 
 
 # Format of input file
@@ -135,26 +165,6 @@ The input file is a JSON hash with keys and values described below. Comments are
         case you will need to set the threshold to a very low value as well. The need to do these things may
         actually indicate a problem with a red mask that is not close enough to the character, i.e., the kerning
         in the real document is tighter than estimated by the software.
-
-# Pattern sets
-
-Treating them as zip files:
-
-Create _data.json that looks like this: `{"size":12,"dpi":300}` and put it in the directory, e.g., pass46.
-
-`zip -j giles46.set pass46/* -i \*.pat \*_data.json` (backslashes necessary on unix, not on windows)
-
-`zipinfo giles46.set`
-
-Utilities for making this easier:
-
-dorcas extract old.set ρ bw.png
-
-... edit bw.png
-
-dorcas insert old.set ρ bw.png new.set
-
-For a reminder of usage on these utilities, do "dorcas insert help", etc.
 
 # Portability
 
