@@ -57,7 +57,7 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,max_scooch:1,smear:2,debug:nil
     (-max_scooch).upto(max_scooch) { |scooch_y|
       s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,k,nil)
       scores.push(s)
-      other.push([data,scooch_x,scooch_y])
+      other.push([data,scooch_x,scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging
     }
   }
   i,s = greatest(scores)

@@ -9,11 +9,13 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
   # Returns a list of hits.
   files_to_delete = []
   pids = []
+  py_dir = dir_and_file_to_path(__dir__,"py") # subdirectory py of the directory in which the ruby code lives
+  py_exe = dir_and_file_to_path(py_dir,"convolve.py")
   code_array.each { |code|
     temp = temp_file_name()
     create_text_file(temp,code)
     files_to_delete.push(temp)
-    pid = Process.spawn("python3","py/convolve.py",{:in=>temp})
+    pid = Process.spawn("python3",py_exe,{:in=>temp})
     pids.push(pid)
   }
   # The following allows us to do other things while the child processes are running, such as print status messages
