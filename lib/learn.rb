@@ -60,6 +60,7 @@ end
 
 def extract_matching_swatches(job,page,report_dir,verbosity:2)
   # Returns a hash whose keys are characters and whose values are of the form [hits,images].
+  # Hits are in the format [score,x,y].
   from_seed = job.set.nil?
   if from_seed then Fset.grow_from_seed(job,page) end
   if verbosity>=2 then
@@ -102,13 +103,15 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 
-  hits = match.three_stage_finish(page,job.set,chars:char)
+  count1,hits2 = match.three_stage_pass2(page,job.set,chars:char)
+  hits3 = match.three_stage_pass_3(page,job.set,hits2) # returns a hash whose keys are chars and values are liss of [score,x,y]
   match.three_stage_cleanup(page)
-  # ...consider using squirrel only, esp. if using force_loc
 
-  images = swatches(hits,page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
+  if verbosity>=1 then print "  Filtered #{count1[char]} to #{hits2.length} to #{hits3.length} after second and third passes.\n" end
+
+  images = swatches(hits3[char],page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
   char_name = char_to_short_name(char)
-  return [hits,images]
+  return [hits3[char],images]
 end
 
 def create_pats_no_matching(job,page)

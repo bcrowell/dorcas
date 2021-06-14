@@ -50,7 +50,8 @@ class Match
 
     self.three_stage_prep(page,set,if_monitor_file:if_monitor_file)
     print "  Done with fft for #{self.characters}.\n" if verbosity>=1
-    self.hits = self.three_stage_finish(page,set)
+    count1,hits2 = self.three_stage_pass_2(page,set)
+    hits3 = self.three_stage_pass_3(page,set,hits2)
     self.three_stage_cleanup(page)
 
     return self.hits
@@ -85,11 +86,14 @@ class Match
                     sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
 
-  def three_stage_finish(page,set,chars:self.characters,verbosity:2)
+  def three_stage_pass_2(page,set,chars:self.characters,verbosity:2)
     # This can be called on one character at a time or on any subset of the characters used in three_stage_prep().
     # Input image stats are all in ink units. See comments at top of function about why it's OK
     # to apply the trivial conversion to PNG grayscale. The output of ink_to_png_8bit_grayscale()
     # is defined so that black is 0.
+    # Returns [count1,hits2], where 
+    #   count1 is a hash whose keys are characters and whose values are the number of hits from pass 1
+    #   hits2 is a hash whose keys are characters and whose values are lists of hits in the format [score,x,y]
 
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     stats = page.stats
@@ -99,8 +103,12 @@ class Match
     pat_by_name = {}
     bw = {}
     red = {}
+    count1 = {}
+    hits2 = {}
     chars.chars.each { |c|
       n = char_to_short_name(c)
+      count1[c] = 0
+      hits2[c] = []
       p = set.pat(c)
       want_these_chars[n] = true
       bw[n] = image_to_ink_array(p.bw)
@@ -109,37 +117,43 @@ class Match
       sdp[n] = p.stats['sd']
     }
 
-    make_scatterplot = false
-
-    hits2 = []
     bg = stats['background']
-    if make_scatterplot then scatt=[] end
-    count_after_pass_1 = 0 # count only hits for the selected characters, so may be much less than hits.length
-    count_after_pass_2 = 0
     self.hits.each { |x|
       co1,i,j,misc = x
       short_name = misc['label']
-      unless want_these_chars.has_key?(short_name) then next end
-      count_after_pass_1 += 1
+      next unless want_these_chars.has_key?(short_name)
+      c = short_name_to_char(short_name)
+      count1[c] += 1
       norm = sdp[short_name]*stats['sd_in_text']
       co2 = correl(page.ink,bw[short_name],red[short_name],bg,i,j,norm)
       if co2<threshold2 then next end
-      count_after_pass_2 += 1
-      if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
-      pat = pat_by_name[short_name]
-      debug = false
-      co3,garbage,scooch_x,scooch_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
-      if make_scatterplot then scatt.push([co1,co3]) end
-      #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end
-      if co3<threshold3 then next end
-      hits2.push([co3,i+scooch_x,j+scooch_y,misc])
+      hits2[c].push([co2,i,j])
     }
-    if verbosity>=1 then print "  Filtered #{count_after_pass_1} to #{count_after_pass_2} to #{hits2.length} after second and third passes.\n" end
+    return [count1,hits2]
+  end
 
-    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits2,chars,set,verbosity:2) end
-    if make_scatterplot then print ascii_scatterplot(hits2,save_to_file:'scatt.txt') end
+  def three_stage_pass_3(page,set,hits2,chars:self.characters,verbosity:2)
+    # hits2 is a hash whose keys are characters and whose values are lists of hits in the format [score,x,y], where score is from pass 2
+    # hits3 is in the same format, but filtered again, and with score from pass 3 possibly perturbed x and y
+    threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
 
-    return hits2
+    hits3 = {}
+    chars.chars.each { |c|
+      hits3[c] = []
+      hits2[c].each { |h|
+        co2,i,j = h
+        if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
+        pat = set.pat(c)
+        debug = false
+        co3,garbage,scooch_x,scooch_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
+        if co3<threshold3 then next end
+        hits3[c].push([co3,i+scooch_x,j+scooch_y])
+      }
+    }
+
+    unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits3,chars,set,verbosity:2) end
+
+    return hits3
   end
 
   def three_stage_cleanup(page)
@@ -171,7 +185,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   wp,hp = pat.width,pat.height
   images = []
   0.upto(nhits-1) { |k|
-    c,i,j,misc = hits[k]
+    score,i,j = hits[k]
     if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n"; next end
     sw = text.crop(i,j,wp,hp)
     remove_impinging_flyspecks(sw,pat,stats)

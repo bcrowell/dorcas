@@ -15,10 +15,8 @@ def verb_squirrel(args)
   File.open(page_file) { |file| page = Marshal.load(file) } # a serialized Page object; should have already had its analyze() method run
   File.open(pats_file) { |file| pats = Marshal.load(file) } # a serialized list of Pat objects
   File.open(hits_file) { |file| hits = Marshal.load(file) } # an array indexed like [patnum][hitnum][0 or 1]
-  File.open(params_file) { |file| params = Marshal.load(file) } # a hash with keys max_schooch, smear, and k
-  max_scooch = params['max_scooch']
-  smear = params['smear']
-  k = params['k']
+  File.open(params_file) { |file| params = Marshal.load(file) } # a hash with keys threshold, max_schooch, smear, and k
+  threshold,max_scooch,smear,k = params['threshold'],params['max_scooch'],params['smear'],params['k']
   count = 0
   pats.each { |pat|
     h = hits[count]
