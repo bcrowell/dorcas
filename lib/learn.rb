@@ -34,7 +34,9 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
     # Analyze them into clusters.
     clusters = find_clusters_of_swatches(all_images,char,job.cluster_threshold)
     cl_averages = make_composite_from_swatches(pat,all_images,clusters)
-    composite = clustering_helper(job.prefer_cluster,cl_averages,char,verbosity:verbosity)
+    my_preferred_cluster = nil
+    if !(job.prefer_cluster.nil?) then my_preferred_cluster=job.prefer_cluster[char] end
+    composite = clustering_helper(my_preferred_cluster,cl_averages,char,verbosity:verbosity)
     pat.transplant(composite)
     pat.save(Pat.char_to_filename(job.output,char))
     char_name = char_to_short_name(char)

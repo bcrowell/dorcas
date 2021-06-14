@@ -60,7 +60,8 @@ If the wrong swatches are being matched to the seed font, this can be fixed on t
 If matches aren't being found at all, use force_location and/or adjust_size.
 
 3. Iteration: Continue the process. Any letter for which we already have a good-enough swatch is matched
-to the swatch, not to the seed font.
+to the swatch, not to the seed font. Once the patterns are in good shape, it works better to use a high
+value for the threshold (~0.6) and a lower value for the cluster_threshold (~0.7).
 
 ### Editing data
 
