@@ -2,6 +2,9 @@ class Page
   # Conceptually, this is an image of text that can't be easily split into smaller
   # pieces without knowing about line breaks and layout.
   # Both reading the PNG file and making the ink array are slow operations.
+  # Once the analyze() method has been called, we know the proper threshold for this image, and
+  # the ink? method will work on the image, which is more efficient than other methods of
+  # doing nearest-neighbor logic.
   def initialize(image,png_filename:nil)
     @image = image
     @ink = image_to_ink_array(image)
@@ -31,6 +34,7 @@ class Page
   end
 
   def analyze(spacing_multiple,guess_dpi,guess_font_size)
+    # Has the side-effect of mixing in Fat module for efficiency.
     print "Input file is #{self.png_filename}\n"
     s = ink_stats_1(self.image,self.ink)
     self.peak_to_bg = s['dark']/s['submedian']
@@ -51,6 +55,8 @@ class Page
     # not super great, sometimes results in a font whose size is wrong by 15%.
  
     self.stats = s
+
+    Fat.bless(self.image,s['threshold'])
   end
 
 end

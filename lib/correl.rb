@@ -49,7 +49,7 @@ def squirrel(text_raw,pat,dx,dy,stats,max_scooch:1,smear:2,debug:false,k:3.0)
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
   # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
   # If debug is not nil, then it should be of the form [true,pat] or [false,...]. The place to set debug is in match.rb.
-  # Pat is a new addition to args, to allow memoization.
+  # Text_raw should be a chunkypng object that has had the Fat mixin applied.
   if debug then 
     print array_ascii_art(pat.bw.bool_array,fn:lambda { |x| if x==true then '*' else if x.nil? then 'n' else ' ' end end} )
   end
@@ -72,44 +72,32 @@ def squirrel(text_raw,pat,dx,dy,stats,max_scooch:1,smear:2,debug:false,k:3.0)
   return x
 end
 
-def squirrel_no_registration_adjustment(text_raw,pat,dx,dy,stats,smear,k,do_debug)
+def squirrel_no_registration_adjustment(text,pat,dx,dy,stats,smear,k,do_debug)
   # A modified version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
-  # text_raw, pat_raw, and red_raw are ink arrays
+  # text is a chunkypng image that has had the Fat mixin applied.
+  # Pat is a Pat object.
   # dx,dy are offsets of pat within text
   # k = multiplier to the penalty when image!=template
   # stats should include the keys background, dark, and threshold, which refer to text
   w,h = pat.width,pat.height
+  tw,th = text.width,text.height
 
   background,threshold,dark = stats['background'],stats['threshold'],stats['dark']
   if background.nil? or threshold.nil? or dark.nil? then die("nil provided in stats as one of background,threshold,dark={[background,threshold,dark]}") end
-
-  text_gray = extract_subarray_with_padding(text_raw,Box.new(dx,dx+w-1,dy,dy+h-1),background)
-  # Make convenient arrays text, pat, and red that are full of the values 0 and 1 and are all the same size.
-  text = array_elements_threshold(text_gray,threshold)
-
-  if do_debug then
-    pat_obj = pat
-    filename = sprintf("squirrel%04d_%04d.png",dx,dy)
-    v = pat_obj.visual(black_color:ChunkyPNG::Color::rgba(0,0,255,130),red_color:ChunkyPNG::Color::rgba(255,0,0,130))
-    #v.save("sqv_"+filename)
-    ii = ink_array_to_image(text_gray)
-    ii = compose_safe(ii,v,0,0)
-    ii.save(filename)
-  end
 
   norm = 0.0
   total = 0.0
   if do_debug then terms=generate_array(w,h,lambda {|i,j| 0.0}) end
   0.upto(h-1) { |j|
     0.upto(w-1) { |i|
-      if pat.pink.ink?(i,j) then next end
+      next if pat.pink.ink?(i,j)
+      ii,jj = i+dx,j+dy
+      next if ii<0 || ii>tw-1 || jj<0 || jj>th-1
       pp = pat.bw.ink?(i,j)
-      t = text[i][j]
+      tt = text.ink?(ii,jj)
       wt = 1
-      tt = (t==1) # boolean version
-      pn = pat.bw.ink?(i,j,radius:smear) # faster, memoized
-      if pat.bw.ink?(31,60) then die("300 became true") end
-      tn = squirrel_helper_has_neighbor(text,w,h,i,j,smear)
+      pn = pat.bw.ink?(i,j,radius:smear)
+      tn = text.ink?(ii,jj,radius:smear)
       if do_debug && i==31 && j==h-1 then print "i=#{i} j=#{j} pp=#{pp} tt=#{tt} pn=#{pn} tn=#{tn}, smear=#{smear}\n" end
       # We don't care if they're both whitespace. Default to doing nothing unless something more special happens.
       wt=0.0
@@ -124,7 +112,7 @@ def squirrel_no_registration_adjustment(text_raw,pat,dx,dy,stats,smear,k,do_debu
   }
   if do_debug then print array_ascii_art(terms,fn:lambda { |x| squirrel_ascii_art_helper(x) }) end
 
-  return [total/norm,{"image"=>filename}]
+  return [total/norm,{}]
 end
 
 def squirrel_ascii_art_helper(x)
