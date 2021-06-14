@@ -15,6 +15,7 @@ require_relative "lib/freak"
 require_relative "lib/fft"
 require_relative "lib/estimate_scale"
 require_relative "lib/image_util"
+require_relative "lib/fat"
 require_relative "lib/font"
 require_relative "lib/fontconfig"
 require_relative "lib/script"
@@ -38,6 +39,15 @@ require_relative "lib/svg"
 require_relative "lib/pdf"
 require_relative "lib/ttf"
 require_relative "lib/test"
+
+class HomeDir
+  # This code can't go in a file inside the lib subdirectory, because when code is executed from there, __dir__ has the wrong value.
+  @@no_place_like = __dir__
+  def HomeDir.home
+    return @@no_place_like
+  end
+end
+
 
 def main()
   start = Time.now
