@@ -95,19 +95,18 @@ class Match
     stats = page.stats
   
     want_these_chars = {}
-    bw = {}
-    red = {}
     sdp = {}
     pat_by_name = {}
+    bw = {}
+    red = {}
     chars.chars.each { |c|
       n = char_to_short_name(c)
       p = set.pat(c)
       want_these_chars[n] = true
-      pat_by_name[n] = p
       bw[n] = image_to_ink_array(p.bw)
       red[n] = image_to_ink_array(p.pink)
-      pat_stats = ink_stats_pat(bw[n],red[n]) # calculates mean and sd
-      sdp[n] = pat_stats['sd']
+      pat_by_name[n] = p
+      sdp[n] = p.stats['sd']
     }
 
     make_scatterplot = false
@@ -128,12 +127,8 @@ class Match
       count_after_pass_2 += 1
       if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
       pat = pat_by_name[short_name]
-      if false then # for ascii art debugging output
-        debug=[true,pat] 
-      else
-        debug=[false,nil]
-      end
-      co3,garbage,scooch_x,scooch_y = squirrel(page.ink,bw[short_name],red[short_name],i,j,stats,pat,k:k,smear:smear,debug:debug)
+      debug = false
+      co3,garbage,scooch_x,scooch_y = squirrel(page.ink,pat,i,j,stats,k:k,smear:smear,debug:debug)
       if make_scatterplot then scatt.push([co1,co3]) end
       #if co2>0.0 then print "i,j=#{i} #{j} raw=#{co1}, co2=#{co2}, co3=#{co3}, threshold3=#{threshold3}\n" end
       if co3<threshold3 then next end

@@ -21,19 +21,24 @@ module Fat
     @memoized = [] # @memoized[0] is the boolean version of the original, @memoized[1] is for radius=1, etc.
   end
 
+  def bool_array(radius:0)
+    self.ink?(0,0,radius:radius) # do a fake access to one pixel to trigger memoization
+    return @memoized[radius]    
+  end
+
   def ink?(i,j,radius:0)
     # Returns a boolean. If radius is 0, tells us whether the original image has ink at (i,j).
     # If radius is 1, tells us if it or any of its neighbors have ink.
     if radius<@memoized.length then return @memoized[radius][i][j] end
-    # print "memoization failed, radius=#{radius}\n"
     if radius==0 then
       r0 = generate_array(self.width,self.height,lambda {|i,j| color_to_ink(self[i,j])>@threshold })
       @memoized = [r0]
       return r0[i][j]
     end
     # Recurse:
-    rn = @memoized[0].clone # just make another boolean array with the same shape
     w,h = self.width,self.height
+    #rn = @memoized[0].clone # just make another boolean array with the same shape
+    rn = generate_array(w,h,lambda { |i,j| false})
     0.upto(w-1) { |x|
       0.upto(h-1) { |y|
         has_neighbor = false

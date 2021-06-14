@@ -16,10 +16,15 @@ class Pat
     Fat.bless(@bw,@threshold)
     Fat.bless(@red,@threshold)
     Fat.bless(@pink,@threshold)
+    @stats = ink_stats_pat(image_to_ink_array(@bw),image_to_ink_array(@pink)) # use pink for this, because that's what we're actually using in correlations
+  end
+
+  def ascii_art
+    return array_ascii_art(self.bw.bool_array,fn:lambda { |x| if x==true then '*' else if x.nil? then 'n' else ' ' end end} )
   end
 
   attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
-  attr_accessor :pink
+  attr_accessor :pink,:stats
 
   def width()
     return bw.width

@@ -43,25 +43,21 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
-def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,pat,max_scooch:1,smear:2,debug:nil,k:3.0)
+def squirrel(text_raw,pat,dx,dy,stats,max_scooch:1,smear:2,debug:false,k:3.0)
   # returns [score,data,scooch_x,scooch_y]
   # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
   # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
   # If debug is not nil, then it should be of the form [true,pat] or [false,...]. The place to set debug is in match.rb.
   # Pat is a new addition to args, to allow memoization.
-  if_debug = !(debug.nil? || !debug[0])
-  if if_debug then debug_pat=debug[1] else debug_pat=nil end
-  if false then
-    # try out new memoizing
-    iii,jjj = rand(pat.bw.width),rand(pat.bw.height)
-    print "in squirrel, at #{[iii,jjj]}, pat.bw.ink?(...)=#{pat.bw.ink?(iii,jjj)}, pat_raw=#{pat_raw[iii][jjj]}, at radius 1, #{pat.bw.ink?(iii,jjj,radius:1)}\n"
+  if debug then 
+    print array_ascii_art(pat.bw.bool_array,fn:lambda { |x| if x==true then '*' else if x.nil? then 'n' else ' ' end end} )
   end
   scores = []
   other = []
   (-max_scooch).upto(max_scooch) { |scooch_x|
     (-max_scooch).upto(max_scooch) { |scooch_y|
-      s,data = squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+scooch_x,dy+scooch_y,stats,smear,k,nil)
+      s,data = squirrel_no_registration_adjustment(text_raw,pat,dx+scooch_x,dy+scooch_y,stats,smear,k,false)
       scores.push(s)
       other.push([data,scooch_x,scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging
     }
@@ -69,21 +65,20 @@ def squirrel(text_raw,pat_raw,red_raw,dx,dy,stats,pat,max_scooch:1,smear:2,debug
   i,s = greatest(scores)
   x = [scores[i]]
   x.concat(other[i])
-  if if_debug then 
+  if debug then 
     # Rerun it once, with the optimum registration, just to get debugging output as requested.
-    squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx+other[i][1],dy+other[i][2],stats,smear,k,debug_pat)
+    squirrel_no_registration_adjustment(text_raw,pat,dx+other[i][1],dy+other[i][2],stats,smear,k,false)
   end
   return x
 end
 
-def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,smear,k,debug)
-  # An experimental version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
+def squirrel_no_registration_adjustment(text_raw,pat,dx,dy,stats,smear,k,do_debug)
+  # A modified version of correl, meant to be slower but smarter, for giving a secondary, more careful evaluation of a hit found by correl.
   # text_raw, pat_raw, and red_raw are ink arrays
   # dx,dy are offsets of pat within text
   # k = multiplier to the penalty when image!=template
   # stats should include the keys background, dark, and threshold, which refer to text
-  # If debug is not nil, it should be a Pat object.
-  w,h = ink_array_dimensions(pat_raw)
+  w,h = pat.width,pat.height
 
   background,threshold,dark = stats['background'],stats['threshold'],stats['dark']
   if background.nil? or threshold.nil? or dark.nil? then die("nil provided in stats as one of background,threshold,dark={[background,threshold,dark]}") end
@@ -91,12 +86,9 @@ def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,sme
   text_gray = extract_subarray_with_padding(text_raw,Box.new(dx,dx+w-1,dy,dy+h-1),background)
   # Make convenient arrays text, pat, and red that are full of the values 0 and 1 and are all the same size.
   text = array_elements_threshold(text_gray,threshold)
-  pat = array_elements_threshold(pat_raw,0.5)
-  red = array_elements_threshold(red_raw,0.5)
 
-  do_debug = ! (debug.nil?)
   if do_debug then
-    pat_obj = debug
+    pat_obj = pat
     filename = sprintf("squirrel%04d_%04d.png",dx,dy)
     v = pat_obj.visual(black_color:ChunkyPNG::Color::rgba(0,0,255,130),red_color:ChunkyPNG::Color::rgba(255,0,0,130))
     #v.save("sqv_"+filename)
@@ -107,29 +99,31 @@ def squirrel_no_registration_adjustment(text_raw,pat_raw,red_raw,dx,dy,stats,sme
 
   norm = 0.0
   total = 0.0
-  if debug then terms=generate_array(w,h,lambda {|i,j| 0.0}) end
+  if do_debug then terms=generate_array(w,h,lambda {|i,j| 0.0}) end
   0.upto(h-1) { |j|
     0.upto(w-1) { |i|
-      if red[i][j]==1 then next end
-      p = pat[i][j]
+      if pat.pink.ink?(i,j) then next end
+      pp = pat.bw.ink?(i,j)
       t = text[i][j]
       wt = 1
-      pp,tt = [(p==1),(t==1)] # boolean versions
-      pn = squirrel_helper_has_neighbor(pat,w,h,i,j,smear)
+      tt = (t==1) # boolean version
+      pn = pat.bw.ink?(i,j,radius:smear) # faster, memoized
+      if pat.bw.ink?(31,60) then die("300 became true") end
       tn = squirrel_helper_has_neighbor(text,w,h,i,j,smear)
-      #if debug && i==19 && (j-31).abs<=3 then print "i=#{i} j=#{j} pp=#{pp} tt=#{tt} pn=#{pn} tn=#{tn}, smear=#{smear}\n" end
+      if do_debug && i==31 && j==h-1 then print "i=#{i} j=#{j} pp=#{pp} tt=#{tt} pn=#{pn} tn=#{tn}, smear=#{smear}\n" end
       # We don't care if they're both whitespace. Default to doing nothing unless something more special happens.
       wt=0.0
       score=0.0
       mismatch = ((!tn) && pp) || ((!pn) && tt)
       if mismatch then wt=1.0; score= -k end      # we care a lot if one has ink and the other doesn't
       if pp and tt then wt=1.0; score= 1.0 end      # they both have ink in the same place
-      if debug then terms[i][j]=wt*score end
+      if do_debug then terms[i][j]=wt*score end
       norm += wt
       total += wt*score
     }
   }
-  if debug then print array_ascii_art(terms,fn:lambda { |x| squirrel_ascii_art_helper(x) }) end
+  if do_debug then print array_ascii_art(terms,fn:lambda { |x| squirrel_ascii_art_helper(x) }) end
+
   return [total/norm,{"image"=>filename}]
 end
 
