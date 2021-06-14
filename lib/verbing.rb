@@ -6,7 +6,28 @@ def verbing(argv)
   if verb=='extract' then verb_extract(argv); recognized=true end
   if verb=='insert' then verb_insert(argv); recognized=true end
   if verb=='test' then verb_test(); recognized=true end
+  if verb=='squirrel' then verb_squirrel(argv); recognized=true end
   if !recognized then die("unrecognized verb #{verb}") end
+end
+
+def verb_squirrel(args)
+  page_file,pats_file,hits_file,params_file,out_file = args
+  File.open(page_file) { |file| page = Marshal.load(file) } # a serialized Page object; should have already had its analyze() method run
+  File.open(pats_file) { |file| pats = Marshal.load(file) } # a serialized list of Pat objects
+  File.open(hits_file) { |file| hits = Marshal.load(file) } # an array indexed like [patnum][hitnum][0 or 1]
+  File.open(params_file) { |file| params = Marshal.load(file) } # a hash with keys max_schooch, smear, and k
+  max_scooch = params['max_scooch']
+  smear = params['smear']
+  k = params['k']
+  count = 0
+  pats.each { |pat|
+    h = hits[count]
+    count += 1
+    h.each { |hit|
+      x,y = hit
+      squirrel(page.image,pat,x,y,max_scooch:max_scooch,smear:smear,k:k)
+    }
+  }
 end
 
 def verb_insert(args)
