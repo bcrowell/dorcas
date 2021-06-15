@@ -25,7 +25,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
 
   n = guess_n_cores()
   μοῖραι = portion_out_characters(all_chars,n)
-  print "μοῖραι=#{μοῖραι}\n"
+  if verbosity>=1 then print "  pass 1, μοῖραι=#{μοῖραι}\n" end
   write_debugging_images = false
   if write_debugging_images then print "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
 

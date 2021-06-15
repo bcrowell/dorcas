@@ -141,6 +141,7 @@ class Match
 
     n = guess_n_cores()
     μοῖραι = portion_out_characters(chars,n)
+    if verbosity>=1 then print "  pass 3, μοῖραι=#{μοῖραι}\n" end
     files_to_delete = []
     page_file = temp_file_name()
     files_to_delete.push(page_file)
