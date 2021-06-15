@@ -44,7 +44,7 @@ def mean_product_simple_list_of_floats(a,b)
 end
 
 def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
-  # returns [score,data,scooch_x,scooch_y]
+  # returns [score,x',y']
   # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
   # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
@@ -58,9 +58,9 @@ def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
   (-max_scooch).upto(max_scooch) { |scooch_x|
     (-max_scooch).upto(max_scooch) { |scooch_y|
       #print "dx.class.name=#{dx.class.name}\n" # qwe
-      s,data = squirrel_no_registration_adjustment(text,pat,dx+scooch_x,dy+scooch_y,smear,k,false)
+      s = squirrel_no_registration_adjustment(text,pat,dx+scooch_x,dy+scooch_y,smear,k,false)
       scores.push(s)
-      other.push([data,dx+scooch_x,dy+scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging
+      other.push([dx+scooch_x,dy+scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging
     }
   }
   i,s = greatest(scores)
@@ -68,7 +68,7 @@ def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
   x.concat(other[i])
   if debug then 
     # Rerun it once, with the optimum registration, just to get debugging output as requested.
-    squirrel_no_registration_adjustment(text,pat,dx+other[i][1],dy+other[i][2],smear,k,false)
+    squirrel_no_registration_adjustment(text,pat,other[i][0],other[i][1],smear,k,false)
   end
   return x
 end
@@ -109,7 +109,7 @@ def squirrel_no_registration_adjustment(text,pat,dx,dy,smear,k,do_debug)
   }
   if do_debug then print array_ascii_art(terms,fn:lambda { |x| squirrel_ascii_art_helper(x) }) end
 
-  return [total/norm,{}]
+  return total/norm
 end
 
 def squirrel_ascii_art_helper(x)

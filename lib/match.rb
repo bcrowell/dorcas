@@ -145,7 +145,7 @@ class Match
         if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
         pat = set.pat(c)
         debug = false
-        co3,garbage,new_x,new_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
+        co3,new_x,new_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
         if co3<threshold3 then next end
         hits3[c].push([co3,new_x,new_y])
       }

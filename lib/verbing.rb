@@ -23,7 +23,7 @@ def verb_squirrel(args)
     count += 1
     h.each { |hit|
       x,y = hit
-      squirrel(page.image,pat,x,y,max_scooch:max_scooch,smear:smear,k:k)
+      hits = squirrel(page.image,pat,x,y,max_scooch:max_scooch,smear:smear,k:k)
     }
   }
 end
