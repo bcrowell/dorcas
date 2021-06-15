@@ -104,6 +104,10 @@ def run_job(job,page,report_dir)
     hits = m.execute(page,job.set,batch_code:Process.pid.to_s) # only result of doing this is currently that mon.png gets written
     spatter = Spatter.from_hits_page_and_set(hits,page,job.set)
     print "spatter:\n  #{spatter.report}\n"
+    lines = spatter.plow()
+    lines.each { |l|
+      print "line:\n  #{l.report}\n"
+    }
     return
   end
   if job.verb=='seed' then

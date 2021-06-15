@@ -42,7 +42,7 @@ class Spatter
   def report
     return [stats_to_string({'line_spacing'=>self.line_spacing,'max_w'=>self.max_w,'max_h'=>self.max_h,'em'=>self.em,
                  'min_interword'=>self.min_interword,'max_interword'=>self.max_interword,'max_kern'=>self.max_kern}),
-            stats_to_string({'total_hits'=>self.total_hits,'height'=>self.height})
+            stats_to_string({'top'=>self.top,'spread'=>self.spread,'total_hits'=>self.total_hits})
            ].join("\n  ")
   end
 
@@ -60,7 +60,8 @@ class Spatter
     return @bottom
   end
 
-  def height
+  def spread
+    # For a happy and well adjusted single line of text, this should be just a few pixels.
     return self.bottom-self.top
   end
 
@@ -68,13 +69,13 @@ class Spatter
     # Return a list of new Spatter objects, each of which is estimated to be a line of text.
     # This is meant to be the dumbest algorithm that has any hope of working. Won't cope well if the text is rotated or lines are curved at all.
     if self.total_hits==0 then return [] end
-    if self.height<1.5*self.line_spacing then return self end
+    if self.spread<0.5*self.line_spacing then return [self] end
     # Make a histogram running along the vertical axis.
     f = 0.25 # each bin is this fraction of line spacing
     bin_width = (self.line_spacing*f).round
     if bin_width<1 then bin_width=1 end
-    n_bins = (self.height/bin_width.to_f).round
-    if n_bins*bin_width<self.height then n_bins+= 1 end
+    n_bins = (self.spread/bin_width.to_f).round
+    if n_bins*bin_width<self.spread then n_bins+= 1 end
     histogram = array_of_zero_floats(n_bins)
     self.hits.each { |c,h|
       h.each { |hh|
