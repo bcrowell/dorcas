@@ -138,17 +138,28 @@ class Match
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
 
     if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
-    hits3 = {}
-    chars.chars.each { |c|
-      hits3[c] = []
-      hits2[c].each { |h|
-        co2,i,j = h
-        pat = set.pat(c)
-        debug = false
-        co3,new_x,new_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
-        if co3<threshold3 then next end
-        hits3[c].push([co3,new_x,new_y])
-      }
+
+    hh = chars.chars.each.map { |c| hits2[c] }   # hits in format needed for spawned process
+    pp = chars.chars.each.map { |c| set.pat(c) } # pats in format needed for spawned process
+    pars = {'threshold'=>threshold3,'max_scooch'=>1,'smear'=>smear,'k'=>k}
+    stuff = [page,pp,hh,pars]
+    infiles = []
+    files_to_delete = []
+    stuff.each { |x|
+      file = temp_file_name()
+      infiles.push(file)
+      files_to_delete.push(file)
+      File.open(file,"wb") { |file| Marshal.dump(x,file) }
+    }
+    outfile = temp_file_name()
+    files_to_delete.push(outfile)
+    myself = find_exe(nil,"dorcas")
+    pid = Process.spawn(myself,"squirrel",infiles[0],infiles[1],infiles[2],infiles[3],outfile)
+    Process.wait(pid)
+    hits3 = nil
+    File.open(outfile,"rb") { |file| hits3 = Marshal.load(file) } 
+    files_to_delete.each { |f|
+      FileUtils.rm_f(f)
     }
 
     unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits3,chars,set,verbosity:2) end

@@ -12,17 +12,20 @@ end
 
 def verb_squirrel(args)
   page_file,pats_file,hits_file,params_file,out_file = args
-  File.open(page_file,"rb") { |file| page = Marshal.load(file) } # a serialized Page object; should have already had its analyze() method run
-  File.open(pats_file,"rb") { |file| pats = Marshal.load(file) } # a serialized list of Pat objects
+  page,pats,hits,params = nil,nil,nil,nil
+  File.open(page_file,"rb") { |file| page = Marshal.load(file) } # Page object, which should have already had its analyze() method run so that the
+                                                                 # image inside it has Fat mixins
+  File.open(pats_file,"rb") { |file| pats = Marshal.load(file) } # list of Pat objects
   File.open(hits_file,"rb") { |file| hits = Marshal.load(file) } # an array indexed like [patnum][hitnum][0..2], where the innermost thing is [score,x,y]
   File.open(params_file,"rb") { |file| params = Marshal.load(file) } # a hash with keys threshold, max_scooch, smear, and k
   threshold,max_scooch,smear,k = params['threshold'],params['max_scooch'],params['smear'],params['k']
-  result = []
+  result = {}
   patnum = 0
   pats.each { |pat|
+    c = pat.c
     h = hits[patnum]
     patnum += 1
-    result.push(h.map { |a| squirrel(page.image,pat,a[1],a[2],max_scooch:max_scooch,smear:smear,k:k) })
+    result[c] = h.map { |a| squirrel(page.image,pat,a[1],a[2],max_scooch:max_scooch,smear:smear,k:k) }.select { |a| a[0]>threshold }
   }
   File.open(out_file,"wb") { |file| Marshal.dump(result,file) }
 end
