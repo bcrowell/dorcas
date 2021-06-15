@@ -119,7 +119,7 @@ class Spatter
   def select(fn)
     new_hits = {}
     self.hits.each { |c,h|
-      new_hits[c] = h.select {|a| fn.call(a)}
+      new_hits[c] = h.select {|a| fn.call([a[0],a[1],a[2],c])} # filter function sees [score,x,y,c]
     }
     return self.transplant_hits(new_hits)
   end
