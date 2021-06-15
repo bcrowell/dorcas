@@ -108,6 +108,9 @@ def run_job(job,page,report_dir)
     lines.each { |l|
       print "line:\n  #{l.report}\n"
     }
+    lines.each { |l|
+      print l.babble,"\n"
+    }
     return
   end
   if job.verb=='seed' then

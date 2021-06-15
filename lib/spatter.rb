@@ -65,6 +65,20 @@ class Spatter
     return self.bottom-self.top
   end
 
+  def babble(threshold:0.5)
+    # Self is assumed to be a single line of text.
+    # Outputs a string that simply contains all hits with scores above the threshold, sorted from left to right.
+    letters = []
+    self.hits.each { |c,h|
+      h.each { |hh|
+        score,x,y = hh
+        if score>threshold then letters.push([c,x]) end
+      }
+    }
+    letters = letters.sort { |p,q| p[1] <=> q[1]}
+    return letters.map { |l| l[0] }.join
+  end
+
   def plow
     # Return a list of new Spatter objects, each of which is estimated to be a line of text.
     # This is meant to be the dumbest algorithm that has any hope of working. Won't cope well if the text is rotated or lines are curved at all.
