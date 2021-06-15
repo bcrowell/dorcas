@@ -1,3 +1,7 @@
+def array_of_zero_floats(n)
+  return Array.new(n) { |i| 0.0 }
+end
+
 def array_subset?(a,b)
   # is a a subset of b?
   return a.to_set.subset?(b.to_set)

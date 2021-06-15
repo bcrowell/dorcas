@@ -102,7 +102,8 @@ def run_job(job,page,report_dir)
     end
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
     hits = m.execute(page,job.set,batch_code:Process.pid.to_s) # only result of doing this is currently that mon.png gets written
-    spatter = Spatter.new(hits,page,[job.set])
+    spatter = Spatter.from_hits_page_and_set(hits,page,job.set)
+    print "spatter:\n  #{spatter.report}\n"
     return
   end
   if job.verb=='seed' then
