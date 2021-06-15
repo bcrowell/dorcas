@@ -3,12 +3,13 @@ class Spatter
   # information such as estimated line spacing, maximum kerning, and interword spacing.
   # Putting this in a class is meant to make it easier to add functionality such as efficient searching.
 
-  def initialize(hits,spatial)
+  def initialize(hits,widths,spatial)
     @hits = clown(hits)
     @hits.each { |c,h|
       h = h.sort {|p, q| q[0] <=> p[0]} # sort in descending order by score; are probably sorted in decreasing order already, or approximately so
     }
-    @spatial = clown(spatial)
+    @spatial = spatial
+    @widths = widths
   end
 
   def Spatter.from_hits_page_and_set(hits,page,set)
@@ -25,11 +26,17 @@ class Spatter
     hits.each { |c,h|
       h = h.map { |a| a[2]+=set.pat(c).baseline; a } # reference each hit to the baseline, not the upper left corner
     }
-    return Spatter.new(hits,{'line_spacing'=>page.stats['line_spacing'],'max_w'=>set.max_w,'max_h'=>set.max_h,
-                              'em'=>em,'min_interword'=>min_interword,'max_interword'=>max_interword,'max_kern'=>max_kern})
+    spatial = {'line_spacing'=>page.stats['line_spacing'],'max_w'=>set.max_w,'max_h'=>set.max_h,
+                              'em'=>em,'min_interword'=>min_interword,'max_interword'=>max_interword,'max_kern'=>max_kern}
+    widths = {}
+    hits.keys.each { |c|
+      pat = set.pat(c)
+      widths[c] = pat.bbox_width
+    }
+    return Spatter.new(hits,widths,spatial)
   end
 
-  attr_reader :hits,:spatial
+  attr_reader :hits,:spatial,:widths
 
   def line_spacing() self.spatial['line_spacing'] end
   def max_w() self.spatial['max_w'] end
@@ -122,7 +129,7 @@ class Spatter
   end
 
   def transplant_hits(h)
-    return Spatter.new(h,self.spatial)
+    return Spatter.new(h,self.widths,self.spatial)
   end
 
 end
