@@ -53,3 +53,9 @@ def parse_json_or_warn(json,warning)
     return nil
   end
 end
+
+def delete_files(files_to_delete)
+  files_to_delete.each { |f|
+    FileUtils.rm_f(f)
+  }
+end

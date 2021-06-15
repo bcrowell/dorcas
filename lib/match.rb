@@ -139,28 +139,40 @@ class Match
 
     if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
 
-    hh = chars.chars.each.map { |c| hits2[c] }   # hits in format needed for spawned process
-    pp = chars.chars.each.map { |c| set.pat(c) } # pats in format needed for spawned process
-    pars = {'threshold'=>threshold3,'max_scooch'=>1,'smear'=>smear,'k'=>k}
-    stuff = [page,pp,hh,pars]
-    infiles = []
+    n = guess_n_cores()
+    μοῖραι = portion_out_characters(chars,n)
     files_to_delete = []
-    stuff.each { |x|
-      file = temp_file_name()
-      infiles.push(file)
-      files_to_delete.push(file)
-      File.open(file,"wb") { |file| Marshal.dump(x,file) }
+    page_file = temp_file_name()
+    files_to_delete.push(page_file)
+    File.open(page_file,"wb") { |file| Marshal.dump(page,file) } # slow operation, takes about 2 seconds for a full page
+    pars = {'threshold'=>threshold3,'max_scooch'=>1,'smear'=>smear,'k'=>k}
+
+    outfiles = []
+    pids = []
+    μοῖραι.each { |these_chars|
+      hh = these_chars.chars.each.map { |c| hits2[c] }   # hits in format needed for spawned process
+      pp = these_chars.chars.each.map { |c| set.pat(c) } # pats in format needed for spawned process
+      infiles = []
+      [pp,hh,pars].each { |x|
+        file = temp_file_name()
+        infiles.push(file)
+        files_to_delete.push(file)
+        File.open(file,"wb") { |file| Marshal.dump(x,file) }
+      }
+      outfile = temp_file_name()
+      files_to_delete.push(outfile)
+      outfiles.push(outfile)
+      myself = find_exe(nil,"dorcas")
+      pid = Process.spawn(myself,"squirrel",page_file,infiles[0],infiles[1],infiles[2],outfile)
+      pids.push(pid)
     }
-    outfile = temp_file_name()
-    files_to_delete.push(outfile)
-    myself = find_exe(nil,"dorcas")
-    pid = Process.spawn(myself,"squirrel",infiles[0],infiles[1],infiles[2],infiles[3],outfile)
-    Process.wait(pid)
-    hits3 = nil
-    File.open(outfile,"rb") { |file| hits3 = Marshal.load(file) } 
-    files_to_delete.each { |f|
-      FileUtils.rm_f(f)
+    pids.each { |pid| Process.wait(pid)  }
+
+    hits3 = {}
+    outfiles.each { |outfile|
+      File.open(outfile,"rb") { |file| hits3 = hits3.merge(Marshal.load(file)) } 
     }
+    delete_files(files_to_delete)
 
     unless self.monitor_file.nil? then png_report(self.monitor_file,page.image,hits3,chars,set,verbosity:2) end
 
