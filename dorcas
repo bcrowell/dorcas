@@ -92,6 +92,7 @@ def main()
 end
 
 def run_job(job,page,report_dir)
+  # Process a single page.
   if job.verb=='ocr' then
     all_chars = job.all_characters
     if all_chars.nil? then
@@ -100,7 +101,8 @@ def run_job(job,page,report_dir)
       m = Match.new(characters:all_chars,meta_threshold:job.threshold)
     end
     if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
-    m.execute(page,job.set,batch_code:Process.pid.to_s) # only result of doing this is currently that mon.png gets written
+    hits = m.execute(page,job.set,batch_code:Process.pid.to_s) # only result of doing this is currently that mon.png gets written
+    spatter = Spatter.new(hits,page,[job.set])
     return
   end
   if job.verb=='seed' then

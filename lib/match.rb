@@ -53,8 +53,9 @@ class Match
     count1,hits2 = self.three_stage_pass_2(page,set)
     hits3 = self.three_stage_pass_3(page,set,hits2)
     self.three_stage_cleanup(page)
+    self.hits = hits3
 
-    return self.hits
+    return hits3
   end
 
   def three_stage_prep(page,set,if_monitor_file:true)
