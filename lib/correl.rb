@@ -60,7 +60,7 @@ def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
       #print "dx.class.name=#{dx.class.name}\n" # qwe
       s,data = squirrel_no_registration_adjustment(text,pat,dx+scooch_x,dy+scooch_y,smear,k,false)
       scores.push(s)
-      other.push([data,scooch_x,scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging
+      other.push([data,dx+scooch_x,dy+scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging
     }
   }
   i,s = greatest(scores)

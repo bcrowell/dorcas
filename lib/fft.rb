@@ -9,8 +9,7 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
   # Returns a list of hits.
   files_to_delete = []
   pids = []
-  py_dir = dir_and_file_to_path(HomeDir.home,"py") # subdirectory py of the directory in which the ruby code lives
-  py_exe = dir_and_file_to_path(py_dir,"convolve.py")
+  py_exe = find_exe("py","convolve.py")
   code_array.each { |code|
     temp = temp_file_name()
     create_text_file(temp,code)

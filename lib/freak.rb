@@ -24,12 +24,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
   all_codes = []
 
   n = guess_n_cores()
-  μοῖραι = Array.new(n) { |i| "" }
-  count = 0
-  all_chars.chars.each { |c|
-    μοῖραι[count%n] += c
-    count += 1
-  }
+  μοῖραι = portion_out_characters(all_chars,n)
   print "μοῖραι=#{μοῖραι}\n"
   write_debugging_images = false
   if write_debugging_images then print "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
