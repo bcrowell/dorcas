@@ -19,6 +19,10 @@ class Pat
     @stats = ink_stats_pat(image_to_ink_array(@bw),image_to_ink_array(@pink)) # use pink for this, because that's what we're actually using in correlations
   end
 
+  def bbox_width
+    return self.bbox[1]-self.bbox[0]
+  end
+
   def ascii_art
     return array_ascii_art(self.bw.bool_array,fn:lambda { |x| if x==true then '*' else if x.nil? then 'n' else ' ' end end} )
   end
@@ -111,7 +115,7 @@ class Pat
         zipfile.add(write_as_name[i],temp_files[i])
       }
     end
-    temp_files.each { |n| FileUtils.rm_f(n) }
+    delete_files(temp_files)
   end
 
   def Pat.from_file(filename,if_fix_red:true)
@@ -144,7 +148,7 @@ class Pat
         if i==2 then data=content end
       end
     end
-    temp_files.each { |n| FileUtils.rm_f(n) }
+    delete_files(temp_files)
     if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
     if data.has_key?('line_spacing') then 
       line_spacing=data['line_spacing']

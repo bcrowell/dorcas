@@ -37,6 +37,13 @@ class Fset
     return @data['size'] # font's size in points
   end
 
+  def estimate_em
+    if self.has_pat?('m') then return self.pat('m').bbox_width end
+    if self.has_pat?('Ω') then return self.pat('Ω').bbox_width end
+    if self.has_pat?('א') then return self.pat('א').bbox_width end
+    return (self.dpi*self.size/72.0)*0.7
+  end
+
   def Fset.from_file_or_directory(file_or_dir)
     # The files containing characters have names that end in .pat. In addition there should
     # be a file called _data.json that looks like this:
