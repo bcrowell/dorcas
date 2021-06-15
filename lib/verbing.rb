@@ -12,20 +12,19 @@ end
 
 def verb_squirrel(args)
   page_file,pats_file,hits_file,params_file,out_file = args
-  File.open(page_file) { |file| page = Marshal.load(file) } # a serialized Page object; should have already had its analyze() method run
-  File.open(pats_file) { |file| pats = Marshal.load(file) } # a serialized list of Pat objects
-  File.open(hits_file) { |file| hits = Marshal.load(file) } # an array indexed like [patnum][hitnum][0 or 1]
-  File.open(params_file) { |file| params = Marshal.load(file) } # a hash with keys threshold, max_schooch, smear, and k
+  File.open(page_file,"rb") { |file| page = Marshal.load(file) } # a serialized Page object; should have already had its analyze() method run
+  File.open(pats_file,"rb") { |file| pats = Marshal.load(file) } # a serialized list of Pat objects
+  File.open(hits_file,"rb") { |file| hits = Marshal.load(file) } # an array indexed like [patnum][hitnum][0..2], where the innermost thing is [score,x,y]
+  File.open(params_file,"rb") { |file| params = Marshal.load(file) } # a hash with keys threshold, max_scooch, smear, and k
   threshold,max_scooch,smear,k = params['threshold'],params['max_scooch'],params['smear'],params['k']
-  count = 0
+  result = []
+  patnum = 0
   pats.each { |pat|
-    h = hits[count]
-    count += 1
-    h.each { |hit|
-      x,y = hit
-      hits = squirrel(page.image,pat,x,y,max_scooch:max_scooch,smear:smear,k:k)
-    }
+    h = hits[patnum]
+    patnum += 1
+    result.push(h.map { |a| squirrel(page.image,pat,a[1],a[2],max_scooch:max_scooch,smear:smear,k:k) })
   }
+  File.open(out_file,"wb") { |file| Marshal.dump(result,file) }
 end
 
 def verb_insert(args)

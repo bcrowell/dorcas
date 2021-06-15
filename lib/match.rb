@@ -137,12 +137,12 @@ class Match
     # hits3 is in the same format, but filtered again, and with score from pass 3 possibly perturbed x and y
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
 
+    if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
     hits3 = {}
     chars.chars.each { |c|
       hits3[c] = []
       hits2[c].each { |h|
         co2,i,j = h
-        if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
         pat = set.pat(c)
         debug = false
         co3,new_x,new_y = squirrel(page.image,pat,i,j,k:k,smear:smear,debug:debug)
