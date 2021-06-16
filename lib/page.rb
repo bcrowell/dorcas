@@ -27,11 +27,11 @@ class Page
     return Box.new(0,self.width-1,0,self.height-1)
   end
 
-  def Page.from_file(filename_raw)
+  def Page.from_file(filename_raw,cache_dir)
     # The filename can be the name of a png file or can have the syntax foo.pdf[37] for page 37 of foo.pdf. In
     # that case, the png_filename attribute is the name of the temp file.
-    if filename_raw=~/pdf\[\d+\]$/ then png_filename=extract_pdf_page(filename_raw,500) else png_filename=filename_raw end
-    # ... 500 dpi is the documented behavior
+    dpi = 500 # this is the documented behavior when the input is a pdf
+    if filename_raw=~/pdf\[\d+\]$/ then png_filename=extract_pdf_page(filename_raw,dpi,cache_dir) else png_filename=filename_raw end
     return Page.new(image_from_file_to_grayscale(png_filename),png_filename:png_filename)
   end
 

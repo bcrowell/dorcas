@@ -32,7 +32,7 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
       #status = `ps -o state -p #{pid}`.chomp # posix, https://stackoverflow.com/a/10592618/1142217
       #print "process #{pid} has status #{process_running?(pid)}\n"
       if File.exists?(sem) then
-        #print "  Process #{pid} has finished.\n"
+        print "  Process #{pid} has finished.\n" # qwe
         ndone += 1
       end
       i += 1

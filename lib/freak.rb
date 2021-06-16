@@ -46,6 +46,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
 
   # run it
   hits = convolve(all_codes,[outfile],batch_code,semaphore_files)
+  if verbosity>=1 then print "    ... done\n" end
   return [hits,files_to_delete]
 
 end

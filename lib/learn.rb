@@ -168,13 +168,6 @@ def load_fonts(job)
   return [all_fonts,script_and_case_to_font_name]
 end
 
-def create_directories(job,report_dir)
-  if File.exists?(job.output_dir) then FileUtils.rm_rf(job.output_dir) end # has safety features, https://stackoverflow.com/a/12335711
-  if not File.exists?(job.output_dir) then Dir.mkdir(job.output_dir) end
-  if not File.exists?(job.cache_dir) then Dir.mkdir(job.cache_dir) end
-  if not File.exists?(report_dir) then Dir.mkdir(report_dir) end
-end
-
 def copy_all_pat_files(set,output_dir)
   # First look for files that exist in the output directory but not the input.
   # Silently allowing this could lead to very confusing stuff happening.

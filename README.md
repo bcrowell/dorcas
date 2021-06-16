@@ -171,6 +171,22 @@ The input file is a JSON hash with keys and values described below. Comments are
         actually indicate a problem with a red mask that is not close enough to the character, i.e., the kerning
         in the real document is tighter than estimated by the software.
 
+# Temporary files and cache
+
+Results of expensive calculations are stored in ~/.dorcas/cache. 
+
+Scratch files are stored in /tmp with names following the pattern /tmp/dorcas*. They should be deleted automatically,
+unless the program dies with an error. 
+
+All of these files can be deleted by doing a `dorcas clean`.
+
+If you OCR a page from scratch, there are two stages. In the first stage, the program scans the page for all the
+letters of the alphabet and writes a .spa ("spatter") file containing a list of every possible detection of a letter,
+including those that have low scores indicating they aren't very good matches. In the second stage, it reads the
+.spa file and tries to string everything together. If you rerun the job without changing any of the parameters that
+would have detected the spatter file, then the program will just read the .spa file back in and avoid the time-consuming
+step of scanning the original page image.
+
 # Portability
 
 The following is a list of the things that would require work if porting this software to a non-Unix system.

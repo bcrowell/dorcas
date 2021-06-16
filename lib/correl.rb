@@ -57,7 +57,6 @@ def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
   other = []
   (-max_scooch).upto(max_scooch) { |scooch_x|
     (-max_scooch).upto(max_scooch) { |scooch_y|
-      #print "dx.class.name=#{dx.class.name}\n" # qwe
       s = squirrel_no_registration_adjustment(text,pat,dx+scooch_x,dy+scooch_y,smear,k,false)
       scores.push(s)
       other.push([dx+scooch_x,dy+scooch_y]) # data is [score,{"image"=>filename}], where filename is just for debugging

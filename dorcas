@@ -2,8 +2,8 @@
 # coding: utf-8
 
 require 'oily_png'  # ubuntu package ruby-oily-png
-require 'json' # ubuntu package ruby-zip
-require 'zip'
+require 'json'
+require 'zip' # ubuntu package ruby-zip
 require 'set'
 
 require_relative "lib/job"
@@ -12,6 +12,7 @@ require_relative "lib/spatter"
 require_relative "lib/pearls"
 require_relative "lib/match"
 require_relative "lib/learn"
+require_relative "lib/ocr"
 require_relative "lib/page"
 require_relative "lib/freak"
 require_relative "lib/fft"
@@ -56,7 +57,7 @@ end
 def main()
   start = Time.now
 
-  cache_dir = dir_and_file_to_path(Dir.home,".dorcas") # is needed for `dorcas clean` as well as for real OCRing jobs
+  cache_dir = dir_and_file_to_path(dir_and_file_to_path(Dir.home,".dorcas"),"cache") # variable is needed for `dorcas clean` as well as for real OCRing jobs
 
   if ARGV.length==0 then die("see README for usage") end
 
@@ -66,14 +67,13 @@ def main()
   end
 
   job_file = ARGV[0] # can be '-' for stdin
-  job_list = Job.list_from_file(job_file)
+  job_list = Job.list_from_file(job_file,cache_dir)
   if job_list.length<1 then die("empty list of pages in job file") end
   job=job_list[0].without_image_info
   if job_list.length==1 then summary=job_list[0].to_s else summary=job.to_s end
   print "Parameters for this job:#{summary}\n"
 
   report_dir = dir_and_file_to_path(job.output,"_reports")
-  job.cache_dir = cache_dir
   create_directories(job,report_dir)
   create_text_file(dir_and_file_to_path(job.output,"_this.job"),slurp_file(job_file)) # copy job file so we have a record of it
   if !(job.set.nil?) then
@@ -85,8 +85,8 @@ def main()
   job_list.each { |one_page_job|
     count += 1
     if job_list.length>1 then print "======\nProcessing page image #{one_page_job.image}, page #{count} of #{job_list.length}.\n======\n" end
-    page = Page.from_file(one_page_job.image) # handles extracting a page from a pdf, if that syntax was used
-    print "fingerprint: #{one_page_job.fingerprint} #{page.fingerprint}\n"
+    page = Page.from_file(one_page_job.image,cache_dir) # handles extracting a page from a pdf, if that syntax was used
+    print "fingerprint: #{one_page_job.fingerprint_pre_spatter} #{page.fingerprint}\n"
     one_page_job.image = page.png_filename
     page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size)
     results.push(run_job(one_page_job,page,report_dir))
@@ -100,20 +100,7 @@ end
 def run_job(job,page,report_dir)
   # Process a single page.
   if job.verb=='ocr' then
-    all_chars = job.all_characters
-    if all_chars.nil? then
-      m = Match.new(scripts:['latin','greek'],meta_threshold:job.threshold)
-    else
-      m = Match.new(characters:all_chars,meta_threshold:job.threshold)
-    end
-    if job.set.nil? then die("job file doesn't contain a set parameter specifying a pattern set") end
-    hits = m.execute(page,job.set,batch_code:Process.pid.to_s) # only result of doing this is currently that mon.png gets written
-    spatter = Spatter.from_hits_page_and_set(hits,page,job.set)
-    print "spatter:\n  #{spatter.report}\n"
-    lines = spatter.plow()
-    #lines.each { |l|      print "line:\n  #{l.report}\n"    }
-    #lines.each { |l| print babble(l),"\n"  }
-    lines.each { |l| print mumble(l),"\n"  }
+    ocr_one_page(job,page,report_dir)
     return
   end
   if job.verb=='seed' then
@@ -139,6 +126,13 @@ def postprocess(job,results,report_dir)
     return
   end
   die("unrecognized verb #{job.verb}")
+end
+
+def create_directories(job,report_dir)
+  if File.exists?(job.output) then FileUtils.rm_rf(job.output) end # has safety features, https://stackoverflow.com/a/12335711
+  if not File.exists?(job.output) then Dir.mkdir(job.output) end
+  if not File.exists?(job.cache_dir) then print "Creating directory #{job.cache_dir}\n"; FileUtils.mkdir_p(job.cache_dir) end
+  if not File.exists?(report_dir) then Dir.mkdir(report_dir) end
 end
 
 def die(message)

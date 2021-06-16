@@ -29,6 +29,7 @@ class Job
   attr_accessor :verb,:image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:output,:characters,
           :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching,:set
   attr_accessor :set_filename # used for reports and fingerprinting
+  attr_accessor :cache_dir
 
   def to_s
     x = self.to_hash
@@ -36,11 +37,14 @@ class Job
     return x.to_s
   end
 
-  def fingerprint(n_dig:8)
+  def fingerprint_pre_spatter(n_dig:8)
+    # Returns a fingerprint of all job parameters that could affect the original scanning stage of the process, which produces the .spa file.
     # N_dig is the number of hex digits to use. The full md5 hash contains 32 digits.
     # JSON.parse(json1).to_json_c14n
     f = shallow_copy(self) # Intentionally make a shallow copy, because we want to call skeleton without munging the original, and don't need a deep copy.
-    json = f.skeleton.to_json_c14n # Get rid of large objects, convert to a canonicalized json string.
+    f.skeleton # Remove large data objects.
+    # In the future, I need to do things that delete any parameters that apply only to the post-spatter stage.
+    json = f.to_json_c14n # Convert to a canonicalized json string.
     result = Digest::MD5.hexdigest(json)[0..n_dig-1]
     return result
   end
@@ -48,7 +52,6 @@ class Job
   def skeleton
     # Remove from myself all large objects, as preparation for fingerprinting. Mutates me.
     remove_instance_variable(:@set) # but @set_filename is still there
-    return self
   end
 
   def to_hash
@@ -151,7 +154,7 @@ class Job
     return result
   end
 
-  def Job.list_from_file(filename)
+  def Job.list_from_file(filename,cache_dir)
     # If the user specified a list of files or a pdf file with a range of pages, process that correctly and
     # return a list of Job objects.
     data = json_from_file_or_stdin_or_die(filename) # automatically does unicode_normalize(:nfc)
@@ -171,7 +174,9 @@ class Job
     image_list.each { |im|
       d = clown(data)
       d['image'] = im
-      jobs.push(Job.new(d))
+      j = Job.new(d)
+      j.cache_dir = cache_dir
+      jobs.push(j)
     }
     return jobs
   end
