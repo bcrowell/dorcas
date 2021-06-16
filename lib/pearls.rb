@@ -4,18 +4,18 @@
 def babble(s,threshold:0.5)
   # S is a spatter object that we hope is a single line of text.
   # Outputs a string that simply contains all hits with scores above the threshold, sorted from left to right.
-  l = prebabble(s,threshold)
-  return l.map { |x| x[0] }.join
+  l = prepearl(s,threshold)
+  return l.map { |x| x[2] }.join
 end
 
 def mumble(s,threshold:0.3)
   # S is a spatter object that we hope is a single line of text.
   # Outputs a string that contains the OCR'd text based on the simplest algorithm that could possibly output anything legible.
   # Simply splits the line wherever there's too much whitespace, then returns mumble_word() on each word.
-  l = prebabble(s,threshold)
+  l = prepearl(s,threshold)
   inter = ((s.max_interword+s.min_interword)*0.5).round
   0.upto(l.length-2) { |i|
-    if l[i+1][1]-l[i][1]-s.widths[l[i][0]]-s.max_kern>inter then
+    if l[i+1][1]-l[i][1]-s.widths[l[i][2]]-s.max_kern>inter then
       x_split = ((l[i+1][1]+l[i][1])*0.5).round
       s1 = s.select(lambda { |a| a[1]<=x_split})
       s2 = s.select(lambda { |a| a[1]>x_split})
@@ -29,10 +29,10 @@ end
 def mumble_word(s)
   # Find the highest-scoring letter in the word. Split the word at that letter, and recurse.
   if s.total_hits==0 then return "" end
-  l = prebabble(s,-999.9)
+  l = prepearl(s,-999.9)
   if l.length==0 then return "" end
-  i,garbage = greatest(l.map { |x| x[1]}) # find index i of the highest-scoring letter
-  c = l[i][0]
+  i,garbage = greatest(l.map { |x| x[0]}) # find index i of the highest-scoring letter
+  c = l[i][2]
   xl = l[i][1]
   xr = xl + s.widths[c]
   s1 = s.select(lambda { |a| a[1]+s.widths[a[3]]-s.max_kern<=xl})
@@ -41,14 +41,44 @@ def mumble_word(s)
 end
 
 def dag_word(s)
-  # Treat the word as a directed acyclig graph, and find the longest path from left to right, where length is measured by sum (score-const).
+  # Treat the word as a directed acyclic graph, and find the longest path from left to right, where length is measured by sum (score-const).
   s = s.sort_by_x
   n = s.hits.length
-  h = s.hits  # looks like a list of [score,x,y].
+  infinity = 1.0e9
+  h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   wt = h.map { |a| a[0]-0.5 } # score of each letter, considered as an edge in the graph; 0.5 is the nominal threshold of my scoring scale
-  # Build a graph e, which will be an array of edges; e[i] is a list of nodes j such that we have an edge from the right side
-  # of character i-1 to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
+  # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
+  # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
+  # In other words, e[i+1] is a list of choices we can make after having chosen i.
   e = word_to_dag(s)
+  # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
+  #   https://en.wikipedia.org/wiki/Longest_path_problem
+  # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
+  # These two arrays get indexed the same way as e:
+  best_score = Array.new(n+1) { |i| -infinity }
+  best_path =  Array.new(n+1) { |i| [] }
+  # We start at the vertex i=-1, representing having already chosen character -1, i.e., the fake origin vertex where we've made no choices.
+  best_score[0] = 0.0 # Score for getting to origin vertex -1 is zero. (offset index -1+1)
+  best_path[0] = []
+  (-1).upto(n-1) { |i|
+    best_score_to_i = best_score[i+1]
+    e[i+1].each { |j|
+      new_possible_score = best_score_to_i+wt[j]
+      if new_possible_score>best_score[j+1] then
+        best_score[j+1]=new_possible_score
+        best_path[j+1]=shallow_clone(best_path[i+1]) # an array of integers, so can be safely shallow-cloned
+        best_path[j+1].push(i)
+      end
+    }
+  }
+  # We may not actually have a connection from left to right. If so, then return the path that gets us closest.
+  n.downto(0) { |i|
+    if best_score[i]>-infinity then
+      path = best_path[i]
+      return path.map { |j| h[j][2] }.join('')
+    end
+  }
+  die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
 end
 
 def word_to_dag(s)
@@ -90,14 +120,14 @@ def word_to_dag(s)
   return e
 end
 
-def prebabble(s,threshold)
-  # Inputs a Spatter object and outputs a spatially sorted list of items of the form [score,x], eliminating all hits below threshold.
+def prepearl(s,threshold)
+  # Inputs a Spatter object and outputs a spatially sorted list of items of the form [score,x,c], eliminating all hits below threshold.
   s = s.you_have_to_have_standards(threshold)
   letters = []
   s.hits.each { |c,h|
     h.each { |hh|
       score,x,y = hh
-      if score>threshold then letters.push([c,x]) end
+      if score>threshold then letters.push([score,x,c]) end
     }
   }
   return letters.sort { |p,q| p[1] <=> q[1]}

@@ -74,7 +74,7 @@ class Spatter
   end
 
   def sort_by_x
-    # Returns a new object. This is meant to be used on small objects like words, will be slow on large objects.
+    # Returns a new object sorted by x of left basline point. This is meant to be used on small objects like words, will be slow on large objects.
     s = clown(self)
     s.hits = s.hits.sort { |p, q| p[1] <=> q[1] }
     return s
