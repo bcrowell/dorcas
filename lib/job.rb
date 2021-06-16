@@ -20,7 +20,7 @@ class Job
     if @verb.nil? then die("no verb specified") end
     if !(@verb=='ocr' || @verb=='learn' || @verb=='seed') then die("unrecognized verb: #{verb}") end
     if @image.nil? then die("no image specified") end
-    if (not set_filename.nil?) and set_filename==@output then die("set and output must not be the same") end
+    if (not @set_filename.nil?) and @set_filename==@output then die("set and output must not be the same") end
     characters_helper(@set,@verb)
     bogus_keys = data.keys-@keys
     if bogus_keys.length>0 then die("bogus keys: #{bogus_keys}") end
@@ -28,12 +28,27 @@ class Job
 
   attr_accessor :verb,:image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:output,:characters,
           :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching,:set
-  attr_accessor :set_filename
+  attr_accessor :set_filename # used for reports and fingerprinting
 
   def to_s
     x = self.to_hash
     x['set'] = self.set_filename
     return x.to_s
+  end
+
+  def fingerprint(n_dig:8)
+    # N_dig is the number of hex digits to use. The full md5 hash contains 32 digits.
+    # JSON.parse(json1).to_json_c14n
+    f = shallow_copy(self) # Intentionally make a shallow copy, because we want to call skeleton without munging the original, and don't need a deep copy.
+    json = f.skeleton.to_json_c14n # Get rid of large objects, convert to a canonicalized json string.
+    result = Digest::MD5.hexdigest(json)[0..n_dig-1]
+    return result
+  end
+
+  def skeleton
+    # Remove from myself all large objects, as preparation for fingerprinting. Mutates me.
+    remove_instance_variable(:@set) # but @set_filename is still there
+    return self
   end
 
   def to_hash
@@ -66,7 +81,7 @@ class Job
     if key=='force_location' then @force_location = force_location_helper(value); recognized=true end
     if key=='no_matching' then @no_matching = value.to_s.downcase=="true"; recognized=true end
     if key=='set' then
-      set_filename=value
+      @set_filename=value
       if !(value.nil?) then @set = Fset.from_file_or_directory(value) end
       recognized=true
     end
