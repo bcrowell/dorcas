@@ -6,13 +6,31 @@ def char_to_code_block(c)
   if cd=~/[abcdefghijklmnopqrstuvwxyz]/ then return 'latin' end
   if cd=~/[αβγδεζηθικλμνξοπρστυφχψως]/ then return 'greek' end
   if c=~/[אבגדהוזחטילמנסעפצקרשתםןףץ]/ then return 'hebrew' end
+  # For accented characters, we'll fall through to here:
+  n = char_to_short_name(c)
+  if is_name_of_greek_letter(n) then return 'greek' end
+  if is_name_of_hebrew_letter(n) then return 'hebrew' end
   # If we fall through to here, then it will be really slow.
   b = char_unicode_property(c,'opt_unicode_block_desc')
   if b=~/(Latin|Greek|Hebrew)/ then return $1.downcase end
   return b
 end
 
+def char_to_script_and_case(c)
+  # Returns, e.g., ['greek','uppercase'] or ['hebrew',''].
+  script = char_to_code_block(c)
+  if script=='hebrew' then return [script,''] end
+  if c.downcase==c then the_case='lowercase' else the_case='uppercase' end
+  return [script,the_case]
+end
+
+def select_script_and_case_from_string(s,script,the_case)
+  # Script and case should be strings. If script is hebrew, case should be a null string.
+  return s.chars.select { |c| char_to_script_and_case(c).eql?([script,the_case]) }.join('')
+end
+
 def char_to_name(c)
+  # This is extremely slow. Avoid using it.
   # Returns the official unicode name of the character.
   # Although these names are officially case-insensitive, this routine always returns uppercase.
   # Examples of names returned:

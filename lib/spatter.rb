@@ -14,8 +14,8 @@ class Spatter
 
   def Spatter.from_hits_page_and_set(hits,page,set)
     # Hits should be a hash whose keys are characters and whose values are lists of hits in the format [score,x,y].
-    # On input to the initializer, the y coordinates are the top-left corners of the templates, but after the object
-    # is created we change those to the coordinates of the baselines.
+    # On input to the initializer, the x-y coordinates are the top-left corners of the templates, but after the object
+    # is created we change those to the coordinates of the point where the baseline intersects the left side of the bounding box.
     # The page and set inputs are used only for extracting geometrical information.
     # Bracket a reasonable range for interword spacing. Convention is 1/3 em to 1/2 em, but will obviously vary in justified text.
     em = set.estimate_em
@@ -25,6 +25,7 @@ class Spatter
     hits = clown(hits)
     hits.each { |c,h|
       h = h.map { |a| a[2]+=set.pat(c).baseline; a } # reference each hit to the baseline, not the upper left corner
+      h = h.map { |a| a[1]+=set.pat(c).bbox[0]; a } # ... and to the left side of the bounding box
     }
     spatial = {'line_spacing'=>page.stats['line_spacing'],'max_w'=>set.max_w,'max_h'=>set.max_h,
                               'em'=>em,'min_interword'=>min_interword,'max_interword'=>max_interword,'max_kern'=>max_kern}

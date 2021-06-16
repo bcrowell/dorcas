@@ -13,6 +13,11 @@ class Fset
 
   attr_reader :pats,:max_w,:max_h
 
+  def all_characters
+    # Returns a string containing every character in the set.
+    return @index.keys.join('')
+  end
+
   def pat(char_or_name)
     # Char_or_name can be either the unicode character or its short name.
     # Returns nil if the pat doesn't exist.

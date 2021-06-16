@@ -134,7 +134,10 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 * characters - An array of arrays, each of which is of the form [script name,(lowercase|uppercase|both),string].
           If the third element is present, it is taken as a list of characters to search for.
-          Otherwise, we search for every plain letter of the alphabet in this script. In the case of Greek, a short list of
+          If the list is not specified and the verb is ocr, then
+          we search for every letter of the alphabet that is in this script and case and is included in the given .set file.
+          If the list is not specified and the verb is seed, then we do the entire alphabet.
+          In the case of Greek, a short list of
           accented characters is automatically included as well, but most such characters need to be specified by hand in a separate run.
           Default: [["latin","lowercase"]]
 
