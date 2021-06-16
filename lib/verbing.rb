@@ -1,5 +1,5 @@
 # coding: utf-8
-def verbing(argv)
+def verbing(argv,cache_dir:nil)
   verb = argv[0]
   argv.shift # remove 1st element
   recognized = false
@@ -7,7 +7,13 @@ def verbing(argv)
   if verb=='insert' then verb_insert(argv); recognized=true end
   if verb=='test' then verb_test(); recognized=true end
   if verb=='squirrel' then verb_squirrel(argv); recognized=true end
+  if verb=='clean' then verb_clean(argv,cache_dir); recognized=true end
   if !recognized then die("unrecognized verb #{verb}") end
+end
+
+def verb_clean(argv,cache_dir)
+  FileUtils.rm_f(Dir.glob('/tmp/dorcas*')) # This convention is set in temp_file_name(), and won't work on Windows.
+  FileUtils.rm_f(Dir.glob(dir_and_file_to_path(cache_dir,"*")))
 end
 
 def verb_squirrel(args)

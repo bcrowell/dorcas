@@ -35,6 +35,8 @@ Dumb Optical Recognition using Correlation
 
 `dorcas insert help`
 
+`dorcas clean` ... removes any scratch files left behind in /tmp and ~/.dorcas
+
 ## Dependencies:
 
 debian packages: ruby python3 r-cran-minpack.lm unicode libgd-perl ruby-zip python3-numpy python3-pil
@@ -195,3 +197,5 @@ For pdf input, we need imagemagick and qpdf.
 In convolve.py, we open the output file to append, and we write lines of under ~4k characters.
 On linux, this should work when there are multiple processes. On windows, opening probably
 locks the file.
+
+In temp_file_name() and verb_clean(), we assume temporary files can be created with the filename pattern /tmp/dorcas*.
