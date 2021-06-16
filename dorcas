@@ -41,6 +41,7 @@ require_relative "lib/reports"
 require_relative "lib/svg"
 require_relative "lib/pdf"
 require_relative "lib/ttf"
+require_relative "lib/json-canonicalization"
 require_relative "lib/test"
 
 class HomeDir

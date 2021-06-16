@@ -17,6 +17,18 @@ end
 
 def verb_test()
   # special_test()
+  json1 = <<-'JSON'
+  {
+    "numbers": [333333333.33333329, 1E30, 4.50,
+              2e-3, 0.000000000000000000000000001],
+    "string": "\u20ac$\u000F\u000aA'\u0042\u0022\u005c\\\"\/",
+    "literals": [null, true, false]
+  }
+  JSON
+  json2 = <<-'JSON'
+  {"literals":[null,true,false],"numbers":[333333333.3333333,1e+30,4.5,0.002,1e-27],"string":"€$\u000f\nA'B\"\\\\\"/"}
+  JSON
+  assert_equal(JSON.parse(json1).to_json_c14n,json2.gsub(/\s/,''))
   #----------------------------------------------------------------------------------------------
   print "Testing arithmetic for fft:\n"
   2.upto(10) { |n|
