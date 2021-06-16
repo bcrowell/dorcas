@@ -10,6 +10,12 @@ def guess_n_cores()
   return n
 end
 
+def lower_priority(pid)
+  Process.setpriority(Process::PRIO_PROCESS, pid, 10) 
+  # https://ruby-doc.org/core-2.6.3/Process.html#method-c-setpriority
+  # not sure what this does on Windows
+end
+
 def portion_out_characters(chars,n)
   # Take an input string of characters and make n strings containing subsets.
   μοῖραι = Array.new(n) { |i| "" }

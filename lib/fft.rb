@@ -15,6 +15,7 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
     create_text_file(temp,code)
     files_to_delete.push(temp)
     pid = Process.spawn("python3",py_exe,{:in=>temp})
+    lower_priority(pid)
     pids.push(pid)
   }
   # The following allows us to do other things while the child processes are running, such as print status messages

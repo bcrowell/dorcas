@@ -73,6 +73,13 @@ class Spatter
     return self.bottom-self.top
   end
 
+  def sort_by_x
+    # Returns a new object. This is meant to be used on small objects like words, will be slow on large objects.
+    s = clown(self)
+    s.hits = s.hits.sort { |p, q| p[1] <=> q[1] }
+    return s
+  end
+
   def plow
     # Return a list of new Spatter objects, each of which is estimated to be a line of text.
     # This is meant to be the dumbest algorithm that has any hope of working. Won't cope well if the text is rotated or lines are curved at all.

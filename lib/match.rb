@@ -166,6 +166,7 @@ class Match
       outfiles.push(outfile)
       myself = find_exe(nil,"dorcas")
       pid = Process.spawn(myself,"squirrel",page_file,infiles[0],infiles[1],infiles[2],outfile)
+      lower_priority(pid)
       pids.push(pid)
     }
     pids.each { |pid| Process.wait(pid)  }
