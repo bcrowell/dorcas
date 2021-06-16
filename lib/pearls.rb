@@ -23,7 +23,9 @@ def mumble(s,threshold:0.3)
     end
   }
   # If we drop through to here, then this is putatively a single word.
-  return mumble_word(s)
+  #return mumble_word(s)
+  success,string = dag_word(s)
+  return string
 end
 
 def mumble_word(s)
@@ -42,7 +44,7 @@ end
 
 def dag_word(s)
   # Treat the word as a directed acyclic graph, and find the longest path from left to right, where length is measured by sum (score-const).
-  s = s.sort_by_x
+  # Returns [success,string].
   n = s.hits.length
   infinity = 1.0e9
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
@@ -50,7 +52,7 @@ def dag_word(s)
   # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i.
-  e = word_to_dag(s)
+  e = word_to_dag(s,h)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
@@ -81,12 +83,12 @@ def dag_word(s)
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
 end
 
-def word_to_dag(s)
-  # Converts an input Spatter object representing a word to a directed acyclic graph. Input should already be sorted by left x.
-  n = s.hits.length
+def word_to_dag(s,h)
+  # Converts an input representing some hits to a directed acyclic graph. Input s is a Spatter object.
+  # Input h should be in the form output by prepearl(), a list of elements like [score,x,c].
+  n = h.length
   # Build a bunch of arrays, all with the same indexing from 0 to n-1.
-  h = s.hits  # looks like a list of [score,x,y].
-  w = s.widths
+  w = h.map { |a| s.widths[a[2]] ]}
   l = h.map { |a| a[1] } # x coord of left edge
   r = [];  0.upto(n-1) { |i| r.push( l[i]+w[i]) } # x coord of right edge
   mi = s.min_interword # any distance greater than this is impermissible within a word
