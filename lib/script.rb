@@ -41,7 +41,8 @@ class Script
       print "#{n}\n"
       script = Script.new(n)
       l = script.all_letters()
-      if n=='greek' then l=l+"ἡῥὑὁἱϊ" end # fixme -- kludge, incomplete list
+      if n=='latin' then l=l+'.,;:-?/<>[]{}_+=!#%^&~' end # fixme -- some characters have special significance to the shell and cause errors
+      if n=='greek' then l=l+"ἡῥὑὁἱϊάέίόύήὰὲὶὸὺὴᾶῖῦῆἄἔἴὄὔἤἅἕἵὅὕἥ" end # fixme -- kludge, incomplete list
       l.chars.uniq.each { |c|
         nn = char_to_short_name_slow(c)
         #print "  #{c} --> #{nn}\n"

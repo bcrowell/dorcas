@@ -49,6 +49,23 @@ def mumble_word(s)
   return mumble_word(s1)+c+mumble_word(s2)
 end
 
+def split_by_scripts(words)
+  # Inputs a list of strings.
+  # If we have a word like ηρχεbeganμυθων, split it into multiple words by detecting that the scripts don't match.
+  n = words.length
+  0.upto(n-1) { |i|
+    word = words[i]
+    0.upto(word.length-2) { |j|
+      if !compatible_scripts(word[j],word[j+1]) then
+        result = clown(words)
+        result[i] = [word[0..j],word[(j+1)..(word.length-1)]]
+        return split_by_scripts(result.flatten)
+      end
+    }
+  }
+  return words
+end
+
 def dag_word(s)
   # Returns a list of strings. In the nominal case, this list only has one word, but sometimes we have to split it into multiple words.
   success,string,remainder = dag_word_one(s)

@@ -18,6 +18,15 @@ end
 def verb_test()
   # special_test()
   #----------------------------------------------------------------------------------------------
+  print "Testing split_by_scripts():\n"
+  assert(compatible_scripts("a","a"))
+  assert(!compatible_scripts("w","ξ"))
+  assert_equal(split_by_scripts(["the"]),["the"])
+  assert_equal(split_by_scripts(["the","dog"]),["the","dog"])
+  assert_equal(split_by_scripts(["the","κύον"]),["the","κύον"])
+  assert_equal(split_by_scripts(["theκύον"]),["the","κύον"])
+  assert_equal(split_by_scripts(["ηρχεbeganμυθων,"]),["ηρχε","began","μυθων,"])
+  #----------------------------------------------------------------------------------------------
   print "Testing longest-path algorithm:\n"
   # ----
   # A trivial railroad, forced through two edges.
