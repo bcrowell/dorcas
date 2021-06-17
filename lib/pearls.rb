@@ -58,10 +58,18 @@ def dag_word(s)
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i. The array e has indices running from 0 to n.
   e = word_to_dag(s,h)
+  success,path = longest_path(e,wt)
+  string = path.map { |j| h[j][2] }.join('')
+  return [success,string]
+end
+
+def longest_path(e,wt)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
   # These two arrays have indices running from 0 to n+1, which represent vertices. If we've already chosen character i, the index is [i+1].
+  n = wt.length
+  infinity = 1.0e9
   best_score = Array.new(n+2) { |i| -infinity }
   best_path =  Array.new(n+2) { |i| [] }
   # We start at the vertex i=-1, representing having already chosen character -1, i.e., the fake origin vertex where we've made no choices.
@@ -84,8 +92,8 @@ def dag_word(s)
     if best_score[i+1]>-infinity then
       path = best_path[i+1]
       success = (i==n)
-      string = path.select {|j| j<n}.map { |j| h[j][2] }.join('')
-      return [success,string]
+      path = path.select {|j| j<n}
+      return [success,path]
     end
   }
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")

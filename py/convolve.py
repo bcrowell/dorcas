@@ -59,7 +59,7 @@ o -- output the atomic-type object on the top of the stack to stdout
 dup -- duplicate the value on the top of the stack
 swap -- swap the two value on the top of the stack
 gaussian_cross_kernel -- calculates a numpy array for a peak-detection kernel; see description in comments at top of gaussian_cross.py;
-         pops the parameters w, h, a, and sigma for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
+         pops the parameters w, h, a, sigma, and laxness for a window that's 2a+1 pixels on a side and fits a gaussian peak with width sigma
 bloat, bloat_rot -- increase size of array
 index -- pops x and y, then looks at pixel position (x,y) on the image on the top of the stack
          and pushes real part of the pixel's value; image is left alone
