@@ -21,6 +21,8 @@ def ocr_one_page(job,page,report_dir)
   lines = spatter.plow()
   #lines.each { |l|      print "line:\n  #{l.report}\n"    }
   #lines.each { |l| print babble(l),"\n"  }
-  lines.each { |l| print mumble(l),"\n"  }
+  lines.each { |l| print dumb_split(l,'mumble'),"\n"  }
+  print "\n"
+  lines.each { |l| print dumb_split(l,'dag'),"\n"  }
   return
 end
