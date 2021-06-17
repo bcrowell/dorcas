@@ -59,6 +59,20 @@ def verb_test()
   assert(success)
   assert_equal(path,[2,3,4])
   assert_equal(score,9.0)
+  # ----
+  # An example that came up in practice (simpler version below).
+  e=[[0], [1], [2, 3], [4], [], [5], [6], [], [8], [9]]
+  wt=[0.42156862745098034, 0.47136038186157514, 0.5, 0.484, 0.5, 0.46371882086167804, 0.44160583941605835, 0.4672131147540983, 0.5]
+  success,path,score,if_error,error_message = longest_path(e,wt)
+  assert_equal(path,[0,1,2,4,5,6])
+  assert(!success)
+  # ----
+  # Simplified version of the preceding one.
+  e=[[0,1],[2],[],[],[4]]
+  wt=[1,1,1,1]
+  success,path,score,if_error,error_message = longest_path(e,wt)
+  assert_equal(path,[0,2])
+  assert(!success)
   #----------------------------------------------------------------------------------------------
   print "Testing canonicalization of json:\n"
   json1 = <<-'JSON'

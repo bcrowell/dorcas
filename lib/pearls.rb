@@ -50,6 +50,8 @@ end
 def dag_word(s)
   # Treat the word as a directed acyclic graph, and find the longest path from left to right, where length is measured by sum (score-const).
   # Returns [success,string].
+  debug = false
+  #debug = (mumble_word(s)=='ταυρωντε')
   infinity = 1.0e9
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   n = h.length
@@ -58,12 +60,15 @@ def dag_word(s)
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i. The array e has indices running from 0 to n.
   e = word_to_dag(s,h)
-  success,path,score,if_error_error_message = longest_path(e,wt)
+  success,path,score,if_error_error_message = longest_path(e,wt,debug:debug)
   string = path.map { |j| h[j][2] }.join('')
+
+  if debug then print "n=#{n}\nh=[[score,x,c],...]=#{h}\nwt=#{wt}\nsuccess=#{success}, path=#{path}\ne=#{e}\n" end
+
   return [success,string]
 end
 
-def longest_path(e,wt)
+def longest_path(e,wt,debug:false)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
@@ -73,17 +78,19 @@ def longest_path(e,wt)
   # The list wt contains the weights of the edges.
   # This algorithm is written to prefer depth over score, i.e., we prefer to include all characters, even if the resulting score is low.
   # These two arrays have indices running from 0 to n+1, which represent vertices. If we've already chosen character i, the index is [i+1].
-  # Test.rb has unit tests.
+  # Test.rb has unit tests for this routine.
   # Returns [success,best_path,best_score,if_error,error_message]
   n = wt.length
   infinity = 1.0e9
   if e.length!=n+1 then return [false,[],-infinity,true,"Edge matrix has the wrong length, #{e.length} instead of n+1=#{n+1}"] end
   best_score = Array.new(n+2) { |i| -infinity }
-  best_path =  Array.new(n+2) { |i| [] }
+  best_path =  Array.new(n+2) { |i| nil }
   # We start at the vertex i=-1, representing having already chosen character -1, i.e., the fake origin vertex where we've made no choices.
   best_score[0] = 0.0 # Score for getting to origin vertex -1 is zero. (offset index -1+1)
   best_path[0] = []
   (-1).upto(n-1) { |i| # we already know the best path in which we've chosen i
+    next if best_path[i+1].nil?
+    if debug then print "i=#{i}, best_path=#{best_path}\n" end
     best_score_to_i = best_score[i+1]
     e[i+1].each { |j|
       if j==n then this_wt=0.0 else this_wt=wt[j] end
@@ -108,7 +115,7 @@ def longest_path(e,wt)
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
 end
 
-def word_to_dag(s,h)
+def word_to_dag(s,h,slop:0.0)
   # Converts an input representing some hits to a directed acyclic graph. Input s is a Spatter object.
   # Input h should be in the form output by prepearl(), a list of elements like [score,x,c].
   n = h.length
@@ -116,11 +123,12 @@ def word_to_dag(s,h)
   w = h.map { |a| s.widths[a[2]] }
   l = h.map { |a| a[1] } # x coord of left edge
   r = [];  0.upto(n-1) { |i| r.push( l[i]+w[i]) } # x coord of right edge
-  mi = s.min_interword # any distance greater than this is impermissible within a word
-  mk = s.max_kern # any distance less than this is impermissible
   leftmost = h[0][1] # x coord of leftmost char; we don't have to start with leftmost char if others line up with it reasonably well
   rightmost = r.max
-  max_end_slop = mi*0.5 # not sure if this is optimal; allow for the possibility that leftmost is actually a bad match and a little too far left, ditto right
+  max_sp = s.min_interword+slop # any spacing greater than this is impermissible within a word
+  min_sp = -s.max_kern-slop # any spacing less than this is impermissible; this is normally negative, because kerning allows overlap
+  max_end_slop = s.min_interword*0.5+slop
+  # ... maybe not optimal; allow for the possibility that leftmost is actually a bad match and a little too far left, ditto right
   # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars.
   # To mark an edge connecting to the final vertex, we use j=n.
@@ -129,7 +137,7 @@ def word_to_dag(s,h)
   # List of possible starting characters:
   e.push([])
   0.upto(n-1) { |i|
-    next if l[i]>leftmost+max_end_slop
+    break if l[i]>leftmost+max_end_slop
     e[0].push(i)
   }
   # Possible transitions from one character to another, or from one character to the final vertex:
@@ -138,10 +146,9 @@ def word_to_dag(s,h)
     xr = r[i]
     (i+1).upto(n-1) { |j|
       xl = l[j]
-      next if xl>xr+mi
-      if xl>xr-mk then e[-1].push(j) end
+      if xl<xr+max_sp && xl>xr+min_sp then e[i+1].push(j) end
     }
-    if r[i]>rightmost-max_end_slop then e[-1].push(n) end # transition to the final vertex
+    if r[i]>rightmost-max_end_slop then e[i+1].push(n) end # transition to the final vertex
   }
   return e
 end
