@@ -1,5 +1,8 @@
 # These functions are meant to input a single line of matched characters and string them together
-# like a string of pearls, returning an OCR result.
+# like a string of pearls, returning an OCR result. It might seem more logical to split this up
+# into a module that breaks lines into words and another that handles individual words. However,
+# it often happens that when we try to analyze a word, we find that it's better analyzed as
+# two words.
 
 def babble(s,threshold:0.5)
   # S is a spatter object that we hope is a single line of text.
@@ -28,8 +31,7 @@ def dumb_split(s,algorithm,threshold:0.3)
     return mumble_word(s)
   end
   if algorithm=='dag' then
-    success,string = dag_word(s)
-    return string
+    return dag_word(s).join(' ')
   end
 end
 
@@ -48,6 +50,14 @@ def mumble_word(s)
 end
 
 def dag_word(s)
+  # Returns a list of strings. In the nominal case, this list only has one word, but sometimes we have to split it into multiple words.
+  success,string,remainder = dag_word_one(s)
+  result = [string]
+  if !success then result.concat(dag_word(remainder)) end
+  return result
+end
+
+def dag_word_one(s)
   # Treat the word as a directed acyclic graph, and find the longest path from left to right, where length is measured by sum (score-const).
   # Returns [success,string].
   debug = false
@@ -62,10 +72,19 @@ def dag_word(s)
   e = word_to_dag(s,h)
   success,path,score,if_error_error_message = longest_path(e,wt,debug:debug)
   string = path.map { |j| h[j][2] }.join('')
+  if !success then
+    # We didn't make it all the way to the end. Interpret this as multiple words.
+    i = path[-1] # index of the rightmost character we were able to get to
+    xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
+    remainder = s.select(lambda { |a| a[1]>xr })
+    # ... all chars whose left edge lies to the right of that; typically there's a big gap, which is why we failed
+  else
+    remainder = nil
+  end
 
   if debug then print "n=#{n}\nh=[[score,x,c],...]=#{h}\nwt=#{wt}\nsuccess=#{success}, path=#{path}\ne=#{e}\n" end
 
-  return [success,string]
+  return [success,string,remainder]
 end
 
 def longest_path(e,wt,debug:false)
