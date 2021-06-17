@@ -117,3 +117,29 @@ class Script
 
 end
 
+def likely_cross_script_confusion(c,other_script,threshold:5)
+  # If we see the character c surrounded on both sides by characters that are in some other script, we
+  # may ask ourselves, what could possibly go wrong?
+  # Input is like ('ω','latin'). Output is a list of pairs like ['w',5], where the first
+  # element is the character we could be confusing it for, and the second is a subjective
+  # measure of how easily confused they are. This number is 10 for characters that are
+  # virtually indistinguishable to a human without hints from context, 5 if you can usually
+  # tell. The output is sorted in descending order by score, so we can just take the first if we wish.
+  # Output is nil if we don't find any matches.
+  n = char_to_short_name(c)
+  confusions = {
+    'omicron,latin'=>[['o',10]],    'o,greek'=>[['omicron',10]],
+    'Zeta,latin'=>[['Z',10]],       'Z,greek'=>[['Zeta',10]],
+    'nu,latin'=>[['v',10]],         'v,greek'=>[['nu',10]],
+    'alpha,latin'=>[['a',5]],       'a,greek'=>[['alpha',5]],
+    'iota,latin'=>[['i',5]],        'i,greek'=>[['iota',5]],
+    'omega,latin'=>[['w',5]],       'w,greek'=>[['omega',5]],
+    'gamma,latin'=>[['y',5]],       'y,greek'=>[['gamma',5]]
+  }
+  result = confusions["#{n},#{other_script}"]
+  if result.nil? then return result end
+  result = result.select { |a| a[1]>=threshold }
+  if result.length==0 then return nil end
+  return result.sort { |p,q| q[1] <=> p[1]} # sort in descending order by score
+end
+

@@ -22,6 +22,12 @@ def compatible_scripts(c1,c2)
   return char_to_code_block(c1)==char_to_code_block(c2)
 end
 
+def common_script(c1,c2)
+  if !compatible_scripts(c1,c2) then return nil end
+  if !(c1=~/[[:alpha:]]/) then return char_to_code_block(c2) end
+  return char_to_code_block(c1)
+end
+
 def char_to_script_and_case(c)
   # Returns, e.g., ['greek','uppercase'] or ['hebrew',''].
   script = char_to_code_block(c)

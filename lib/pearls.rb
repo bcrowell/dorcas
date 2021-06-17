@@ -49,12 +49,39 @@ def mumble_word(s)
   return mumble_word(s1)+c+mumble_word(s2)
 end
 
-def split_by_scripts(words)
+def split_by_scripts(words_raw)
   # Inputs a list of strings.
   # If we have a word like ηρχεbeganμυθων, split it into multiple words by detecting that the scripts don't match.
+  # If we have a word like flγing, where the latin y has been mistakenly read as a gamma, we try to correct that first.
+  words = clown(words_raw)
   n = words.length
+  # Switch easily mistaken characters surrounded by other script.
   0.upto(n-1) { |i|
     word = words[i]
+    if word.length>1 then
+      loop do # Loop until it stops changing. But I think the way the algorithm currently works, it's not possible for it to take >1 iteration.
+        did_anything = false
+        0.upto(word.length-1) { |j|
+          compat1 = (j==0 || compatible_scripts(word[j-1],word[j]))
+          compat2 = (j==word.length-1 || compatible_scripts(word[j],word[j+1]))
+          if (!compat1 && !compat2) || (j==0 && !compat2) || (j==word.length-1 && !compat1) then
+            if j==0 || j==word.length-1 || compatible_scripts(word[j-1],word[j+1]) then
+              if j==0 then other_script = char_to_code_block(word[j+1]) end
+              if j==word.length-1 then other_script = char_to_code_block(word[j-1]) end
+              if j!=0 && j!=word.length-1 then other_script=common_script(word[j-1],word[j+1]) end
+              alternatives = likely_cross_script_confusion(word[j],other_script)
+              if !(alternatives.nil?) then
+                n=alternatives[0][0] # if there's more than one, just try the highest-scoring one; mutates words, which is a clone of input
+                words[i][j] = short_name_to_char(n)
+                did_anything = true
+              end
+            end
+          end
+        }
+        break if !did_anything
+      end
+    end
+    # Split word where script changes.
     0.upto(word.length-2) { |j|
       if !compatible_scripts(word[j],word[j+1]) then
         result = clown(words)
@@ -79,10 +106,17 @@ def dag_word_one(s)
   # Returns [success,string].
   debug = false
   #debug = (mumble_word(s)=='ταυρωντε')
+  #debug = (mumble_word(s)=='hecatoub') 
+  #debug = (mumble_word(s)=='Zηνς') 
   infinity = 1.0e9
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   n = h.length
-  wt = h.map { |a| a[0]-0.5 } # score of each letter, considered as an edge in the graph; 0.5 is the nominal threshold of my scoring scale
+  if n==0 then return [true,'',nil] end
+  wt = h.map { |a| a[0]-0.5 }
+  # ...score of each letter, considered as an edge in the graph. It doesn't actually seem to matter much whether I subtract 0.5 (the
+  #    nominal threshold of my scoring scale) or 1.0 (which makes sense if you figure that a score of 1-epsilon means a probability
+  #    epsilon of error, and ln(1-epsilon)~-epsilon). The latter does cause "halls" to be read as "hals."
+  #wt = h.map { |a| if a[2]=='u' then -100.0 else a[0]-1.0 end } # qwe
   # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i. The array e has indices running from 0 to n.
@@ -117,6 +151,7 @@ def longest_path(e,wt,debug:false)
   # Test.rb has unit tests for this routine.
   # Returns [success,best_path,best_score,if_error,error_message]
   n = wt.length
+  if n==0 then return [true,[],0.0,false,nil] end
   infinity = 1.0e9
   if e.length!=n+1 then return [false,[],-infinity,true,"Edge matrix has the wrong length, #{e.length} instead of n+1=#{n+1}"] end
   best_score = Array.new(n+2) { |i| -infinity }
@@ -126,7 +161,7 @@ def longest_path(e,wt,debug:false)
   best_path[0] = []
   (-1).upto(n-1) { |i| # we already know the best path in which we've chosen i
     next if best_path[i+1].nil?
-    if debug then print "i=#{i}, best_path=#{best_path}\n" end
+    #if debug then print "i=#{i}, best_path=#{best_path}\n" end
     best_score_to_i = best_score[i+1]
     e[i+1].each { |j|
       if j==n then this_wt=0.0 else this_wt=wt[j] end
@@ -151,7 +186,7 @@ def longest_path(e,wt,debug:false)
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
 end
 
-def word_to_dag(s,h,slop:0.0)
+def word_to_dag(s,h,slop:0)
   # Converts an input representing some hits to a directed acyclic graph. Input s is a Spatter object.
   # Input h should be in the form output by prepearl(), a list of elements like [score,x,c].
   n = h.length
@@ -163,8 +198,9 @@ def word_to_dag(s,h,slop:0.0)
   rightmost = r.max
   max_sp = s.min_interword+slop # any spacing greater than this is impermissible within a word
   min_sp = -s.max_kern-slop # any spacing less than this is impermissible; this is normally negative, because kerning allows overlap
-  max_end_slop = s.min_interword*0.5+slop
+  max_end_slop = s.min_interword*0.5
   # ... maybe not optimal; allow for the possibility that leftmost is actually a bad match and a little too far left, ditto right
+  if slop>0 then max_end_slop+= slop end # making max_end_slop negative produces goofy results
   # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars.
   # To mark an edge connecting to the final vertex, we use j=n.
@@ -176,6 +212,7 @@ def word_to_dag(s,h,slop:0.0)
     break if l[i]>leftmost+max_end_slop
     e[0].push(i)
   }
+  if e[0].length==0 then e[0]=[0] end # can happen if max_end_slop<0
   # Possible transitions from one character to another, or from one character to the final vertex:
   0.upto(n-1) { |i|
     e.push([])

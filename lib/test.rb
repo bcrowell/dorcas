@@ -21,11 +21,22 @@ def verb_test()
   print "Testing split_by_scripts():\n"
   assert(compatible_scripts("a","a"))
   assert(!compatible_scripts("w","ξ"))
+  assert(likely_cross_script_confusion("ξ","latin").nil?)
+  assert(likely_cross_script_confusion("ν","latin")[0][0]=='v')
+  assert(likely_cross_script_confusion("γ","latin")[0][0]=='y')
+  assert(likely_cross_script_confusion("γ","latin",threshold:10).nil?)
   assert_equal(split_by_scripts(["the"]),["the"])
   assert_equal(split_by_scripts(["the","dog"]),["the","dog"])
   assert_equal(split_by_scripts(["the","κύον"]),["the","κύον"])
   assert_equal(split_by_scripts(["theκύον"]),["the","κύον"])
   assert_equal(split_by_scripts(["ηρχεbeganμυθων,"]),["ηρχε","began","μυθων,"])
+  assert_equal(split_by_scripts(["a"]),["a"]) # single character
+  assert_equal(split_by_scripts(["ξξξξξ"]),["ξξξξξ"]) # nothing needs to be fixed
+  assert_equal(split_by_scripts(["flaξen"]),["fla","ξ","en"]) # no alternatives available
+  assert_equal(split_by_scripts(["flγing"]),["flying"]) # y misread as gamma
+  assert_equal(split_by_scripts(["γou"]),["you"])
+  assert_equal(split_by_scripts(["boγ"]),["boy"])
+  assert_equal(split_by_scripts(["άγyελος"]),["άγγελος"]) # latin to greek
   #----------------------------------------------------------------------------------------------
   print "Testing longest-path algorithm:\n"
   # ----
