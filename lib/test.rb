@@ -17,6 +17,16 @@ end
 
 def verb_test()
   # special_test()
+  #----------------------------------------------------------------------------------------------
+  print "Testing longest-path algorithm:\n"
+  e = [[0],[1],[2]]
+  wt = [1,1]
+  success,path,score = longest_path(e,wt)
+  assert_equal(path,[0,1])
+  assert_equal(score,2.0)
+  exit(0)
+  #----------------------------------------------------------------------------------------------
+  print "Testing canonicalization of json:\n"
   json1 = <<-'JSON'
   {
     "numbers": [333333333.33333329, 1E30, 4.50,
