@@ -58,7 +58,7 @@ def dag_word(s)
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i. The array e has indices running from 0 to n.
   e = word_to_dag(s,h)
-  success,path,score = longest_path(e,wt)
+  success,path,score,if_error_error_message = longest_path(e,wt)
   string = path.map { |j| h[j][2] }.join('')
   return [success,string]
 end
@@ -71,9 +71,13 @@ def longest_path(e,wt)
   # There are fake vertices -1 and n representing the start and end of the graph.
   # The vertex i=-1 represents the idea that we've "chosen" to start. The choice n represents choosing to reach the end of the graph.
   # The list wt contains the weights of the edges.
+  # This algorithm is written to prefer depth over score, i.e., we prefer to include all characters, even if the resulting score is low.
   # These two arrays have indices running from 0 to n+1, which represent vertices. If we've already chosen character i, the index is [i+1].
+  # Test.rb has unit tests.
+  # Returns [success,best_path,best_score,if_error,error_message]
   n = wt.length
   infinity = 1.0e9
+  if e.length!=n+1 then return [false,[],-infinity,true,"Edge matrix has the wrong length, #{e.length} instead of n+1=#{n+1}"] end
   best_score = Array.new(n+2) { |i| -infinity }
   best_path =  Array.new(n+2) { |i| [] }
   # We start at the vertex i=-1, representing having already chosen character -1, i.e., the fake origin vertex where we've made no choices.
@@ -83,6 +87,7 @@ def longest_path(e,wt)
     best_score_to_i = best_score[i+1]
     e[i+1].each { |j|
       if j==n then this_wt=0.0 else this_wt=wt[j] end
+      if j<=i then return [false,[],-infinity,true,"Graph is not topologically ordered."] end
       new_possible_score = best_score_to_i+this_wt
       if new_possible_score>best_score[j+1] then
         best_score[j+1]=new_possible_score
@@ -97,7 +102,7 @@ def longest_path(e,wt)
       path = best_path[i+1]
       success = (i==n)
       path = path.select {|j| j<n}
-      return [success,path,best_score[i+1]]
+      return [success,path,best_score[i+1],false,nil]
     end
   }
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
