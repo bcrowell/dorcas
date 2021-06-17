@@ -102,7 +102,7 @@ def verb_test()
     u fft,                           #   fft
     r f1,                            # bring back signal's spectrum
     a *,                             # multiply the signal and template in frequency domain
-    r w,r h,i 10,f 3,gaussian_cross_kernel,  # generate a peak-detection kernel with the given a and sigma
+    r w,r h,i 10,f 3,f 0.0,gaussian_cross_kernel,  # generate a peak-detection kernel with the given a and sigma
     u fft,                           #    fft
     a *,                             #    convolve with that too
     u ifft,                          # do an inverse fourier transform
