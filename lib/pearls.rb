@@ -71,7 +71,7 @@ def dag_word(s)
   success,string,remainder = dag_word_one(s)
   result = [string]
   if !success then result.concat(dag_word(remainder)) end
-  return result
+  return split_by_scripts(result)
 end
 
 def dag_word_one(s)
