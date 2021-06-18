@@ -162,6 +162,52 @@ class Pat
     return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
   end
 
+  def snowman
+    # Generate some kind of approximate kerning information. This consists of 12 numbers, indexed as [side][color][slab].
+    # Breaks the character up into three layers (slab=0, 1, 2) on each side (0=left, 1=right).
+    # For color=0, gives the skinny snowman consisting of the width of the black template.
+    # For color=1, gives the fatter one that is the white (i.e., not pink).
+    # All x coordinates are relative to the left edge of the bbox, not the upper left.
+    # The computations take about 1 second for 100 characters, and are memoized.
+    if !(@snowman.nil?) then return @snowman end # memoized
+    w,h = self.bw.width,self.bw.height
+    black = image_to_boolean_ink_array(self.bw) # true means black
+    white = generate_array(w,h,lambda {|i,j| !has_ink(self.pink[i,j])}) # true means not pink
+    outermost = [nil,nil]
+    0.upto(1) { |side| # 0=left, 1=right
+      stuff = [nil,nil]
+      0.upto(1) { |color| # 0=black, 1=white
+        stuff[color] = []
+        0.upto(h-1) { |j|
+          if color==0 then
+            x = 0.upto(w-1).select { |i| black[i][j] }
+          else
+            x = 0.upto(w-1).select { |i| white[i][j] }
+          end
+          if side==0 then stuff[color].push(x.min) else stuff[color].push(x.max) end
+        }
+      }
+      outermost[side] = clown(stuff)
+    }
+    result = [nil,nil]
+    0.upto(1) { |side| # 0=left, 1=right
+      result[side] = [nil,nil]
+      0.upto(1) { |color| # 0=black, 1=white
+        result[side][color] = [nil,nil,nil]
+        0.upto(2) { |slab| # 0=top, 1=waist, 2=descender
+          dividers = [0,self.baseline/2,self.baseline,h]
+          top = dividers[slab]
+          bottom = dividers[slab+1]-1
+          outer_limits = top.upto(bottom).map { |j| outermost[side][color] }
+          if side==0 then extreme_outer_limits=outer_limits.min else extreme_outer_limits=outer_limits.max end
+          result[side][color][slab] = extreme_outer_limits-self.bbox[0]
+        }
+      }
+    }
+    @snowman = result
+    return result
+  end
+
   def Pat.fix_red(bw,red,baseline,line_spacing,c)
     # On the fly, fiddle with three things related to the red mask:
     # (1) It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
