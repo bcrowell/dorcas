@@ -17,9 +17,11 @@ def dumb_split(s,algorithm,threshold:0.3)
   # Simply splits the line wherever there's too much whitespace, then returns mumble_word() on each word.
   # On each word, then calls the specified algorithm, 'mumble' or 'dag'.
   l = prepearl(s,threshold)
-  inter = ((s.max_interword+s.min_interword)*0.5).round
+  inter = s.min_interword
+  inter = (inter*0.8).round
+  # ... min_interword is set based on general typographic practice; the 0.8 is tuned to give best balance between lumping and splitting on sample text
   0.upto(l.length-2) { |i|
-    if l[i+1][1]-l[i][1]-s.widths[l[i][2]]-s.max_kern>inter then
+    if l[i+1][1]-l[i][1]-s.widths[l[i][2]]>inter then
       x_split = ((l[i+1][1]+l[i][1])*0.5).round
       s1 = s.select(lambda { |a| a[1]<=x_split})
       s2 = s.select(lambda { |a| a[1]>x_split})

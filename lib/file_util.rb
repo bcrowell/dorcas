@@ -59,3 +59,9 @@ def delete_files(files_to_delete)
     FileUtils.rm_f(f)
   }
 end
+
+def replace_ext(filename,ext)
+  # exp should be like "svg", not ".svg"
+  result = shallow_copy(filename)
+  return result.gsub(/\.\w*$/,".#{ext}")
+end

@@ -45,7 +45,7 @@ def write_svg_reports_helper(dir,output_dir,file_base,info,data)
   if err!=0 then warn(message) end
 end
 
-def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
+def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale)
   if unsorted_pats.length==0 then return [1,"no patterns to write to #{basic_svg_filename}, file not written",nil] end
   if not File.exists?(dir) then Dir.mkdir(dir) end
   svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
@@ -65,7 +65,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     if x[1] then heights.push(x[2].bw.height) end
   }
   if heights.length==0 then return [2,"no matched patterns to write to #{basic_svg_filename}, file not written",nil] end
-  max_height = greatest(heights)[1]
+  max_height = scale*greatest(heights)[1]
   row_height = max_height*1.3
   col_width = max_height*1.5
   images = []
@@ -86,19 +86,19 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats)
     labels.push([name,col_width*2,y,rough_font_size]) if name!=c
     count += 1
   }
-  svg = svg_code_patset(images,labels,300.0)
+  svg = svg_code_patset(images,labels,300.0,scale)
   File.open(svg_filename,'w') { |f| f.print svg }
   return [0,nil,svg_filename]
 end
 
-def svg_code_patset(image_info,label_info,dpi)
+def svg_code_patset(image_info,label_info,dpi,scale2)
   x_offset = 10 # in mm
   y_offset = 10
   images = []
   scale = 25.4/dpi # to convert from pixels to mm
   image_info.each { |i|
     filename,x,y,w,h,opacity = i
-    images.push(svg_image(filename,x*scale+x_offset,y*scale+y_offset,w*scale,h*scale,opacity))
+    images.push(svg_image(filename,x*scale+x_offset,y*scale+y_offset,w*scale*scale2,h*scale*scale2,opacity))
   }
   images_svg = images.join("\n")
   labels = []

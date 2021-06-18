@@ -20,6 +20,7 @@ class Spatter
     # Bracket a reasonable range for interword spacing. Convention is 1/3 em to 1/2 em, but will obviously vary in justified text.
     em = set.estimate_em
     min_interword = (0.3*em).round
+    # ...based on general typographic practice
     max_interword = (0.53*em).round
     max_kern = (em*0.15).round # https://en.wikipedia.org/wiki/Kerning
     hits = clown(hits)

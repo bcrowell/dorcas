@@ -7,11 +7,22 @@ def verbing(argv,cache_dir:nil)
   if verb=='insert' then verb_insert(argv); recognized=true end
   if verb=='test' then verb_test(); recognized=true end
   if verb=='squirrel' then verb_squirrel(argv); recognized=true end
-  if verb=='clean' then verb_clean(argv,cache_dir); recognized=true end
+  if verb=='clean' then verb_clean(cache_dir); recognized=true end
+  if verb=='view' then verb_view(argv); recognized=true end
   if !recognized then die("unrecognized verb #{verb}") end
 end
 
-def verb_clean(argv,cache_dir)
+def verb_view(args)
+  set_file_or_dir,report_dir = args
+  svg_file = replace_ext(File.basename(set_file_or_dir),"svg")
+  set = Fset.from_file_or_directory(set_file_or_dir)
+  unless File.directory?(report_dir) then Dir.mkdir(report_dir) end
+  pats = set.pats.map { |x| [true,x]}
+  err,message,filename = patset_as_svg(report_dir,svg_file,pats,5.0)
+  if err!=0 then warn(message) else print "Report written to #{filename}\n" end
+end
+
+def verb_clean(cache_dir)
   FileUtils.rm_f(Dir.glob('/tmp/dorcas*')) # This convention is set in temp_file_name(), and won't work on Windows.
   FileUtils.rm_f(Dir.glob(dir_and_file_to_path(cache_dir,"*")))
 end

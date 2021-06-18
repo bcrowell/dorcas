@@ -37,6 +37,8 @@ Dumb Optical Recognition using Correlation
 
 `dorcas clean` ... removes any scratch files left behind in /tmp and ~/.dorcas
 
+`dorcas view foo.set reports` ... write a visual report on the pattern set foo.set to report/foo.svg; also works with a set in directory form
+
 ## Dependencies:
 
 debian packages: ruby python3 r-cran-minpack.lm unicode libgd-perl ruby-zip python3-numpy python3-pil
