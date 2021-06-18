@@ -1,7 +1,19 @@
 class Spatter
   # Encapsulates a list of hits, with their spatial locations and scores, along with basic spatial
-  # information such as estimated line spacing, maximum kerning, and interword spacing.
+  # over-all information such as estimated line spacing, maximum kerning, and interword spacing.
   # Putting this in a class is meant to make it easier to add functionality such as efficient searching.
+  # On input, each hit is in the format [score,x,y] (with Spot mixins added later), and x and y are
+  # coordinates of the upper-left corner of the template relative to the page **THIS IS ON INPUT**. This convention for (x,y)
+  # is the one used in the Match class and in .spa files. The Spatter initializer transforms
+  # these coordinates so that they're the coordinates of the template's reference point instead.
+  # The initialize() method is not really meant to be used externally. Use from_hits_page_and_set();
+  # when you use this method, both low-precision and high-precision geometrical information is also stored.
+  # The crude information is in the @widths instance variable, which is an array of widths calculated from
+  # the width of the pat's real_bbox, which is in turn based on the black ink in the template). For more
+  # precise geometrical information, the initializer blesses each [score,x,y] array into the Spot class,
+  # which adds some mixins. Algorithms that don't need the fancier information can just treat the array
+  # as an array. Once the array has been blessed as a Spot object, never shallow-copy it or replace it
+  # with a new array, either mutate it or deep-copy it.
 
   def initialize(hits,widths,spatial)
     @hits = clown(hits)
@@ -13,7 +25,7 @@ class Spatter
   end
 
   def Spatter.from_hits_page_and_set(hits,page,set)
-    # Hits should be a hash whose keys are characters and whose values are lists of hits in the format [score,x,y].
+    # Hits should be a hash whose keys are characters and whose values are lists of hits in the format described above.
     # On input to the initializer, the x-y coordinates are the top-left corners of the templates, but after the object
     # is created we change those to the coordinates of the point where the baseline intersects the left side of the bounding box.
     # The page and set inputs are used only for extracting geometrical information.
@@ -25,8 +37,8 @@ class Spatter
     max_kern = (em*0.15).round # https://en.wikipedia.org/wiki/Kerning
     hits = clown(hits)
     hits.each { |c,h|
-      h = h.map { |a| a[2]+=set.pat(c).baseline; a } # reference each hit to the baseline, not the upper left corner
-      h = h.map { |a| a[1]+=set.pat(c).bbox[0]; a } # ... and to the left side of the bounding box
+      h = h.map { |a| a[2]+=set.pat(c).ref_y; a }
+      h = h.map { |a| a[1]+=set.pat(c).ref_x; a }
     }
     spatial = {'line_spacing'=>page.stats['line_spacing'],'max_w'=>set.max_w,'max_h'=>set.max_h,
                               'em'=>em,'min_interword'=>min_interword,'max_interword'=>max_interword,'max_kern'=>max_kern}

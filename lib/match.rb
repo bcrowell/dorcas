@@ -173,7 +173,7 @@ class Match
 
     hits3 = {}
     outfiles.each { |outfile|
-      File.open(outfile,"rb") { |file| hits3 = hits3.merge(Marshal.load(file)) } 
+      File.open(outfile,"rb") { |file| hits3 = hits3.merge(Marshal.load(file)) }
     }
     delete_files(files_to_delete)
 

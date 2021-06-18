@@ -201,11 +201,11 @@ class Pat
 
   def snowman(set)
     # Generate some kind of approximate kerning information. This consists of [vert,horiz], containing 16 numbers, where
-    # vert is an array like [top,xheight,baseline,bottom], and horizo is an array indexed as [side][color][slab].
+    # vert is an array like [top,xheight,baseline,bottom], and horiz is an array indexed as [side][color][slab].
     # Breaks the character up into three layers (slab=0, 1, 2) on each side (0=left, 1=right).
     # For color=0, gives the skinny snowman consisting of the width of the black template.
     # For color=1, gives the fatter one that is the white (i.e., not pink).
-    # All x coordinates are relative to the left side of the whole image.
+    # All x coordinates are relative to the left side of the template image.
     # A pat object doesn't know what set it's part of, so for this purpose we need that as an argument.
     # The computations take about 1 second for 100 characters, and are memoized.
     w,h = self.bw.width,self.bw.height

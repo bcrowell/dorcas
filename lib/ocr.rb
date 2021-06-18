@@ -14,6 +14,7 @@ def ocr_one_page(job,page,report_dir)
       m = Match.new(characters:all_chars,meta_threshold:job.threshold)
      end
     hits = m.execute(page,job.set,batch_code:Process.pid.to_s) # only result of doing this is currently that mon.png gets written
+    hits.each { |c,h| Spot.bless(h,job.set,job.set.pat(c)) }
     spatter = Spatter.from_hits_page_and_set(hits,page,job.set)
     File.open(cached_spatter_filename,"wb") { |file| Marshal.dump(spatter,file) }
   end
