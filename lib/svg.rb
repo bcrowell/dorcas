@@ -71,6 +71,8 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale)
   images = []
   labels = []
   bw_filename = {}
+  snowmen = []
+  bboxen = []
   count = 0
   pats.keys.sort {|a,b| pats[a][0] <=> pats[b][0]}.each { |name|
     c,matched,pat = pats[name]
@@ -80,27 +82,50 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale)
       bw_filename[name] = basic_png_filename
       pat.visual.save(dir_and_file_to_path(dir,basic_png_filename))
       images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
+      snowmen.push(pat.snowman)
+      bboxen.push(pat.real_bbox)
     end
     rough_font_size = max_height*0.27
     labels.push([c,   col_width,  y,rough_font_size])
     labels.push([name,col_width*2,y,rough_font_size]) if name!=c
     count += 1
   }
-  svg = svg_code_patset(images,labels,300.0,scale)
+  svg = svg_code_patset(images,labels,snowmen,bboxen,300.0,scale)
   File.open(svg_filename,'w') { |f| f.print svg }
   return [0,nil,svg_filename]
 end
 
-def svg_code_patset(image_info,label_info,dpi,scale2)
+def svg_code_patset(image_info,label_info,snowmen,bboxen,dpi,scale2)
   x_offset = 10 # in mm
   y_offset = 10
   images = []
   scale = 25.4/dpi # to convert from pixels to mm
+  count = 0
+  snowmen_list_svg = []
+  bbox_list_svg = []
   image_info.each { |i|
     filename,x,y,w,h,opacity = i
-    images.push(svg_image(filename,x*scale+x_offset,y*scale+y_offset,w*scale*scale2,h*scale*scale2,opacity))
+    x0,y0 = [x*scale+x_offset,y*scale+y_offset]
+    images.push(svg_image(filename,x0,y0,w*scale*scale2,h*scale*scale2,opacity))
+    b = clown(bboxen[count])
+    b.right +=1; b.bottom +=1 # my Box objects always include edges, so when drawing an outline, need to include the right and bottom pixels
+    bbox_list_svg.push(svg_box(b.scale(scale*scale2).translate(x0,y0),color:"#00b949"))
+    vert,horiz = snowmen[count]
+    0.upto(1) { |side| # 0=left, 1=right
+      0.upto(1) { |color| # 0=black, 1=white
+        0.upto(2) { |slab| # 0=top, 1=waist, 2=descender
+          x = x0 + horiz[side][color][slab]*scale*scale2
+          y1 = y0 + vert[slab]  *scale*scale2
+          y2 = y0 + vert[slab+1]*scale*scale2
+          snowmen_list_svg.push(svg_vertical_line(x,y1,y2))
+        }
+      }
+    }    
+    count += 1
   }
   images_svg = images.join("\n")
+  snowmen_svg = snowmen_list_svg.join("\n")
+  bbox_svg = bbox_list_svg.join("\n")
   labels = []
   label_info.each { |i|
     text,x,y,h = i
@@ -108,7 +133,7 @@ def svg_code_patset(image_info,label_info,dpi,scale2)
     labels.push(svg_text(text,x*scale+x_offset,(y+fudge_y_pos*h)*scale+y_offset,h*scale))
   }
   labels_svg = labels.join("\n")
-  svg = "#{svg_header()}  #{images_svg} #{labels_svg} </svg>"
+  svg = "#{svg_header()}  #{images_svg} #{snowmen_svg} #{bbox_svg} #{labels_svg} </svg>"
   return svg
 end
 
@@ -188,6 +213,37 @@ def svg_code_matches(char_name,dir,image_info,dpi,composites,labels_svg)
   images_svg = images.join("\n")
   text_svg = labels.join("\n")
   svg = "#{svg_header()}  #{images_svg} #{text_svg} #{labels_svg} </svg>"
+  return svg
+end
+
+def svg_vertical_line(x,y_top,y_bottom)
+svg = 
+<<-"SVG"
+    <path
+       style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.17638889;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       d="M #{x},#{y_top} V #{y_bottom}"
+       inkscape:connector-curvature="0" />
+SVG
+  return svg
+end
+
+def svg_box(box,color:"#000000")
+  # box is a Box object
+  # color is, e.g., "#00b949" for green
+  ds = ["M #{box.left},#{box.top} V #{box.bottom}",
+       "M #{box.right},#{box.top} V #{box.bottom}",
+       "M #{box.left},#{box.top} H #{box.right}",
+       "M #{box.left},#{box.bottom} H #{box.right}"]
+  svg = ''
+  ds.each { |d|
+    svg += 
+      <<-"SVG"
+      <path
+       style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#{color};stroke-width:0.17638889;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       d="#{d}"
+       inkscape:connector-curvature="0" />
+      SVG
+  }
   return svg
 end
 

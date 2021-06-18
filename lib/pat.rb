@@ -10,13 +10,19 @@ class Pat
     # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
     # and is also used in the actual OCR'ing process.
-    garbage,@pink,@bw=Pat.fix_red(bw,red,baseline,line_spacing,c)
+    garbage,@pink,@bw=Pat.fix_red(bw,red,baseline,line_spacing,c,@bbox)
     @threshold = 0.5 # once this has been set, don't change it without deleting all memoized data by calling set_threshold on everything that has a Fat mixin
     # Mix in Fat methods for all objects, memoizing for speed:
     Fat.bless(@bw,@threshold)
     Fat.bless(@red,@threshold)
     Fat.bless(@pink,@threshold)
     @stats = ink_stats_pat(image_to_ink_array(@bw),image_to_ink_array(@pink)) # use pink for this, because that's what we're actually using in correlations
+  end
+
+  def real_bbox
+    # returns a Box object
+    # As with all my box objects, this has integer coords and includes edges.
+    return real_ink_bbox(self.bw) # will use Fat mixin for speed
   end
 
   def bbox_width
@@ -39,6 +45,7 @@ class Pat
   end
 
   def bboxo()
+    # fake one from seed font
     return Box.from_a(bbox)
   end
 
@@ -163,14 +170,16 @@ class Pat
   end
 
   def snowman
-    # Generate some kind of approximate kerning information. This consists of 12 numbers, indexed as [side][color][slab].
+    # Generate some kind of approximate kerning information. This consists of [vert,horiz], containing 16 numbers, where
+    # vert is an array like [top,xheight,baseline,bottom], and horizo is an array indexed as [side][color][slab].
     # Breaks the character up into three layers (slab=0, 1, 2) on each side (0=left, 1=right).
     # For color=0, gives the skinny snowman consisting of the width of the black template.
     # For color=1, gives the fatter one that is the white (i.e., not pink).
-    # All x coordinates are relative to the left edge of the bbox, not the upper left.
+    # All x coordinates are relative to the left side of the whole image.
     # The computations take about 1 second for 100 characters, and are memoized.
-    if !(@snowman.nil?) then return @snowman end # memoized
     w,h = self.bw.width,self.bw.height
+    vert = [0,self.baseline/2,self.baseline,h] # fixme -- use a more correct x-height rather than baseline/2
+    if !(@snowman.nil?) then return @snowman end # memoized
     black = image_to_boolean_ink_array(self.bw) # true means black
     white = generate_array(w,h,lambda {|i,j| !has_ink(self.pink[i,j])}) # true means not pink
     outermost = [nil,nil]
@@ -189,34 +198,40 @@ class Pat
       }
       outermost[side] = clown(stuff)
     }
-    result = [nil,nil]
+    horiz = [nil,nil]
     0.upto(1) { |side| # 0=left, 1=right
-      result[side] = [nil,nil]
+      horiz[side] = [nil,nil]
       0.upto(1) { |color| # 0=black, 1=white
-        result[side][color] = [nil,nil,nil]
+        horiz[side][color] = [nil,nil,nil]
         0.upto(2) { |slab| # 0=top, 1=waist, 2=descender
-          dividers = [0,self.baseline/2,self.baseline,h]
-          top = dividers[slab]
-          bottom = dividers[slab+1]-1
-          outer_limits = top.upto(bottom).map { |j| outermost[side][color] }
-          if side==0 then extreme_outer_limits=outer_limits.min else extreme_outer_limits=outer_limits.max end
-          result[side][color][slab] = extreme_outer_limits-self.bbox[0]
+          top = vert[slab]
+          bottom = vert[slab+1]-1
+          outer_limits = top.upto(bottom).map { |j| outermost[side][color][j] }.select { |x| !(x.nil?)}
+          if outer_limits.length==0 then
+            x = (self.bbox[0]+self.bbox[1])/2 # happens a lot with black above x height, black snowman is at center, zero width
+          else
+            if side==0 then extreme_outer_limits=outer_limits.min else extreme_outer_limits=outer_limits.max end
+            x = extreme_outer_limits
+          end
+          horiz[side][color][slab] = x
         }
       }
     }
-    @snowman = result
-    return result
+    @snowman = [vert,horiz]
+    return @snowman
   end
 
-  def Pat.fix_red(bw,red,baseline,line_spacing,c)
+  def Pat.fix_red(bw,red,baseline,line_spacing,c,bbox)
     # On the fly, fiddle with three things related to the red mask:
     # (1) It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
     # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
     # down into ε's whitespace. This operation is idempotent, so although could be done for once and for all, it's OK to do it every time.
     # (2) Fill in concavities in the shape of the red mask, and let it diffuse outward by a few pixels (variable pink_radius below).
     # This is something we want to do on the fly, because the amount of smearing is something we might want to adjust.
-    # (3) Remove any black pixels that are inside pink, and any that are at the edges. These are always glitches.
-    # The argument c is used only for debugging.
+    # (3) Remove any black pixels that are both (a) outside the nominal bbox from the seed font and (b)
+    # either inside pink or at the edges. These are always glitches. (Criterion a can't be based on snowman, because part of the reason
+    # for removing these glitches is so we can make an accurate snowman.)
+    # The argument c is used only for debugging. The bbox argument is the nominal bbox from the seed font.
     # Note that if there are flyspecks in bw, it will have an effect on this.
     # Returns chunkypng objects [red,pink].
     r = image_to_boolean_ink_array(red)
@@ -257,22 +272,30 @@ class Pat
     r = pinkify(bw_boolean,r,pink_radius,c)
     #if c=='ε' then print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) end
 
-    # Remove any black pixels that are inside pink, and any that are at the edges. These are always glitches.
+    # Remove any black pixels that are outside the nominal bbox and inside pink or at the edges. (See comments at top of method for why
+    # these criteria are used.)
     white_color = ChunkyPNG::Color::WHITE
+    box = Box.from_a(bbox)
     0.upto(h-1) { |j|
-      bw_boolean[0][j] = false
-      bw_boolean[w-1][j] = false
+      deglitch_helper(box,bw_boolean,0,j)
+      deglitch_helper(box,bw_boolean,w-1,j)
     }
     0.upto(w-1) { |i|
-      bw_boolean[i][0] = false
-      bw_boolean[i][h-1] = false
+      deglitch_helper(box,bw_boolean,i,0)
+      deglitch_helper(box,bw_boolean,i,h-1)
+    }
+    0.upto(w-1) { |i|
       0.upto(h-1) { |j|
-        if r[i][j] then bw_boolean[i][j] = false end
+        if r[i][j] then deglitch_helper(box,bw_boolean,i,j) end
       }
     }
     return [boolean_ink_array_to_image(r_with_baseline_fix),boolean_ink_array_to_image(r),boolean_ink_array_to_image(bw_boolean)]
   end
 
+end
+
+def deglitch_helper(box,array,i,j)
+  if !box.contains?(i,j) then array[i][j] = false end
 end
 
 def pinkify(b,r,x,c)

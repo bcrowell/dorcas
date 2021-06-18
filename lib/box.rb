@@ -47,6 +47,24 @@ class Box
     return (x>=self.left and x<=self.right and y>=self.top and y<=self.bottom)
   end
 
+  def scale(a)
+    x = clown(self)
+    x.left *= a
+    x.right *= a
+    x.top *= a
+    x.bottom *= a
+    return x
+  end
+
+  def translate(h,v)
+    x = clown(self)
+    x.left += h
+    x.right += h
+    x.top += v
+    x.bottom += v
+    return x
+  end
+
   def fatten(h)
     # returns a new object
     x = clown(self)

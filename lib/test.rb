@@ -18,6 +18,11 @@ end
 def verb_test()
   # special_test()
   #----------------------------------------------------------------------------------------------
+  print "Testing real_ink_bbox():\n"
+  a = [[false,false,false,false],[true,false,false,false],[false,true,true,false],[false,false,false,false]] # [col1, col2, ...]
+  b = real_ink_bbox(a)
+  assert_equal(b.to_a,[1,2,0,2])
+  #----------------------------------------------------------------------------------------------
   print "Testing split_by_scripts():\n"
   assert(compatible_scripts("a","a"))
   assert(!compatible_scripts("w","ξ"))

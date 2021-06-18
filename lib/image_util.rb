@@ -445,3 +445,23 @@ def remove_flyspecks(image,threshold,radius,mask:nil)
     }
   }
 end
+
+def real_ink_bbox(im)
+  # im should be an image with the Fat mixins.
+  w,h = im.width,im.height
+  lo_x = w+1
+  hi_x = -1
+  lo_y = h+1
+  hi_y = -1
+  0.upto(w-1) { |i| 
+    0.upto(h-1) { |j|
+      if im.ink?(i,j) then
+        if i<lo_x then lo_x=i end
+        if i>hi_x then hi_x=i end
+        if j<lo_y then lo_y=j end
+        if j>hi_y then hi_y=j end
+      end
+    }
+  }
+  return Box.new(lo_x,hi_x,lo_y,hi_y)
+end
