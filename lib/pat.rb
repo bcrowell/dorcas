@@ -4,13 +4,14 @@ class Pat
   def initialize(bw,red,line_spacing,baseline,bbox,c)
     @bw,@red,@line_spacing,@bbox,@baseline,@c = bw,red,line_spacing,bbox,baseline,c
     # bw and red are ChunkyPNG objects
-    # The bbox is typically the one from the original seed font, but can be modified. This is a raw array. To get a Box object, use bboxo().
-    # There is not much point in storing the bbox of the actual swatch, since that is probably unreliable and in any case can
-    # be found from bw and red if we need it. The only part of the bbox that we normally care about
-    # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
+    # The bbox is typically the one from the original seed font, and is maintained along with the rest of the data, but
+    # it's not of much use compared to real_bbox(), unless real_bbox() is wrong because of flyspecks.
+    # The most important part of real_bbox is that it's used to define ref_x.
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
     # and is also used in the actual OCR'ing process.
+    @real_bbox = nil # mark it as not ready to calculate, will be wrong if calculated before fix_red() is executed
     garbage,@pink,@bw=Pat.fix_red(bw,red,baseline,line_spacing,c,@bbox)
+    @real_bbox = [] # mark it as ready to calculate and memoize
     @threshold = 0.5 # once this has been set, don't change it without deleting all memoized data by calling set_threshold on everything that has a Fat mixin
     # Mix in Fat methods for all objects, memoizing for speed:
     Fat.bless(@bw,@threshold)
@@ -19,14 +20,41 @@ class Pat
     @stats = ink_stats_pat(image_to_ink_array(@bw),image_to_ink_array(@pink)) # use pink for this, because that's what we're actually using in correlations
   end
 
+  def ref_x
+    # The left side of real_bbox. Can be unreliable if real_bbox is wrong because of flyspecks.
+    # this differs from what is normally called the origin of a character in a font; the difference is called the left bearing.
+    return real_bbox.left
+  end
+
+  def ref_y
+    return real_baseline
+  end
+
+  def real_baseline
+    # The @baseline variable is based on how this character was registered relative to the seed font, and can be off by a couple of pixels.
+    # For characters that don't have a descender, we can give a more precise estimate using the real bbox. For a character that doesn't have
+    # a descender, this allows us to estimate the bottom of the snowman accurately, rather than mistaking the bottom of the character for
+    # something that is a descender.
+    if self.has_descender then return @baseline else return self.real_bbox.bottom end
+  end
+
+  def has_descender
+    est_x_ht = self.height*0.4 # all we need for our present purposes is a quick and dirty estimate that is independent of script
+    return self.real_bbox.bottom>@baseline+0.5*est_x_ht
+  end
+
   def real_bbox
-    # returns a Box object
+    # Returns a Box object. This is based on the actual black ink in self.bw, not the bbox on the seed font. If there are flyspecks
+    # that don't get cleaned up by fix_red, then this will be wrong.
     # As with all my box objects, this has integer coords and includes edges.
-    return real_ink_bbox(self.bw) # will use Fat mixin for speed
+    if @real_bbox.nil? then die("real_bbox called before fix_ref") end
+    if @real_bbox.class==Box then return @real_bbox end
+    @real_bbox = real_ink_bbox(self.bw) # will use Fat mixin for speed
+    return @real_bbox
   end
 
   def bbox_width
-    return self.bbox[1]-self.bbox[0]
+    return self.real_bbox.width
   end
 
   def ascii_art
@@ -42,11 +70,6 @@ class Pat
 
   def height()
     return bw.height
-  end
-
-  def bboxo()
-    # fake one from seed font
-    return Box.from_a(bbox)
   end
 
   def transplant_from_file(filename)
@@ -169,16 +192,26 @@ class Pat
     return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
   end
 
-  def snowman
+  def real_x_height(set)
+    # Gives a precise geometrical estimate of the x height, but can be wrong if there are flyspecks.
+    # A pat object doesn't know what set it's part of, so for this purpose we need that as an argument.
+    script = Script.new(self.c)
+    return set.real_x_height(script:script)
+  end
+
+  def snowman(set)
     # Generate some kind of approximate kerning information. This consists of [vert,horiz], containing 16 numbers, where
     # vert is an array like [top,xheight,baseline,bottom], and horizo is an array indexed as [side][color][slab].
     # Breaks the character up into three layers (slab=0, 1, 2) on each side (0=left, 1=right).
     # For color=0, gives the skinny snowman consisting of the width of the black template.
     # For color=1, gives the fatter one that is the white (i.e., not pink).
     # All x coordinates are relative to the left side of the whole image.
+    # A pat object doesn't know what set it's part of, so for this purpose we need that as an argument.
     # The computations take about 1 second for 100 characters, and are memoized.
     w,h = self.bw.width,self.bw.height
-    vert = [0,self.baseline/2,self.baseline,h] # fixme -- use a more correct x-height rather than baseline/2
+    bl = self.real_baseline
+    xh = self.real_x_height(set)
+    vert = [xh/6,bl-xh,bl,h] # top is not 0 because often we have a strip of white at the top
     if !(@snowman.nil?) then return @snowman end # memoized
     black = image_to_boolean_ink_array(self.bw) # true means black
     white = generate_array(w,h,lambda {|i,j| !has_ink(self.pink[i,j])}) # true means not pink
@@ -204,8 +237,9 @@ class Pat
       0.upto(1) { |color| # 0=black, 1=white
         horiz[side][color] = [nil,nil,nil]
         0.upto(2) { |slab| # 0=top, 1=waist, 2=descender
-          top = vert[slab]
-          bottom = vert[slab+1]-1
+          vslop = (0.03*h).round # try to make it not too sensitive to the exact vertical coords
+          top = vert[slab]+vslop
+          bottom = vert[slab+1]-vslop
           outer_limits = top.upto(bottom).map { |j| outermost[side][color][j] }.select { |x| !(x.nil?)}
           if outer_limits.length==0 then
             x = (self.bbox[0]+self.bbox[1])/2 # happens a lot with black above x height, black snowman is at center, zero width

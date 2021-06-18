@@ -34,6 +34,17 @@ class Fset
     return ! (self.pat(char_or_name).nil?)
   end
 
+  def real_x_height(script:"latin")
+    # Script can be either a string like "latin" or a Script object.
+    # If the Fset is carefully constructed and doesn't have flyspecks, then this is a geometrically accurate x height.
+    # But in most cases I just use x height as sort of a generic measure of the scale in order to estimate stuff, e.g.,
+    # how many characters are likely to exist on a page, so other sources of data, based on the seed font, may be
+    # less likely to be way off.
+    if script.class==String then script=Script.new(script) end
+    c = script.x_height_string
+    return self.pat(c).real_bbox.height
+  end
+
   def all_char_names
     # returns a list of short names
     return @index2.keys

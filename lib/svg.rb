@@ -45,7 +45,7 @@ def write_svg_reports_helper(dir,output_dir,file_base,info,data)
   if err!=0 then warn(message) end
 end
 
-def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale)
+def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale,set)
   if unsorted_pats.length==0 then return [1,"no patterns to write to #{basic_svg_filename}, file not written",nil] end
   if not File.exists?(dir) then Dir.mkdir(dir) end
   svg_filename = dir_and_file_to_path(dir,basic_svg_filename)
@@ -82,7 +82,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale)
       bw_filename[name] = basic_png_filename
       pat.visual.save(dir_and_file_to_path(dir,basic_png_filename))
       images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
-      snowmen.push(pat.snowman)
+      snowmen.push(pat.snowman(set))
       bboxen.push(pat.real_bbox)
     end
     rough_font_size = max_height*0.27

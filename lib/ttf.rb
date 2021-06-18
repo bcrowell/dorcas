@@ -65,6 +65,7 @@ def ttf_get_font_metrics(ttf_file_path,point_size,script,x_height_str,full_heigh
   # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing, em.
   # Ascent is defined the normal, standard way in typography, from the baseline to the top of the tallest letter; the Perl GD docs
   # define it a nonstandard way, but this code does it the standard way.
+  # This gives data from the seed font. For less reliable but more precise results, see methods like Fset's real_x_height.
   code = <<-"PERL"
     use GD::Simple;
     use strict;

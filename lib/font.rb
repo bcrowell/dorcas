@@ -72,6 +72,7 @@ end
 def font_metrics_helper(font,dpi,script)
   # glue code for the low-level interface
   # Returns a hash with keys xheight, ascent, descent, hpheight, leading, line_spacing, em.
+  # This gives data from the seed font. For less reliable but more precise results, see methods like Fset's real_x_height.
   ttf_file_path = font.file_path
   x_height_str = script.x_height_string()
   full_height_str = script.full_height_string()

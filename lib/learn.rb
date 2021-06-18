@@ -100,7 +100,7 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   if !(page.dpi.nil?) and (page.dpi<=0 or page.dpi>2000) then die("page.dpi=#{page.dpi} fails sanity check") end
   print "Examining #{match.count_candidates(char)} candidates from FFT for character #{char}.\n"
   pat = job.set.pat(char)
-  if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}\n" end
+  if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}, real_bbox=#{pat.real_bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 
   count1,hits2 = match.three_stage_pass2(page,job.set,chars:char)

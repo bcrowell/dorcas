@@ -18,7 +18,7 @@ def verb_view(args)
   set = Fset.from_file_or_directory(set_file_or_dir)
   unless File.directory?(report_dir) then Dir.mkdir(report_dir) end
   pats = set.pats.map { |x| [true,x]}
-  err,message,filename = patset_as_svg(report_dir,svg_file,pats,5.0)
+  err,message,filename = patset_as_svg(report_dir,svg_file,pats,5.0,set)
   if err!=0 then warn(message) else print "Report written to #{filename}\n" end
 end
 
