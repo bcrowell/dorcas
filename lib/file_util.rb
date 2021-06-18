@@ -65,3 +65,9 @@ def replace_ext(filename,ext)
   result = shallow_copy(filename)
   return result.gsub(/\.\w*$/,".#{ext}")
 end
+
+def file_fingerprint(filename,n_dig:8)
+  if filename.nil? then return nil end
+  s = File::Stat.new(filename) # will throw an error if file doesn't exist, but we only call this from constructor after reading the file
+  return Digest::MD5.hexdigest(s.ino.to_s+","+s.mtime.to_r.to_s)[0..n_dig-1]
+end

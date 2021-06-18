@@ -12,6 +12,11 @@ class Fset
   end
 
   attr_reader :pats,:max_w,:max_h
+  attr_accessor :file_or_dir
+
+  def fingerprint
+    return file_fingerprint(self.file_or_dir) # a hex number that should be unique for this file (is nil if this is newly created in memory)
+  end
 
   def all_characters
     # Returns a string containing every character in the set.
@@ -75,7 +80,9 @@ class Fset
       warn("No _data.json file found in #{dir}, supplying default values.")
       data = {"size"=>12,"dpi"=>300}
     end
-    return Fset.new(l,data)
+    it = Fset.new(l,data)
+    it.file_or_dir = dir
+    return it
   end
 
   def Fset.from_file_helper(filename)
@@ -103,7 +110,9 @@ class Fset
       end
     end
     if data.nil? then die("Zip file #{filename} does not contain a file _data.json") end
-    return Fset.new(l,data)
+    it = Fset.new(l,data)
+    it.file_or_dir = filename
+    return it
   end
 
   def Fset.grow_from_seed(job,page,verbosity:2)

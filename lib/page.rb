@@ -9,7 +9,7 @@ class Page
     @image = image
     @ink = image_to_ink_array(image)
     @png_filename = png_filename
-    @fingerprint=file_fingerprint_helper(@png_filename) # can be nil, but otherwise is a hex number that should be unique for this image
+    @fingerprint=file_fingerprint(@png_filename) # can be nil if the page isn't from a file, but otherwise is a hex number that is unique for this image
   end
 
   attr_accessor :image,:ink,:png_filename,:stats,:dpi,:peak_to_bg
@@ -73,9 +73,4 @@ def match_seed_font_scale(font,stats,script,fudge_size)
   return dpi.round
 end
 
-def file_fingerprint_helper(filename,n_dig:8)
-  if filename.nil? then return nil end
-  s = File::Stat.new(filename) # will throw an error if file doesn't exist, but we only call this from constructor after reading the file
-  return Digest::MD5.hexdigest(s.ino.to_s+","+s.mtime.to_r.to_s)[0..n_dig-1]
-end
 
