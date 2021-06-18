@@ -78,7 +78,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale)
     if matched then
       basic_png_filename = "patterns_"+name+"_bw.png" # the prefix is because we share a directory with other svg files and their images
       bw_filename[name] = basic_png_filename
-      pat.bw.save(dir_and_file_to_path(dir,basic_png_filename))
+      pat.visual.save(dir_and_file_to_path(dir,basic_png_filename))
       images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
     end
     rough_font_size = max_height*0.27

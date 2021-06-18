@@ -10,7 +10,7 @@ class Pat
     # is element 0, which is the x coordinate of the left side (and which differs from the origin by the left bearing).
     # The character itself, c, is only used as a convenience feature for storing in the metadata when writing to a file,
     # and is also used in the actual OCR'ing process.
-    garbage,@pink=Pat.fix_red(bw,red,baseline,line_spacing,c)
+    garbage,@pink,@bw=Pat.fix_red(bw,red,baseline,line_spacing,c)
     @threshold = 0.5 # once this has been set, don't change it without deleting all memoized data by calling set_threshold on everything that has a Fat mixin
     # Mix in Fat methods for all objects, memoizing for speed:
     Fat.bless(@bw,@threshold)
@@ -83,9 +83,13 @@ class Pat
     # Either color can be nil.
     # Unlike most of our routines that return PNG images, this one returns a color image.
     v = ChunkyPNG::Image.new(@red.width,@red.height) # default is to initialize it as transparent, which is what we want
+    pink_color = ChunkyPNG::Color::rgb(255,160,160)
     0.upto(v.width-1) { |i|
       0.upto(v.height-1) { |j|
-        if (not red_color.nil?) and has_ink(@red[i,j]) then v[i,j]=red_color end
+        if (not red_color.nil?) then
+          if has_ink(@pink[i,j]) then v[i,j]=pink_color end
+          if has_ink(@red[i,j]) then v[i,j]=red_color end
+        end
         if (not black_color.nil?) and has_ink(@bw[i,j]) then v[i,j]=black_color end
       }
     }
@@ -159,12 +163,13 @@ class Pat
   end
 
   def Pat.fix_red(bw,red,baseline,line_spacing,c)
-    # On the fly, fix two possible problems with red mask:
+    # On the fly, fiddle with three things related to the red mask:
     # (1) It's hard to get an accurate red mask below the baseline using guard-rail characters. E.g., in my initial attempts,
     # I neglected to use ρ as a right-side guard character, so strings like ερ were causing problems, tail of ρ hanging
     # down into ε's whitespace. This operation is idempotent, so although could be done for once and for all, it's OK to do it every time.
     # (2) Fill in concavities in the shape of the red mask, and let it diffuse outward by a few pixels (variable pink_radius below).
     # This is something we want to do on the fly, because the amount of smearing is something we might want to adjust.
+    # (3) Remove any black pixels that are inside pink, and any that are at the edges. These are always glitches.
     # The argument c is used only for debugging.
     # Note that if there are flyspecks in bw, it will have an effect on this.
     # Returns chunkypng objects [red,pink].
@@ -201,11 +206,25 @@ class Pat
     r_with_baseline_fix = clown(r)
     #if c=='ε' then print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) end
 
+    bw_boolean = image_to_boolean_ink_array(bw)
     pink_radius = (0.042*line_spacing).round  # the magic constant gives 3 pixels for Giles, which worked well
-    r = pinkify(image_to_boolean_ink_array(bw),r,pink_radius,c)
+    r = pinkify(bw_boolean,r,pink_radius,c)
     #if c=='ε' then print array_ascii_art(r,fn:lambda {|x| {true=>'t',false=>' '}[x]}) end
 
-    return [boolean_ink_array_to_image(r_with_baseline_fix),boolean_ink_array_to_image(r)]
+    # Remove any black pixels that are inside pink, and any that are at the edges. These are always glitches.
+    white_color = ChunkyPNG::Color::WHITE
+    0.upto(h-1) { |j|
+      bw_boolean[0][j] = false
+      bw_boolean[w-1][j] = false
+    }
+    0.upto(w-1) { |i|
+      bw_boolean[i][0] = false
+      bw_boolean[i][h-1] = false
+      0.upto(h-1) { |j|
+        if r[i][j] then bw_boolean[i][j] = false end
+      }
+    }
+    return [boolean_ink_array_to_image(r_with_baseline_fix),boolean_ink_array_to_image(r),boolean_ink_array_to_image(bw_boolean)]
   end
 
 end
