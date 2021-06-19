@@ -9,6 +9,7 @@ require 'set'
 require_relative "lib/job"
 require_relative "lib/verbing"
 require_relative "lib/spatter"
+require_relative "lib/spot"
 require_relative "lib/pearls"
 require_relative "lib/match"
 require_relative "lib/learn"
