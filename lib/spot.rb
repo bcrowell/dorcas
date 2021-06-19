@@ -1,14 +1,15 @@
 module Spot
   # Provides mixins that give precise positioning and kerning information.
   # We want the data structure not to get too unwieldy when we serialize it, so all we store is 17 integers: ref_x plus the 16 numbers in the snowman.
+  # These mixins are normally applied to an array of the form [score,x,y] (Spatter hit) or [score,x,c] (used in pearls).
 
   def Spot.bless(a,set,pat)
     a.extend(Spot)
-    @ref_x = pat.ref_x
-    @snowman = clown(pat.snowman(set))
+    a.ref_x = pat.ref_x
+    a.snowman = clown(pat.snowman(set))
   end
 
-  attr_reader :snowman,:ref_x
+  attr_accessor :snowman,:ref_x
 
   def tension(spot2)
     # Measures how much tension exists when spot2 is assumed to be immediately to our right.

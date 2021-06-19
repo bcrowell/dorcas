@@ -29,6 +29,13 @@ def dumb_split(s,algorithm,threshold:0.3)
     end
   }
   # If we drop through to here, then this is putatively a single word.
+  if true then # test print tension, qwe
+    0.upto(l.length-2) { |i|
+      spot1,spot2 = l[i],l[i+1]
+      print "  #{spot1[2]}#{spot2[2]} t=#{spot1.tension(spot2)}   "
+    }
+    print "\n"
+  end
   if algorithm=='mumble' then
     return mumble_word(s)
   end
@@ -118,7 +125,7 @@ def dag_word_one(s)
   # ...score of each letter, considered as an edge in the graph. It doesn't actually seem to matter much whether I subtract 0.5 (the
   #    nominal threshold of my scoring scale) or 1.0 (which makes sense if you figure that a score of 1-epsilon means a probability
   #    epsilon of error, and ln(1-epsilon)~-epsilon). The latter does cause "halls" to be read as "hals."
-  #wt = h.map { |a| if a[2]=='u' then -100.0 else a[0]-1.0 end } # qwe
+  #wt = h.map { |a| if a[2]=='u' then -100.0 else a[0]-1.0 end }
   # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i. The array e has indices running from 0 to n.
@@ -230,12 +237,17 @@ end
 
 def prepearl(s,threshold)
   # Inputs a Spatter object and outputs a spatially sorted list of items of the form [score,x,c], eliminating all hits below threshold.
+  # If the input hits are blessed with the Spot mixins, then the output will have the same blessing.
   s = s.you_have_to_have_standards(threshold)
   letters = []
   s.hits.each { |c,h|
     h.each { |hh|
       score,x,y = hh
-      if score>threshold then letters.push([score,x,c]) end
+      if score>threshold then
+        hh = clown(hh) # deep copy to preserve Spot mixins
+        hh[2] = c
+        letters.push(hh)
+      end
     }
   }
   return letters.sort { |p,q| p[1] <=> q[1]}
