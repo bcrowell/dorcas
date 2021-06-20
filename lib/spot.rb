@@ -11,10 +11,12 @@ module Spot
 
   attr_accessor :snowman,:ref_x
 
-  def tension(spot2)
+  def tension(spot2,em)
     # Measures how much tension exists when spot2 is assumed to be immediately to our right.
     # Positive tension means that the space is too large for these to be two characters in a row of the same word.
-    # Negative means too close. The tension is in units of pixels, i.e., it scales with resolution.
+    # Negative means too close. The tension is scaled by 60/em, where em is the estimated m width. With this
+    # scaling, tension within a word seems to usually be in the range from -10 to +10, mean of about 0 or slightly negative,
+    # most values no bigger than +-3. The output is an integer.
     # Also returns what it thinks is an equilibrium position for spot2, where its estimate of tension would vanish.
     # Equilibrium is a value of ref_x(2)-ref_x(1)
     # --
@@ -37,6 +39,18 @@ module Spot
     minus_overlap = l.min
     tension = minus_overlap
     equilibrium = x2-x1-minus_overlap
-    return [tension,equilibrium]
+    tension_scaled = (tension*(60.0/em)).round
+    return [tension_scaled,equilibrium]
+  end
+end
+
+def tension_to_strain(t)
+  # An ad hoc function meant to represent how much pain it should cause us to have a certain amount of tension.
+  a = t.abs
+  slope1,slope2,knee = 0.01,0.05,10
+  if a<knee then 
+    return a*slope1
+  else
+    return knee*slope1+(a-knee)*slope2
   end
 end

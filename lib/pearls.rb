@@ -29,13 +29,6 @@ def dumb_split(s,algorithm,threshold:0.3)
     end
   }
   # If we drop through to here, then this is putatively a single word.
-  if true then # test print tension, qwe
-    0.upto(l.length-2) { |i|
-      spot1,spot2 = l[i],l[i+1]
-      print "  #{spot1[2]}#{spot2[2]} t=#{spot1.tension(spot2)}   "
-    }
-    print "\n"
-  end
   if algorithm=='mumble' then
     return mumble_word(s)
   end
@@ -104,7 +97,7 @@ end
 
 def dag_word(s)
   # Returns a list of strings. In the nominal case, this list only has one word, but sometimes we have to split it into multiple words.
-  success,string,remainder = dag_word_one(s)
+  success,string,hits,remainder = dag_word_one(s)
   result = [string]
   if !success then result.concat(dag_word(remainder)) end
   return split_by_scripts(result)
@@ -112,7 +105,9 @@ end
 
 def dag_word_one(s)
   # Treat the word as a directed acyclic graph, and find the longest path from left to right, where length is measured by sum (score-const).
-  # Returns [success,string].
+  # Returns [success,string,hits,remainder], where hits is the list of hits, in the format output by prepearl, that formed the string.
+  # If we weren't able to get all the way through the word, then success is set to false, and remainder is a Spatter object containing
+  # the remaining hits that we weren't able to process.
   debug = false
   #debug = (mumble_word(s)=='ταυρωντε')
   #debug = (mumble_word(s)=='hecatoub') 
@@ -132,19 +127,36 @@ def dag_word_one(s)
   e = word_to_dag(s,h)
   success,path,score,if_error_error_message = longest_path(e,wt,debug:debug)
   string = path.map { |j| h[j][2] }.join('')
+  i = path[-1] # index of the rightmost character we were able to get to
+  xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
   if !success then
     # We didn't make it all the way to the end. Interpret this as multiple words.
-    i = path[-1] # index of the rightmost character we were able to get to
-    xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
     remainder = s.select(lambda { |a| a[1]>xr })
     # ... all chars whose left edge lies to the right of that; typically there's a big gap, which is why we failed
   else
     remainder = nil
   end
+  hits = path.map { |j| h[j] }
 
   if debug then print "n=#{n}\nh=[[score,x,c],...]=#{h}\nwt=#{wt}\nsuccess=#{success}, path=#{path}\ne=#{e}\n" end
 
-  return [success,string,remainder]
+  if false and hits.length>=2 then # debug test print tension
+    print "======== #{string} ========\n"
+    tt = []
+    0.upto(hits.length-2) { |i|
+      spot1,spot2 = hits[i],hits[i+1]
+      t = spot1.tension(spot2,s.em)[0]
+      tt.push(t)
+      print "  #{spot1[2]}#{spot2[2]} t=#{t}   "
+    }
+    print "\n"
+    mean,sd = find_mean_sd(tt)
+    strain = tt.map { |t| tension_to_strain(t) }.sum
+    print "mean tension = #{mean}, sd=#{sd}, strain=#{strain}\n"
+    
+  end
+
+  return [success,string,hits,remainder]
 end
 
 def longest_path(e,wt,debug:false)
