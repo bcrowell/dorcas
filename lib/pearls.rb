@@ -232,7 +232,6 @@ def word_to_dag(s,h,template_scores,slop:0)
   e.push([])
   0.upto(n-1) { |i|
     break if l[i]>leftmost+max_end_slop
-    score = h[i][0]-0.5
     e[0].push([i,template_scores[0]])
   }
   if e[0].length==0 then e[0]=[0,0] end # can happen if max_end_slop<0
@@ -241,8 +240,12 @@ def word_to_dag(s,h,template_scores,slop:0)
     e.push([])
     xr = r[i]
     (i+1).upto(n-1) { |j|
+      spot1,spot2 = h[i],h[j]
+      strain = tension_to_strain(spot1.tension(spot2,s.em)[0])
+      stiffness = 0.5
+      score = template_scores[j] + stiffness*strain
       xl = l[j]
-      if xl<xr+max_sp && xl>xr+min_sp then e[i+1].push([j,template_scores[j]]) end
+      if xl<xr+max_sp && xl>xr+min_sp then e[i+1].push([j,score]) end
     }
     if r[i]>rightmost-max_end_slop then e[i+1].push([n,0.0]) end # transition to the final vertex
   }
