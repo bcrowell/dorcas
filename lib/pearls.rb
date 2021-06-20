@@ -116,16 +116,15 @@ def dag_word_one(s)
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   n = h.length
   if n==0 then return [true,'',nil] end
-  wt = h.map { |a| a[0]-0.5 }
-  # ...score of each letter, considered as an edge in the graph. It doesn't actually seem to matter much whether I subtract 0.5 (the
+  template_scores = h.map { |a| a[0]-0.5 }
+  # ...It doesn't actually seem to matter much whether I subtract 0.5 (the
   #    nominal threshold of my scoring scale) or 1.0 (which makes sense if you figure that a score of 1-epsilon means a probability
   #    epsilon of error, and ln(1-epsilon)~-epsilon). The latter does cause "halls" to be read as "hals."
-  #wt = h.map { |a| if a[2]=='u' then -100.0 else a[0]-1.0 end }
-  # Build a graph e, which will be an array of edges; e[i+1] is a list of nodes j such that we have an edge from the right side
+  # Build a graph e, which will be an array of edges; e[i+1] is a list of [j,weight], where j is such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
-  # In other words, e[i+1] is a list of choices we can make after having chosen i. The array e has indices running from 0 to n.
-  e = word_to_dag(s,h)
-  success,path,score,if_error_error_message = longest_path(e,wt,debug:debug)
+  # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
+  e = word_to_dag(s,h,template_scores)
+  success,path,score,if_error_error_message = longest_path(e,debug:debug)
   string = path.map { |j| h[j][2] }.join('')
   i = path[-1] # index of the rightmost character we were able to get to
   xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
@@ -159,22 +158,21 @@ def dag_word_one(s)
   return [success,string,hits,remainder]
 end
 
-def longest_path(e,wt,debug:false)
+def longest_path(e,debug:false)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
-  # The two-dimensional array e contains lists of edges, with e[i+1] being the list of choices we can make after having already chosen i.
+  # E is a list of lists of edges, with e[i+1] being the list of elements in the form [j,w], where
+  # j is a choice we can make after having already chosen i, and w is the associated weight of that edge.
   # There are fake vertices -1 and n representing the start and end of the graph.
   # The vertex i=-1 represents the idea that we've "chosen" to start. The choice n represents choosing to reach the end of the graph.
-  # The list wt contains the weights of the edges.
   # This algorithm is written to prefer depth over score, i.e., we prefer to include all characters, even if the resulting score is low.
   # These two arrays have indices running from 0 to n+1, which represent vertices. If we've already chosen character i, the index is [i+1].
   # Test.rb has unit tests for this routine.
   # Returns [success,best_path,best_score,if_error,error_message]
-  n = wt.length
+  n = e.length-1
   if n==0 then return [true,[],0.0,false,nil] end
   infinity = 1.0e9
-  if e.length!=n+1 then return [false,[],-infinity,true,"Edge matrix has the wrong length, #{e.length} instead of n+1=#{n+1}"] end
   best_score = Array.new(n+2) { |i| -infinity }
   best_path =  Array.new(n+2) { |i| nil }
   # We start at the vertex i=-1, representing having already chosen character -1, i.e., the fake origin vertex where we've made no choices.
@@ -184,10 +182,12 @@ def longest_path(e,wt,debug:false)
     next if best_path[i+1].nil?
     #if debug then print "i=#{i}, best_path=#{best_path}\n" end
     best_score_to_i = best_score[i+1]
-    e[i+1].each { |j|
-      if j==n then this_wt=0.0 else this_wt=wt[j] end
+    e[i+1].each { |edge|
+      j,w = edge
+      if j>n then return  [false,[],-infinity,true,"Graph refers to vertex #{j}, which is greater than #{n}."] end
+      if j==n then w=0.0 end
       if j<=i then return [false,[],-infinity,true,"Graph is not topologically ordered."] end
-      new_possible_score = best_score_to_i+this_wt
+      new_possible_score = best_score_to_i+w
       if new_possible_score>best_score[j+1] then
         best_score[j+1]=new_possible_score
         best_path[j+1]=shallow_copy(best_path[i+1]) # an array of integers, so can be safely shallow-cloned
@@ -207,10 +207,11 @@ def longest_path(e,wt,debug:false)
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
 end
 
-def word_to_dag(s,h,slop:0)
+def word_to_dag(s,h,template_scores,slop:0)
   # Converts an input representing some hits to a directed acyclic graph. Input s is a Spatter object.
   # Input h should be in the form output by prepearl(), a list of elements like [score,x,c].
   n = h.length
+  em = s.em # estimate of em width, used only to provide the proper scaling invariance for tension
   # Build a bunch of arrays, all with the same indexing from 0 to n-1.
   w = h.map { |a| s.widths[a[2]] }
   l = h.map { |a| a[1] } # x coord of left edge
@@ -231,18 +232,19 @@ def word_to_dag(s,h,slop:0)
   e.push([])
   0.upto(n-1) { |i|
     break if l[i]>leftmost+max_end_slop
-    e[0].push(i)
+    score = h[i][0]-0.5
+    e[0].push([i,template_scores[0]])
   }
-  if e[0].length==0 then e[0]=[0] end # can happen if max_end_slop<0
+  if e[0].length==0 then e[0]=[0,0] end # can happen if max_end_slop<0
   # Possible transitions from one character to another, or from one character to the final vertex:
   0.upto(n-1) { |i|
     e.push([])
     xr = r[i]
     (i+1).upto(n-1) { |j|
       xl = l[j]
-      if xl<xr+max_sp && xl>xr+min_sp then e[i+1].push(j) end
+      if xl<xr+max_sp && xl>xr+min_sp then e[i+1].push([j,template_scores[j]]) end
     }
-    if r[i]>rightmost-max_end_slop then e[i+1].push(n) end # transition to the final vertex
+    if r[i]>rightmost-max_end_slop then e[i+1].push([n,0.0]) end # transition to the final vertex
   }
   return e
 end

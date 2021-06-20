@@ -18,10 +18,43 @@ end
 def verb_test()
   # special_test()
   #----------------------------------------------------------------------------------------------
-  print "Testing real_ink_bbox():\n"
-  a = [[false,false,false,false],[true,false,false,false],[false,true,true,false],[false,false,false,false]] # [col1, col2, ...]
-  b = real_ink_bbox(a)
-  assert_equal(b.to_a,[1,2,0,2])
+  print "Testing longest-path algorithm:\n"
+  # ----
+  w = 1.0 # for readability, a standard weight to use for most edges
+  # A trivial railroad, forced through two edges.
+  e = [[[0,w]],[[1,w]],[[2,w]]]
+  success,path,score,if_error,error_message = longest_path(e)
+  assert(success)
+  assert_equal(path,[0,1])
+  assert_equal(score,2.0*w)
+  # ----
+  # A graph that doesn't allow us to get all the way to the end. This is the railroad with one edge removed.
+  e = [[[0,3*w]],[],[[2,w]]]
+  wt = [3,1]
+  success,path,score,if_error,error_message = longest_path(e)
+  assert(!success)
+  assert_equal(path,[0])
+  assert_equal(score,3.0*w)
+  # ----
+  # A diamond-shaped graph, choice between scores of 1+1 and 2+1.
+  e = [[[0,2*w],[1,w]] , [[2,w]] , [[2,w]] , [[3,0]]  ]
+  success,path,score,if_error,error_message = longest_path(e)
+  assert(success)
+  assert_equal(path,[0,2])
+  assert_equal(score,3.0*w)
+  # ----
+  # The diamond with one edge removed, forming a dead end.
+  e = [[[1,w]] , [[2,w]] , [[2,w]] , [[3,0]]  ]
+  success,path,score,if_error,error_message = longest_path(e)
+  assert(success)
+  assert_equal(path,[1,2])
+  assert_equal(score,2.0*w)
+  # ----
+  # A path with no way through, algorithm should pick the longest path.
+  e = [ [[0,w],[1,2]]  , [[2,w]]  , [] , [] , [[4,w]]      ]
+  success,path,score,if_error,error_message = longest_path(e)
+  assert_equal(path,[0,2])
+  assert(!success)
   #----------------------------------------------------------------------------------------------
   print "Testing split_by_scripts():\n"
   assert(compatible_scripts("a","a"))
@@ -42,62 +75,6 @@ def verb_test()
   assert_equal(split_by_scripts(["γou"]),["you"])
   assert_equal(split_by_scripts(["boγ"]),["boy"])
   assert_equal(split_by_scripts(["άγyελος"]),["άγγελος"]) # latin to greek
-  #----------------------------------------------------------------------------------------------
-  print "Testing longest-path algorithm:\n"
-  # ----
-  # A trivial railroad, forced through two edges.
-  e = [[0],[1],[2]]
-  wt = [1,1]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert(success)
-  assert_equal(path,[0,1])
-  assert_equal(score,2.0)
-  # ----
-  # A graph that doesn't allow us to get all the way to the end. This is the railroad with one edge removed.
-  e = [[0],[],[2]]
-  wt = [3,1]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert(!success)
-  assert_equal(path,[0])
-  assert_equal(score,3.0)
-  # ----
-  # A diamond-shaped graph, choice between scores of 1+1 and 2+1.
-  e = [[0,1],[2],[3],[4],[4]]
-  wt = [2,1,1,1]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert(success)
-  assert_equal(path,[0,2])
-  assert_equal(score,3.0)
-  # ----
-  # The diamond with one edge removed, forming a dead end.
-  e = [[0,1],[2],[3],[],[4]]
-  wt = [2,1,1,1]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert(success)
-  assert_equal(path,[1,3])
-  assert_equal(score,2.0)
-  # ----
-  # A more complicated graph. The paths are [01], [234], and a dead-ending [25]. The dead end has a big weight, but we shouldn't pick it.
-  e = [[0,2],[1],[6],[3,5],[4],[6],[]]
-  wt = [3,5,-1,-1,11,100]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert(success)
-  assert_equal(path,[2,3,4])
-  assert_equal(score,9.0)
-  # ----
-  # An example that came up in practice (simpler version below).
-  e=[[0], [1], [2, 3], [4], [], [5], [6], [], [8], [9]]
-  wt=[0.42156862745098034, 0.47136038186157514, 0.5, 0.484, 0.5, 0.46371882086167804, 0.44160583941605835, 0.4672131147540983, 0.5]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert_equal(path,[0,1,2,4,5,6])
-  assert(!success)
-  # ----
-  # Simplified version of the preceding one.
-  e=[[0,1],[2],[],[],[4]]
-  wt=[1,1,1,1]
-  success,path,score,if_error,error_message = longest_path(e,wt)
-  assert_equal(path,[0,2])
-  assert(!success)
   #----------------------------------------------------------------------------------------------
   print "Testing canonicalization of json:\n"
   json1 = <<-'JSON'
