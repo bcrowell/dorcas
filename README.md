@@ -1,18 +1,26 @@
 dorcas
 ======
 
-Dumb Optical Recognition using Correlation
+Dorcas is an OCR system that can handle text in a mixture of languages. My original
+use case was a 19th century book containing Greek words mixed together with English.
+On this book, I was not able to get usable results with Tesseract, the most widely
+used open-source OCR system. Compared to Tesseract, Dorcas uses a completely different
+approach that is fundamentally better suited to this type of problem. In fancy
+terminology, it uses template matching and convolution rather than neural networks.
+What this means is that you have to put some effort into training it on a specific
+font, but once you've done that, it can interpret that font in contexts where Tesseract
+fails.
 
-## What I want to do
+## What the system is designed to do
 
-* Make a system that doesn't depend on a neural network as an unmodifiable, unfixable, and inscrutable black box.
-     Instead, use some variant of old-school convolution methods.
+* Handles text in any mixture of languages.
 
-* Handle text in a mixture of languages.
+* Doesn't depend on a neural network as an unmodifiable, unfixable, and inscrutable black box.
+     Instead, use some variant of old-school methods such as convolution and template matching.
 
 * Handle RTL alphabetic scripts.
 
-* Take advantage of SMP.
+* Take advantage of symmetrical multiprocessing.
 
 ## Intended limitations
 
@@ -23,7 +31,8 @@ Dumb Optical Recognition using Correlation
 
 * Won't handle CJK, vertical scripts, or handwriting.
 
-* I'm not making much of an effort to make it something that could run on Windows.
+* It runs on Linux. I've made an effort to make it fairly portable, but actually porting it to Windows would require some effort, and
+    is not something I would work on myself.
 
 ## Usage
 
@@ -95,9 +104,13 @@ dorcas insert old.set ρ bw.png new.set
 
 For a reminder of usage on these utilities, do "dorcas insert help", etc.
 
-### Editing .pat files
+### Editing pattern templates
 
-To delete a bad pattern, simply remove the .pat file.
+Each letter of the alphabet(s) is represented by a template created as a composite from sample swatches
+taken from page scans. That template can be stored on disk either as a single file or as a directory containing
+several files. In the former case, the single file is just a container in the zip format.
+
+To delete a bad pattern, simply remove the .pat file or directory.
 
 If the .pat file is inside a .set file, use dorcas extract and dorcas insert (see above).
 
