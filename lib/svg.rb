@@ -32,7 +32,7 @@ def write_svg_reports_helper(dir,output_dir,file_base,info,data)
     data.chars.each { |c|
       filename = Pat.char_to_filename(output_dir,c)
       if File.exists?(filename) then
-        pats.push([true,Pat.from_file(filename)])
+        pats.push([true,Pat.from_file_or_directory(filename)])
       else
         pats.push([false,c])
       end

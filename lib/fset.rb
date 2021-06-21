@@ -82,7 +82,7 @@ class Fset
     # Don't call this directly, call Fset.from_file_or_directory, so the user always has a choice of dir or zip.
     l = []
     Dir[dir_and_file_to_path(dir,"*.pat")].each { |filename|
-      l.push(Pat.from_file(filename))
+      l.push(Pat.from_file_or_directory(filename))
     }
     data_file = dir_and_file_to_path(dir,"_data.json")
     if File.exists?(data_file) then
@@ -115,7 +115,7 @@ class Fset
         if name_in_archive=~/_data.json/ then type='data' end
         next if type.nil?
         entry.extract(temp)
-        if type=='pat' then l.push(Pat.from_file(temp)) end
+        if type=='pat' then l.push(Pat.from_file_or_directory(temp)) end
         if type=='data' then data=JSON.parse(entry.get_input_stream.read) end
         FileUtils.rm_f(temp)
       end

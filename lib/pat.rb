@@ -72,9 +72,9 @@ class Pat
     return bw.height
   end
 
-  def transplant_from_file(filename)
+  def transplant_from_file_or_directory(filename)
     # Checks that the dimensions are the same, and deletes any memoized data.
-    my new_pat = Pat.from_file(filename)
+    my new_pat = Pat.from_file_or_directory(filename)
     self.transplant(new_pat.bw)
   end
 
@@ -152,16 +152,38 @@ class Pat
     delete_files(temp_files)
   end
 
-  def Pat.from_file(filename,if_fix_red:true)
-    temp_files = []
+  def Pat.from_file_or_directory(file_or_dir)
+    # The pattern may be in a file with a name like "alpha.pat" or in a directory with a name like "alpha". It doesn't matter
+    # which form the pattern is in or which string you supply when you call this routine. It will always look for both possibilities, and
+    # either add or remove the ".pat" as necessary.
+    if file_or_dir=~/(.*)\.pat$/ then name1=$1 else name1=file_or_dir end
+    name2 = name1 + ".pat"
+    if !(File.exists?(name1) || File.exists?(name2)) then die("Neither #{name1} nor #{name2} exists. These were inferred from #{file_or_dir}") end
+    if File.exists?(name1) && File.exists?(name2) then die("Both #{name1} and #{name2} exist. These were inferred from #{file_or_dir}") end
+    if File.exists?(name1) then name=name1 else name=name2 end
     read_as_name = ["bw.png","red.png","data.json"]
+    if File.directory?(name) then
+      a = Pat.from_directory_helper(name,read_as_name)
+    else
+      a = Pat.from_file_helper(name,read_as_name)
+    end
+    bw,red,data,line_spacing = a
+    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
+  end
+
+  def Pat.from_directory_helper(dir,read_as_name)
+    files = read_as_name.map { |n| dir_and_file_to_path(dir,n) }
+    bw,red,data,line_spacing = Pat.from_file_or_directory_helper2(files)
+    return [bw,red,data,line_spacing]
+  end
+
+  def Pat.from_file_helper(filename,read_as_name)
+    temp_files = [nil,nil,nil]
     name_to_index = {}
     n_pieces = read_as_name.length
     0.upto(n_pieces-1) { |i|
-      temp_files.push(temp_file_name())
       name_to_index[read_as_name[i]] = i
     }
-    bw,red,data = nil,nil,nil
     # https://github.com/rubyzip/rubyzip
     Zip::File.open(filename) do |zipfile|
       zipfile.each do |entry|
@@ -170,26 +192,26 @@ class Pat
         name_in_archive = entry.name
         if not (name_to_index.has_key?(name_in_archive)) then die("illegal filename in archive, #{name_in_archive}") end
         i = name_to_index[name_in_archive]
-        temp = temp_files[i]
-        entry.extract(temp) # read into temp file
-        if i==0 or i==1 then
-          content = image_from_file_to_grayscale(temp)
-        else
-          content = JSON.parse(entry.get_input_stream.read)
-        end
-        if i==0 then bw=content end
-        if i==1 then red=content end
-        if i==2 then data=content end
+        temp_files[i] = temp_file_name()
+        entry.extract(temp_files[i]) # read into temp file
       end
     end
+    if temp_files.include?(nil) then die("error reading #{filename}, didn't find all required parts") end
+    bw,red,data,line_spacing = Pat.from_file_or_directory_helper2(temp_files)
     delete_files(temp_files)
-    if bw.nil? or red.nil? or data.nil? then die("error reading #{filename}, didn't find all required parts") end
+    return [bw,red,data,line_spacing]
+  end
+
+  def Pat.from_file_or_directory_helper2(files)
+    bw  = image_from_file_to_grayscale(files[0])
+    red = image_from_file_to_grayscale(files[1])
+    data = json_from_file_or_die(files[2])
     if data.has_key?('line_spacing') then 
       line_spacing=data['line_spacing']
     else
       line_spacing=72; warn("using default line spacing for pink")
     end
-    return Pat.new(bw,red,line_spacing,data['baseline'],data['bbox'],data['character'])
+    return [bw,red,data,line_spacing]
   end
 
   def real_x_height(set)
