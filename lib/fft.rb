@@ -51,11 +51,19 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
     File.open(file,'r') { |f|
       f.each_line {|line|
         next if line=~/^\s*$/ # nothing but whitespace
-        score,x,y,misc = parse_json_or_warn(line,"The following line could not be parsed as valid JSON:\n#{line}\n")
-        next if score.nil? # happens when there is an error
-        if ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
-        misc.delete('batch')
-        hits.push([score,x,y,misc])
+        if line=~/(.*\])(\[.*)/ then
+          # Because processes run in parallel, we sometimes get output that looks like [...][...]\n\n.
+          ll = [$1,$2]
+        else
+          ll = [line]
+        end
+        ll.each { |l|
+          score,x,y,misc = parse_json_or_warn(l,"The following line could not be parsed as valid JSON:\n#{l}\n")
+          next if score.nil? # happens when there is an error
+          if ((!(misc.has_key?('batch'))) or misc['batch']!=batch_code) then next end
+          misc.delete('batch')
+          hits.push([score,x,y,misc])
+        }
       }
     }
   }

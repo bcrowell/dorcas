@@ -103,7 +103,7 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   if verbosity>=3 then print "pat.line_spacing=#{pat.line_spacing}, bbox=#{pat.bbox}, real_bbox=#{pat.real_bbox}\n" end
   if job.set.nil? then die("job.set is nil") end
 
-  count1,hits2 = match.three_stage_pass2(page,job.set,chars:char)
+  count1,hits2 = match.three_stage_pass_2(page,job.set,chars:char)
   hits3 = match.three_stage_pass_3(page,job.set,hits2) # returns a hash whose keys are chars and values are liss of [score,x,y]
   match.three_stage_cleanup(page)
 

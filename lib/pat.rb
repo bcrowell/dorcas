@@ -126,21 +126,42 @@ class Pat
     return v
   end
 
-  def save(filename)
-    # My convention is that the filename has extension .pat.
+  def save(file_or_dir)
     data = {'baseline'=>self.baseline,'bbox'=>self.bbox,'character'=>self.c,'unicode_name'=>char_to_name(self.c),'line_spacing'=>self.line_spacing}
     # ...the call to char_to_name() is currently pretty slow
-    temp_files = []
     write_as_name = ["bw.png","red.png","data.json"]
+    stuff = [self.bw,self.red,JSON.pretty_generate(data)]
+    if true then
+      Pat.save_as_dir_helper(file_or_dir,data,write_as_name,stuff)
+    else
+      Pat.save_as_file_helper(file_or_dir,data,write_as_name,stuff)
+    end    
+  end
+
+  def Pat.save_as_dir_helper(dir,data,write_as_name,stuff)
+    if !File.exists?(dir) then Dir.mkdir(dir) end
+    files = write_as_name.map { |n| dir_and_file_to_path(dir,n) }
+    n_pieces = write_as_name.length
+    0.upto(n_pieces-1) { |i|
+      n = files[i]
+      if i==0 then stuff[0].save(n) end
+      if i==1 then stuff[1].save(n) end
+      if i==2 then create_text_file(n,stuff[2]) end
+    }
+  end
+
+  def Pat.save_as_file_helper(filename,data,write_as_name,stuff)
+    # My convention is that the filename has extension .pat.
+    temp_files = []
     n_pieces = write_as_name.length
     0.upto(n_pieces-1) { |i|
       temp_files.push(temp_file_name())
     }
     0.upto(n_pieces-1) { |i|
       n = temp_files[i]
-      if i==0 then self.bw.save(n) end
-      if i==1 then self.red.save(n) end
-      if i==2 then create_text_file(n,JSON.pretty_generate(data)) end
+      if i==0 then stuff[0].save(n) end
+      if i==1 then stuff[1].save(n) end
+      if i==2 then create_text_file(n,stuff[2]) end
     }
     # rubyzip, https://github.com/rubyzip
     FileUtils.rm_f(filename)

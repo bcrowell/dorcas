@@ -6,7 +6,7 @@ def write_svg_reports(job,dir,pats:nil)
   # Write a single svg file summarizing all the patterns in the list defined by pats (which can be
   # either a string of characters or a list of patterns):
   if !(pats.nil?) && pats.length>0 then
-    write_svg_reports_helper(dir,output_dir,"swatches.svg","Writing a summary of new swatches to %s\n",pats)
+    write_svg_reports_helper(dir,output_dir,"swatches.svg","Writing a summary of new swatches to %s\n",pats,job)
   end
 
   all_chars_in_set = Fset.from_file_or_directory(job.output).all_char_names().map { |n| short_name_to_char(n) }.join('')
@@ -20,11 +20,11 @@ def write_svg_reports(job,dir,pats:nil)
     chars = chars+all_chars_in_set # in case there are accented characters not listed there
     chars = chars+chars_done # in case we have characters we tried and failed to match, so they're not in the output
     chars = chars.chars.uniq.sort.select { |c| char_to_code_block(c)==script_name && matches_case(c,the_case) }.join('')
-    write_svg_reports_helper(dir,output_dir,file_base,"Writing a summary of #{script_name} #{the_case} to %s\n",chars)
+    write_svg_reports_helper(dir,output_dir,file_base,"Writing a summary of #{script_name} #{the_case} to %s\n",chars,job)
   }
 end
 
-def write_svg_reports_helper(dir,output_dir,file_base,info,data)
+def write_svg_reports_helper(dir,output_dir,file_base,info,data,job)
   # Data can be either a string of characters or a list of patterns. For the characters defined by this list, write
   # a single report.
   if data.class==String then
@@ -40,7 +40,8 @@ def write_svg_reports_helper(dir,output_dir,file_base,info,data)
   else
     pats = data
   end
-  err,message,filename = patset_as_svg(dir,file_base,pats)
+  scale = 1.0
+  err,message,filename = patset_as_svg(dir,file_base,pats,scale,job.set)
   print sprintf(info,filename)
   if err!=0 then warn(message) end
 end

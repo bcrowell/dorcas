@@ -448,6 +448,7 @@ end
 
 def real_ink_bbox(im)
   # im should be an image with the Fat mixins.
+  w,h = im.width,im.height
   lo_x = w+1
   hi_x = -1
   lo_y = h+1
