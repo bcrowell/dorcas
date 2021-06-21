@@ -35,7 +35,9 @@ def json_from_file_or_stdin_or_die(file)
 end
 
 def dir_and_file_to_path(dir,file)
-  return dir+"/"+file # bug: won't work on windows
+  # I'm not sure what happens with this on windows. For glob(), it appears from the docs that using / rather than \ is actually mandatory
+  # on windows. Not sure about things like File.open.
+  return dir+"/"+file
 end
 
 def create_text_file(filename,text)
@@ -60,14 +62,29 @@ def delete_files(files_to_delete)
   }
 end
 
-def replace_ext(filename,ext)
-  # exp should be like "svg", not ".svg"
+def force_ext(filename,ext)
+  # ext should be like "svg", not ".svg"
   result = shallow_copy(filename)
-  return result.gsub(/\.\w*$/,".#{ext}")
+  if result=~/\.\w+$/ then
+    return result.gsub(/\.\w*$/,".#{ext}")
+  else
+    return result+".#{ext}"
+  end
 end
 
 def file_fingerprint(filename,n_dig:8)
   if filename.nil? then return nil end
-  s = File::Stat.new(filename) # will throw an error if file doesn't exist, but we only call this from constructor after reading the file
-  return Digest::MD5.hexdigest(s.ino.to_s+","+s.mtime.to_r.to_s)[0..n_dig-1]
+  s = File::Stat.new(filename) 
+  return Digest::MD5.hexdigest(s.ino.to_s+","+latest_modification(filename).to_r.to_s)[0..n_dig-1]
+  # ... I believe the ino call is actually cross-platform.
+end
+
+def latest_modification(file_or_dir)
+  # If it's a directory, recursively checks for the most recent modification to any subdirectory.
+  times = [File::Stat.new(file_or_dir).mtime] # will throw an error if file doesn't exist
+  if File.directory?(file_or_dir) then
+    Dir.each_child(file_or_dir) { |f| times.push(latest_modification(dir_and_file_to_path(file_or_dir,f))) }
+  end
+  #print " ================== #{times.max}\n" # qwe
+  return times.max
 end

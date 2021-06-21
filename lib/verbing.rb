@@ -14,7 +14,7 @@ end
 
 def verb_view(args)
   set_file_or_dir,report_dir = args
-  svg_file = replace_ext(File.basename(set_file_or_dir),"svg")
+  svg_file = force_ext(File.basename(set_file_or_dir),"svg")
   set = Fset.from_file_or_directory(set_file_or_dir)
   unless File.directory?(report_dir) then Dir.mkdir(report_dir) end
   pats = set.pats.map { |x| [true,x]}

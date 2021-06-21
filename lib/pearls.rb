@@ -116,7 +116,7 @@ def dag_word_one(s)
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   n = h.length
   if n==0 then return [true,'',nil] end
-  template_scores = h.map { |a| a[0]-0.5 }
+  template_scores = h.map { |a| a[0]-1.0 }
   # ...It doesn't actually seem to matter much whether I subtract 0.5 (the
   #    nominal threshold of my scoring scale) or 1.0 (which makes sense if you figure that a score of 1-epsilon means a probability
   #    epsilon of error, and ln(1-epsilon)~-epsilon). The latter does cause "halls" to be read as "hals."
