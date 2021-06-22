@@ -62,6 +62,7 @@ def clean_up_text(t,language)
   t.gsub!(/ϕ/,'φ')
   t.gsub!(/ϛ/,'ς')
   t.gsub!(/ϒ/,'Υ')
+  t.gsub!(/ỏ/,'ὀ')
   t.gsub!(/ῤ/,'ῥ') # seems to be a typo in PG, rho can't be smooth
   return t
 end

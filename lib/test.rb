@@ -19,6 +19,9 @@ def verb_test()
   # special_test()
   #----------------------------------------------------------------------------------------------
   print "Testing string manipulation:\n"
+  assert_equal(char_to_short_name_helper('ὁ'),"omicron_rough")
+  assert_equal(short_name_to_char('o'),"o")
+  assert_equal(remove_accents('o'),"o") # latin letter with no accent
   assert_equal(remove_accents('è'),"e")
   assert_equal(remove_accents('ώ'),"ω")
   assert_equal(remove_accents('ᾕ'),"η") # eta_rough_and_acute_and_ypogegrammeni
