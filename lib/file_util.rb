@@ -85,6 +85,5 @@ def latest_modification(file_or_dir)
   if File.directory?(file_or_dir) then
     Dir.each_child(file_or_dir) { |f| times.push(latest_modification(dir_and_file_to_path(file_or_dir,f))) }
   end
-  #print " ================== #{times.max}\n" # qwe
   return times.max
 end

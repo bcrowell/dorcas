@@ -43,8 +43,22 @@ def mean_product_simple_list_of_floats(a,b)
   return sum/norm
 end
 
+def multisquirrel(text,pat,dx,dy,max_scooch:1,debug:false,k:3.0)
+  # An experimental elaboration on squirrel meant to reward matches that don't need a big smear to make them work.
+  # This actually seemed to reduce precision, possibly by making matches more sensitive to thickness of strokes.
+  s,x,y = monosquirrel(text,pat,dx,dy,max_scooch:max_scooch,smear:2,debug:debug,k:k)
+  t,c = 0.8,0.2
+  if s<t then return [s,x,y] end
+  # Give it a chance to compete at a higher level.
+  s2,x2,y2 = monosquirrel(text,pat,dx,dy,max_scooch:max_scooch,smear:1,debug:debug,k:k)
+  w=(s-t)/(1.0-t) # to avoid a discontinuity in behavior, assign a weight that phases in slowly as we go past t
+  if w>1 then w=1 end
+  a = s*(1-w)+(s2+c)*w
+  return [[s,a].max,x,y] # max is to make sure that it's a monotonic function
+end
+
 def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
-  # returns [score,x',y']
+  # Returns [score,x',y'], where score is the well-known Pearson squirrelation coefficient.
   # The registration adjustment is important. It has a big effect on scores, and the caller also needs to know the corrected position.
   # I'm not clear on why, but the max on the fft seems to be systematically off by about half a pixel up and to the left.
   # In cases where the error is 1 pixel horizontally on a character like l, this causes a huge effect on scores.
