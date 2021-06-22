@@ -18,6 +18,11 @@ end
 def verb_test()
   # special_test()
   #----------------------------------------------------------------------------------------------
+  print "Testing string manipulation:\n"
+  assert_equal(remove_accents('è'),"e")
+  assert_equal(remove_accents('ώ'),"ω")
+  assert_equal(remove_accents('ᾕ'),"η") # eta_rough_and_acute_and_ypogegrammeni
+  #----------------------------------------------------------------------------------------------
   print "Testing longest-path algorithm:\n"
   # ----
   w = 1.0 # for readability, a standard weight to use for most edges
