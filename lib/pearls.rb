@@ -34,7 +34,7 @@ def dumb_split(s,algorithm,lingos,threshold:0.3)
     return mumble_word(s)
   end
   if algorithm=='dag' then
-    return dag_word(s).join(' ')
+    return dag_word(s,lingos).join(' ')
   end
 end
 
@@ -96,15 +96,15 @@ def split_by_scripts(words_raw)
   return words
 end
 
-def dag_word(s)
+def dag_word(s,lingos)
   # Returns a list of strings. In the nominal case, this list only has one word, but sometimes we have to split it into multiple words.
-  success,string,hits,remainder = dag_word_one(s)
+  success,string,hits,remainder = dag_word_one(s,lingos)
   result = [string]
-  if !success then result.concat(dag_word(remainder)) end
+  if !success then result.concat(dag_word(remainder,lingos)) end
   return split_by_scripts(result)
 end
 
-def dag_word_one(s)
+def dag_word_one(s,lingos)
   # Treat the word as a directed acyclic graph, and find the longest path from left to right, where length is measured by sum (score-const).
   # Returns [success,string,hits,remainder], where hits is the list of hits, in the format output by prepearl, that formed the string.
   # If we weren't able to get all the way through the word, then success is set to false, and remainder is a Spatter object containing
@@ -124,7 +124,7 @@ def dag_word_one(s)
   # Build a graph e, which will be an array of edges; e[i+1] is a list of [j,weight], where j is such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
-  e = word_to_dag(s,h,template_scores)
+  e = word_to_dag(s,h,template_scores,lingos)
   success,path,score,if_error_error_message = longest_path(e,debug:debug)
   string = path.map { |j| h[j][2] }.join('')
   i = path[-1] # index of the rightmost character we were able to get to
@@ -208,9 +208,10 @@ def longest_path(e,debug:false)
   die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
 end
 
-def word_to_dag(s,h,template_scores,slop:0)
+def word_to_dag(s,h,template_scores,lingos,slop:0)
   # Converts an input representing some hits to a directed acyclic graph. Input s is a Spatter object.
   # Input h should be in the form output by prepearl(), a list of elements like [score,x,c].
+  # It's OK if lingos is nil or missing an entry for a given script.
   n = h.length
   em = s.em # estimate of em width, used only to provide the proper scaling invariance for tension
   # Build a bunch of arrays, all with the same indexing from 0 to n-1.
@@ -230,10 +231,12 @@ def word_to_dag(s,h,template_scores,slop:0)
   # The array e has indices running from 0 to n.
   e = []
   # List of possible starting characters:
+  would_be_starting_char = {}
   e.push([])
   0.upto(n-1) { |i|
     break if l[i]>leftmost+max_end_slop
     e[0].push([i,template_scores[0]])
+    would_be_starting_char[i] = 1
   }
   if e[0].length==0 then e[0]=[0,0] end # can happen if max_end_slop<0
   # Possible transitions from one character to another, or from one character to the final vertex:
@@ -246,7 +249,20 @@ def word_to_dag(s,h,template_scores,slop:0)
       stiffness = 0.5
       score = template_scores[j] + stiffness*strain
       xl = l[j]
-      if xl<xr+max_sp && xl>xr+min_sp then e[i+1].push([j,score]) end
+      next unless xl<xr+max_sp && xl>xr+min_sp
+      reject_bigram = false
+      if !(lingos.nil?) then
+        c1,c2 = h[i][2],h[j][2]
+        script = char_to_script_and_case(c1)[0]
+        if lingos.has_key?(script) then
+          lingo = lingos[script]
+          if would_be_starting_char.has_key?(i) && !(lingo.bigram_can_be_word_initial?(c1+c2)) then reject_bigram=true end
+          # ... also has the effect of rejecting stuff like τo, where the o is a latin o rather than an omicron
+        end
+      end
+      #if reject_bigram then print "rejecting word-initial bigram #{c1+c2}\n" end
+      next if reject_bigram
+      e[i+1].push([j,score])
     }
     if r[i]>rightmost-max_end_slop then e[i+1].push([n,0.0]) end # transition to the final vertex
   }
