@@ -22,11 +22,13 @@ def dumb_split(s,algorithm,lingos,threshold:0.3)
   inter = (inter*0.8).round
   # ... min_interword is set based on general typographic practice; the 0.8 is tuned to give best balance between lumping and splitting on sample text
   0.upto(l.length-2) { |i|
-    if l[i+1][1]-l[i][1]-s.widths[l[i][2]]>inter then # absolutely no matches above threshold within this space
+    spot1,spot2 = l[i],l[i+1]
+    tension,equilibrium = spot1.tension(spot2,s.em)
+    if spot2.ref_x-spot1.ref_x>equilibrium+inter then
       x_split = ((l[i+1][1]+l[i][1])*0.5).round
       s1 = s.select(lambda { |a| a[1]<=x_split})
       s2 = s.select(lambda { |a| a[1]>x_split})
-      if l[i+1][1]=519 and dumb_split(s2,algorithm,lingos)=~/gamemuon/ then # qwe
+      if false and l[i+1][1]=519 and dumb_split(s2,algorithm,lingos)=~/gamemuon/ then
         # lhs=ι rhs=gamemuon s sc
         # 519 484 17 11
         print "lhs=#{dumb_split(s1,algorithm,lingos)} rhs=#{dumb_split(s2,algorithm,lingos)}\n"

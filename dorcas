@@ -72,8 +72,10 @@ def main()
   job_list = Job.list_from_file(job_file,cache_dir)
   if job_list.length<1 then die("empty list of pages in job file") end
   job=job_list[0].without_image_info
-  if job_list.length==1 then summary=job_list[0].to_s else summary=job.to_s end
-  print "Parameters for this job:#{summary}\n"
+  if false then
+    if job_list.length==1 then summary=job_list[0].to_s else summary=job.to_s end
+    print "Parameters for this job:#{summary}\n"
+  end
 
   report_dir = dir_and_file_to_path(job.output,"_reports")
   create_directories(job,report_dir)

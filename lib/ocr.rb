@@ -22,8 +22,10 @@ def ocr_one_page(job,page,report_dir,lingos)
   lines = spatter.plow()
   #lines.each { |l|      print "line:\n  #{l.report}\n"    }
   #lines.each { |l| print babble(l),"\n"  }
-  lines.each { |l| print dumb_split(l,'mumble',lingos,threshold:job.threshold),"\n"  }
-  print "\n"
+  if false # mumble algorithm actually gives surprisingly good results, given how simple it is
+    lines.each { |l| print dumb_split(l,'mumble',lingos,threshold:job.threshold),"\n"  }
+    print "\n"
+  end
   lines.each { |l| print dumb_split(l,'dag',lingos,threshold:job.threshold),"\n"  }
   return
 end
