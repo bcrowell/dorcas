@@ -20,8 +20,8 @@ def main()
       wrong_script = false
       w.chars.each { |c| if c=~/[[:alpha:]]/ and char_to_code_block(c)!=script then wrong_script=true end }
       next if wrong_script
-      next if reject(w)
       if w==w.upcase then w=w.downcase end # e.g., THE ILIAD, but don't fiddle with Achilles
+      w.gsub!(/_/,'')
       if words.has_key?(w) then words[w] +=1 else words[w] = 1 end
     }
   }
@@ -32,7 +32,7 @@ def main()
   total = total.to_f
   words.each { |w,n|
     words[w] = (Math::log(n.to_f/total)/Math::log(2.0)).round
-    if blacklist().include?(w) then words.delete(w) end
+    if reject(w) then words.delete(w) end
   }
   #print JSON.pretty_generate(alphabetical_sort(words.keys).map { |w| [w,words[w]] })
   print JSON.pretty_generate(words)
@@ -43,7 +43,7 @@ def blacklist
 end
 
 def reject(w)
-  if is_roman_numeral(w) then return true end
+  if is_roman_numeral(w) || blacklist().include?(w.downcase) then return true end
   return false
 end
 

@@ -75,28 +75,32 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale,set)
   snowmen = []
   bboxen = []
   count = 0
+  ref_dots = []
   pats.keys.sort {|a,b| pats[a][0] <=> pats[b][0]}.each { |name|
     c,matched,pat = pats[name]
+    x = 0
     y = count*row_height
     if matched then
       basic_png_filename = "patterns_"+name+"_bw.png" # the prefix is because we share a directory with other svg files and their images
       bw_filename[name] = basic_png_filename
       pat.visual.save(dir_and_file_to_path(dir,basic_png_filename))
-      images.push([basic_png_filename,0,y,pat.bw.width,pat.bw.height,1.0])
+      images.push([basic_png_filename,x,y,pat.bw.width,pat.bw.height,1.0])
       snowmen.push(pat.snowman(set))
       bboxen.push(pat.real_bbox)
     end
     rough_font_size = max_height*0.27
-    labels.push([c,   col_width,  y,rough_font_size])
-    labels.push([name,col_width*2,y,rough_font_size]) if name!=c
+    labels.push([c,   x+col_width,  y,rough_font_size])
+    labels.push([name,x+col_width*2,y,rough_font_size]) if name!=c
+    radius = 0.8 # mm
+    ref_dots.push([x,y,pat.ref_x,pat.ref_y,radius])
     count += 1
   }
-  svg = svg_code_patset(images,labels,snowmen,bboxen,300.0,scale)
+  svg = svg_code_patset(images,labels,snowmen,bboxen,ref_dots,300.0,scale)
   File.open(svg_filename,'w') { |f| f.print svg }
   return [0,nil,svg_filename]
 end
 
-def svg_code_patset(image_info,label_info,snowmen,bboxen,dpi,scale2)
+def svg_code_patset(image_info,label_info,snowmen,bboxen,ref_dots_info,dpi,scale2)
   x_offset = 10 # in mm
   y_offset = 10
   images = []
@@ -134,7 +138,14 @@ def svg_code_patset(image_info,label_info,snowmen,bboxen,dpi,scale2)
     labels.push(svg_text(text,x*scale+x_offset,(y+fudge_y_pos*h)*scale+y_offset,h*scale))
   }
   labels_svg = labels.join("\n")
-  svg = "#{svg_header()}  #{images_svg} #{snowmen_svg} #{bbox_svg} #{labels_svg} </svg>"
+  ref_dots = []
+  ref_dots_info.each { |dot|
+    x,y,dx,dy,radius = dot
+    ref_dots.push(svg_blue_dot(x*scale+x_offset+dx*scale*scale2,y*scale+y_offset+dy*scale*scale2,radius))
+  }
+  ref_dots_svg = ref_dots.join("\n")
+
+  svg = "#{svg_header()}  #{images_svg} #{snowmen_svg} #{bbox_svg} #{labels_svg} #{ref_dots_svg} </svg>"
   return svg
 end
 
@@ -158,7 +169,7 @@ def summarize_composites_as_svg(report_dir,svg_filename,char_name,composites)
     filename = dir_and_file_to_path(report_dir,"composite_#{char_name}_#{count}.png")
     image.save(filename)
     images.push(svg_image(filename,x*scale,y*scale,image.width*scale,image.height*scale,1.0))
-    count += 1 
+    count += 1
   }
   images_svg = images.join("\n")
   svg = "#{svg_header()}  #{images_svg} </svg>"
@@ -201,10 +212,12 @@ def svg_code_matches(char_name,dir,image_info,dpi,composites,labels_svg)
   highest_y = greatest(y_bottom_list)[1]
   count = 0
   composites.each { |image|
+    x0 = 0
+    y0 = highest_y+75*count # shouldn't be hardcoded
     filename = dir_and_file_to_path(dir,"matches_#{char_name}_composite_#{count}.png")
     image.save(filename)
     count += 1
-    y = highest_y+75*count # shouldn't be hardcoded
+    y = y0
     images.push(svg_image(filename,0,y*scale,image.width*scale,image.height*scale,1.0))
     font_size = 16 # mm
     text = "cluster #{count}"
@@ -227,6 +240,21 @@ svg =
 SVG
   return svg
 end
+
+def svg_blue_dot(cx,cy,radius)
+svg = 
+<<-"SVG"
+    <circle
+       style="opacity:1;vector-effect:none;fill:#422cff;fill-opacity:0.59174314;fill-rule:evenodd;stroke:#0500fa;stroke-width:0.24694444;stroke-linecap:but\
+t;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path5099"
+       cx="#{cx}"
+       cy="#{cy}"
+       r="#{radius}" />
+SVG
+  return svg
+end
+
 
 def svg_box(box,color:"#000000")
   # box is a Box object

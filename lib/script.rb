@@ -136,7 +136,8 @@ def likely_cross_script_confusion(c,other_script,threshold:5)
     'alpha,latin'=>[['a',5]],       'a,greek'=>[['alpha',5]],
     'iota,latin'=>[['i',5]],        'i,greek'=>[['iota',5]],
     'omega,latin'=>[['w',5]],       'w,greek'=>[['omega',5]],
-    'gamma,latin'=>[['y',5]],       'y,greek'=>[['gamma',5]]
+    'gamma,latin'=>[['y',5]],       'y,greek'=>[['gamma',5]],
+    'Lambda,latin'=>[['A',5]],      'A,greek'=>[['Lambda',5]],
   }
   result = confusions["#{n},#{other_script}"]
   if result.nil? then return result end

@@ -15,13 +15,15 @@ def main()
   result = {}
   words.each { |w,log_freq|
     if w=~/^([[:alpha:]])([[:alpha:]])/ then
-      a,b = remove_accents($1).downcase,remove_accents($2).downcase
-      bigram = a+b
-      k = 'word_initial_no_accents'
-      if !(result.has_key?(k)) then result[k]={} end
-      freq = (2**log_freq).to_f
-      if result[k].has_key?(bigram) then result[k][bigram][0]+=freq else result[k][bigram]=[freq,w] end # each item is stored as [freq,witness]
+      a,b = $1,$2
+      ax,bx = remove_accents(a).downcase,remove_accents(b).downcase
+      helper(result,'word_initial_no_accents',ax,bx,log_freq,w)
     end
+    0.upto(w.length-2) { |i|
+      a,b = w[i],w[i+1]
+      ax,bx = remove_accents(a).downcase,remove_accents(b).downcase
+      helper(result,'no_accents',ax,bx,log_freq,w)
+    }
   }
   result.keys.each { |k|
     result[k].keys.each { |bigram|
@@ -29,6 +31,13 @@ def main()
     }
   }
   print JSON.pretty_generate(result)
+end
+
+def helper(result,k,a,b,log_freq,witness)
+  bigram = a+b
+  if !(result.has_key?(k)) then result[k]={} end
+  freq = (2**log_freq).to_f
+  if result[k].has_key?(bigram) then result[k][bigram][0]+=freq else result[k][bigram]=[freq,witness] end # each item is stored as [freq,witness]
 end
 
 def die(message)

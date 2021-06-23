@@ -14,7 +14,7 @@ end
 def dumb_split(s,algorithm,lingos,threshold:0.3)
   # S is a spatter object that we hope is a single line of text.
   # Does word splitting based on the simplest algorithm that could possibly output anything legible.
-  # Simply splits the line wherever there's too much whitespace, then returns mumble_word() on each word.
+  # Simply splits the line wherever there's too much whitespace, then returns an interpretation of on each word.
   # On each word, then calls the specified algorithm, 'mumble' or 'dag'.
   # Lingos is a hash that maps script name to Lingo object.
   l = prepearl(s,threshold)
@@ -22,10 +22,16 @@ def dumb_split(s,algorithm,lingos,threshold:0.3)
   inter = (inter*0.8).round
   # ... min_interword is set based on general typographic practice; the 0.8 is tuned to give best balance between lumping and splitting on sample text
   0.upto(l.length-2) { |i|
-    if l[i+1][1]-l[i][1]-s.widths[l[i][2]]>inter then
+    if l[i+1][1]-l[i][1]-s.widths[l[i][2]]>inter then # absolutely no matches above threshold within this space
       x_split = ((l[i+1][1]+l[i][1])*0.5).round
       s1 = s.select(lambda { |a| a[1]<=x_split})
       s2 = s.select(lambda { |a| a[1]>x_split})
+      if l[i+1][1]=519 and dumb_split(s2,algorithm,lingos)=~/gamemuon/ then # qwe
+        # lhs=ι rhs=gamemuon s sc
+        # 519 484 17 11
+        print "lhs=#{dumb_split(s1,algorithm,lingos)} rhs=#{dumb_split(s2,algorithm,lingos)}\n"
+        print "#{l[i+1][1]} #{l[i][1]} #{s.widths[l[i][2]]} #{inter}\n"
+      end
       return dumb_split(s1,algorithm,lingos)+" "+dumb_split(s2,algorithm,lingos) 
     end
   }
@@ -61,6 +67,7 @@ def split_by_scripts(words_raw)
   # Switch easily mistaken characters surrounded by other script.
   0.upto(n-1) { |i|
     word = words[i]
+    #debug=(word=~/muon/)
     if word.length>1 then
       loop do # Loop until it stops changing. But I think the way the algorithm currently works, it's not possible for it to take >1 iteration.
         did_anything = false
@@ -258,6 +265,7 @@ def word_to_dag(s,h,template_scores,lingos,slop:0)
           lingo = lingos[script]
           if would_be_starting_char.has_key?(i) && !(lingo.bigram_can_be_word_initial?(c1+c2)) then reject_bigram=true end
           # ... also has the effect of rejecting stuff like τo, where the o is a latin o rather than an omicron
+          if !(lingo.bigram_can_exist?(c1+c2)) then reject_bigram=true end
         end
       end
       #if reject_bigram then print "rejecting word-initial bigram #{c1+c2}\n" end

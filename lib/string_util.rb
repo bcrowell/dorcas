@@ -97,6 +97,7 @@ def remove_accents(s)
 end
 
 def remove_accents_one_char(c_orig)
+  unless c_orig=~/[[:alpha:]]/ then return c_orig end
   c = c_orig.clone
   # for latin:
   c.gsub!(/[àáâãäå]/,'a')
