@@ -103,7 +103,7 @@ def remove_accents(c_orig)
   c.gsub!(/[ýÿ]/,'y')
   # for greek:
   n = char_to_short_name(c)
-  n.gsub!(/(_(acute|grave|circumflex|and|rough|smooth|circ|ypogegrammeni))*$/,'')
+  n.gsub!(/(_(acute|grave|circumflex|and|rough|smooth|circ|ypogegrammeni|diar))*$/,'')
   c = short_name_to_char(n)
   return c
 end

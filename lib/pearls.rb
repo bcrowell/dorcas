@@ -11,11 +11,12 @@ def babble(s,threshold:0.5)
   return l.map { |x| x[2] }.join
 end
 
-def dumb_split(s,algorithm,threshold:0.3)
+def dumb_split(s,algorithm,lingos,threshold:0.3)
   # S is a spatter object that we hope is a single line of text.
   # Does word splitting based on the simplest algorithm that could possibly output anything legible.
   # Simply splits the line wherever there's too much whitespace, then returns mumble_word() on each word.
   # On each word, then calls the specified algorithm, 'mumble' or 'dag'.
+  # Lingos is a hash that maps script name to Lingo object.
   l = prepearl(s,threshold)
   inter = s.min_interword
   inter = (inter*0.8).round
@@ -25,7 +26,7 @@ def dumb_split(s,algorithm,threshold:0.3)
       x_split = ((l[i+1][1]+l[i][1])*0.5).round
       s1 = s.select(lambda { |a| a[1]<=x_split})
       s2 = s.select(lambda { |a| a[1]>x_split})
-      return dumb_split(s1,algorithm)+" "+dumb_split(s2,algorithm) 
+      return dumb_split(s1,algorithm,lingos)+" "+dumb_split(s2,algorithm,lingos) 
     end
   }
   # If we drop through to here, then this is putatively a single word.

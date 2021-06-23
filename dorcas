@@ -14,6 +14,7 @@ require_relative "lib/pearls"
 require_relative "lib/match"
 require_relative "lib/learn"
 require_relative "lib/ocr"
+require_relative "lib/lingo"
 require_relative "lib/page"
 require_relative "lib/freak"
 require_relative "lib/fft"
@@ -101,7 +102,8 @@ end
 def run_job(job,page,report_dir)
   # Process a single page.
   if job.verb=='ocr' then
-    ocr_one_page(job,page,report_dir)
+    lingos = {'latin'=>Lingo.new('latin','en'),'greek'=>Lingo.new('greek','grc')} # fixme -- should be user-selectable
+    ocr_one_page(job,page,report_dir,lingos)
     return
   end
   if job.verb=='seed' then

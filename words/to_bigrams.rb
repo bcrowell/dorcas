@@ -7,7 +7,7 @@ require_relative "../lib/string_util"
 # Usage:
 #   bigrams.rb <foo.json >foo_bigrams.json
 # Inputs a JSON data structure in the format output by to_words.rb.
-# Outputs a list of bigrams in a similar format.
+# Outputs a list of bigrams.
 
 # coding: utf-8
 def main()
@@ -15,12 +15,18 @@ def main()
   result = {}
   words.each { |w,log_freq|
     if w=~/^([[:alpha:]])([[:alpha:]])/ then
-      a,b = remove_accents($1),remove_accents($2)
+      a,b = remove_accents($1).downcase,remove_accents($2).downcase
       bigram = a+b
       k = 'word_initial_no_accents'
       if !(result.has_key?(k)) then result[k]={} end
-      if result[k].has_key?(bigram) then result[k][bigram][0]+=1 else result[k][bigram]=[1,w] end # each item is stored as [count,witness]
+      freq = (2**log_freq).to_f
+      if result[k].has_key?(bigram) then result[k][bigram][0]+=freq else result[k][bigram]=[freq,w] end # each item is stored as [freq,witness]
     end
+  }
+  result.keys.each { |k|
+    result[k].keys.each { |bigram|
+      result[k][bigram][0] = (Math::log(result[k][bigram][0])/Math::log(2.0)).round
+    }
   }
   print JSON.pretty_generate(result)
 end

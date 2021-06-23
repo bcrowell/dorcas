@@ -1,0 +1,1180 @@
+{
+  "word_initial_no_accents": {
+    "il": [
+      -10,
+      "iliad"
+    ],
+    "of": [
+      -5,
+      "of"
+    ],
+    "ho": [
+      -7,
+      "homer"
+    ],
+    "bo": [
+      -7,
+      "book"
+    ],
+    "th": [
+      -3,
+      "the"
+    ],
+    "fi": [
+      -7,
+      "first"
+    ],
+    "ar": [
+      -7,
+      "argument"
+    ],
+    "ap": [
+      -9,
+      "Apollo"
+    ],
+    "en": [
+      -8,
+      "enraged"
+    ],
+    "at": [
+      -7,
+      "at"
+    ],
+    "in": [
+      -5,
+      "insult"
+    ],
+    "to": [
+      -5,
+      "to"
+    ],
+    "hi": [
+      -5,
+      "his"
+    ],
+    "pr": [
+      -7,
+      "priest"
+    ],
+    "ch": [
+      -8,
+      "Chryses"
+    ],
+    "se": [
+      -7,
+      "sends"
+    ],
+    "pe": [
+      -8,
+      "pestilence"
+    ],
+    "up": [
+      -8,
+      "upon"
+    ],
+    "gr": [
+      -7,
+      "Greeks"
+    ],
+    "co": [
+      -6,
+      "council"
+    ],
+    "is": [
+      -8,
+      "is"
+    ],
+    "ca": [
+      -7,
+      "called"
+    ],
+    "an": [
+      -4,
+      "and"
+    ],
+    "ag": [
+      -8,
+      "Agamemnon"
+    ],
+    "be": [
+      -6,
+      "being"
+    ],
+    "re": [
+      -7,
+      "restore"
+    ],
+    "da": [
+      -8,
+      "daughter"
+    ],
+    "wh": [
+      -6,
+      "whom"
+    ],
+    "he": [
+      -5,
+      "he"
+    ],
+    "ha": [
+      -6,
+      "had"
+    ],
+    "ta": [
+      -9,
+      "taken"
+    ],
+    "fr": [
+      -7,
+      "from"
+    ],
+    "de": [
+      -7,
+      "deprives"
+    ],
+    "ac": [
+      -8,
+      "Achilles"
+    ],
+    "bu": [
+      -7,
+      "but"
+    ],
+    "ai": [
+      -10,
+      "aid"
+    ],
+    "ba": [
+      -8,
+      "battle"
+    ],
+    "mo": [
+      -7,
+      "mother"
+    ],
+    "jo": [
+      -8,
+      "Jove"
+    ],
+    "so": [
+      -6,
+      "son"
+    ],
+    "ex": [
+      -9,
+      "expense"
+    ],
+    "ju": [
+      -10,
+      "Jupiter"
+    ],
+    "op": [
+      -10,
+      "opposition"
+    ],
+    "si": [
+      -8,
+      "Sing"
+    ],
+    "go": [
+      -7,
+      "goddess"
+    ],
+    "wr": [
+      -10,
+      "wrath"
+    ],
+    "br": [
+      -7,
+      "brought"
+    ],
+    "wo": [
+      -7,
+      "woes"
+    ],
+    "hu": [
+      -9,
+      "hurled"
+    ],
+    "ma": [
+      -6,
+      "many"
+    ],
+    "va": [
+      -9,
+      "valiant"
+    ],
+    "do": [
+      -8,
+      "down"
+    ],
+    "al": [
+      -6,
+      "all"
+    ],
+    "bi": [
+      -10,
+      "birds"
+    ],
+    "wi": [
+      -6,
+      "will"
+    ],
+    "wa": [
+      -7,
+      "was"
+    ],
+    "ti": [
+      -9,
+      "time"
+    ],
+    "ki": [
+      -8,
+      "king"
+    ],
+    "me": [
+      -7,
+      "men"
+    ],
+    "no": [
+      -6,
+      "noble"
+    ],
+    "we": [
+      -7,
+      "were"
+    ],
+    "di": [
+      -7,
+      "disunited"
+    ],
+    "fo": [
+      -6,
+      "Footnote"
+    ],
+    "as": [
+      -7,
+      "as"
+    ],
+    "er": [
+      -11,
+      "Ernesti"
+    ],
+    "ob": [
+      -10,
+      "observes"
+    ],
+    "ve": [
+      -9,
+      "verb"
+    ],
+    "ne": [
+      -8,
+      "necessarily"
+    ],
+    "id": [
+      -11,
+      "idea"
+    ],
+    "ye": [
+      -8,
+      "yet"
+    ],
+    "un": [
+      -8,
+      "unanimous"
+    ],
+    "it": [
+      -8,
+      "it"
+    ],
+    "eu": [
+      -11,
+      "Eustathius"
+    ],
+    "ed": [
+      -12,
+      "ed"
+    ],
+    "cf": [
+      -13,
+      "Cf"
+    ],
+    "vi": [
+      -9,
+      "Virg"
+    ],
+    "æn": [
+      -12,
+      "Æn"
+    ],
+    "cu": [
+      -10,
+      "cum"
+    ],
+    "ge": [
+      -10,
+      "gemitu"
+    ],
+    "fu": [
+      -9,
+      "fugit"
+    ],
+    "su": [
+      -8,
+      "sub"
+    ],
+    "um": [
+      -16,
+      "umbras"
+    ],
+    "qu": [
+      -9,
+      "quia"
+    ],
+    "na": [
+      -10,
+      "nam"
+    ],
+    "vo": [
+      -10,
+      "volunt"
+    ],
+    "ph": [
+      -10,
+      "philosophi"
+    ],
+    "ad": [
+      -9,
+      "adhuc"
+    ],
+    "le": [
+      -7,
+      "legibus"
+    ],
+    "po": [
+      -8,
+      "poterat"
+    ],
+    "la": [
+      -8,
+      "later"
+    ],
+    "ie": [
+      -15,
+      "Ie"
+    ],
+    "tw": [
+      -9,
+      "two"
+    ],
+    "st": [
+      -6,
+      "strife"
+    ],
+    "sh": [
+      -6,
+      "should"
+    ],
+    "ev": [
+      -8,
+      "evil"
+    ],
+    "ke": [
+      -10,
+      "kept"
+    ],
+    "sw": [
+      -9,
+      "swift"
+    ],
+    "ra": [
+      -8,
+      "ransom"
+    ],
+    "fa": [
+      -7,
+      "far"
+    ],
+    "on": [
+      -6,
+      "on"
+    ],
+    "sc": [
+      -9,
+      "sceptre"
+    ],
+    "ot": [
+      -9,
+      "other"
+    ],
+    "yo": [
+      -7,
+      "you"
+    ],
+    "dw": [
+      -12,
+      "dwellings"
+    ],
+    "ci": [
+      -9,
+      "city"
+    ],
+    "sa": [
+      -7,
+      "safely"
+    ],
+    "li": [
+      -7,
+      "liberate"
+    ],
+    "my": [
+      -8,
+      "my"
+    ],
+    "ru": [
+      -9,
+      "Rut"
+    ],
+    "im": [
+      -9,
+      "imperfect"
+    ],
+    "te": [
+      -8,
+      "tense"
+    ],
+    "sp": [
+      -7,
+      "splendid"
+    ],
+    "pl": [
+      -8,
+      "pleasing"
+    ],
+    "mi": [
+      -8,
+      "mind"
+    ],
+    "ol": [
+      -9,
+      "old"
+    ],
+    "ei": [
+      -11,
+      "either"
+    ],
+    "lo": [
+      -8,
+      "loitering"
+    ],
+    "or": [
+      -8,
+      "or"
+    ],
+    "av": [
+      -11,
+      "avail"
+    ],
+    "aw": [
+      -10,
+      "away"
+    ],
+    "em": [
+      -10,
+      "employed"
+    ],
+    "ir": [
+      -11,
+      "irritate"
+    ],
+    "us": [
+      -9,
+      "usage"
+    ],
+    "cl": [
+      -8,
+      "clings"
+    ],
+    "tr": [
+      -7,
+      "translations"
+    ],
+    "by": [
+      -8,
+      "by"
+    ],
+    "gi": [
+      -9,
+      "give"
+    ],
+    "ri": [
+      -9,
+      "right"
+    ],
+    "od": [
+      -12,
+      "Od"
+    ],
+    "af": [
+      -10,
+      "afraid"
+    ],
+    "mu": [
+      -9,
+      "much"
+    ],
+    "ov": [
+      -9,
+      "over"
+    ],
+    "sm": [
+      -10,
+      "Sminthius"
+    ],
+    "if": [
+      -9,
+      "if"
+    ],
+    "ro": [
+      -8,
+      "roofed"
+    ],
+    "pa": [
+      -8,
+      "pay"
+    ],
+    "ep": [
+      -12,
+      "epithet"
+    ],
+    "pu": [
+      -9,
+      "put"
+    ],
+    "am": [
+      -8,
+      "among"
+    ],
+    "au": [
+      -11,
+      "augury"
+    ],
+    "ea": [
+      -8,
+      "earliest"
+    ],
+    "æo": [
+      -16,
+      "Æolic"
+    ],
+    "cr": [
+      -9,
+      "crowned"
+    ],
+    "ni": [
+      -10,
+      "night"
+    ],
+    "pi": [
+      -9,
+      "piles"
+    ],
+    "ou": [
+      -8,
+      "our"
+    ],
+    "es": [
+      -11,
+      "escape"
+    ],
+    "dr": [
+      -8,
+      "dreams"
+    ],
+    "bl": [
+      -9,
+      "blames"
+    ],
+    "du": [
+      -10,
+      "Duport"
+    ],
+    "gn": [
+      -14,
+      "Gnom"
+    ],
+    "sq": [
+      -12,
+      "sq"
+    ],
+    "kn": [
+      -9,
+      "knew"
+    ],
+    "gu": [
+      -10,
+      "guided"
+    ],
+    "ga": [
+      -9,
+      "gave"
+    ],
+    "et": [
+      -12,
+      "eternity"
+    ],
+    "ps": [
+      -17,
+      "Pseud"
+    ],
+    "om": [
+      -13,
+      "omnia"
+    ],
+    "ab": [
+      -9,
+      "Abresch"
+    ],
+    "æs": [
+      -14,
+      "Æschyl"
+    ],
+    "rh": [
+      -13,
+      "Rhet"
+    ],
+    "ey": [
+      -9,
+      "eyed"
+    ],
+    "gl": [
+      -9,
+      "gloomy"
+    ],
+    "el": [
+      -11,
+      "elsewhere"
+    ],
+    "ow": [
+      -10,
+      "own"
+    ],
+    "ce": [
+      -10,
+      "certain"
+    ],
+    "gk": [
+      -18,
+      "Gk"
+    ],
+    "eq": [
+      -11,
+      "equivalent"
+    ],
+    "aj": [
+      -10,
+      "Ajax"
+    ],
+    "ul": [
+      -10,
+      "Ulysses"
+    ],
+    "nu": [
+      -11,
+      "number"
+    ],
+    "cy": [
+      -12,
+      "Cyenus"
+    ],
+    "ox": [
+      -11,
+      "oxen"
+    ],
+    "fe": [
+      -8,
+      "fertile"
+    ],
+    "tu": [
+      -10,
+      "tumultuous"
+    ],
+    "fl": [
+      -8,
+      "Fly"
+    ],
+    "ur": [
+      -11,
+      "urges"
+    ],
+    "æg": [
+      -13,
+      "ægis"
+    ],
+    "az": [
+      -14,
+      "azure"
+    ],
+    "oc": [
+      -12,
+      "occasion"
+    ],
+    "eg": [
+      -14,
+      "Egeriai"
+    ],
+    "oa": [
+      -12,
+      "oath"
+    ],
+    "ax": [
+      -13,
+      "axe"
+    ],
+    "dy": [
+      -13,
+      "dying"
+    ],
+    "sl": [
+      -9,
+      "slaying"
+    ],
+    "py": [
+      -12,
+      "Pylians"
+    ],
+    "sk": [
+      -10,
+      "sketch"
+    ],
+    "cæ": [
+      -16,
+      "Cæneus"
+    ],
+    "ut": [
+      -12,
+      "utter"
+    ],
+    "yi": [
+      -11,
+      "yield"
+    ],
+    "ef": [
+      -13,
+      "effects"
+    ],
+    "ze": [
+      -11,
+      "zealous"
+    ],
+    "sy": [
+      -14,
+      "symbolical"
+    ],
+    "eo": [
+      -18,
+      "eos"
+    ],
+    "ee": [
+      -14,
+      "Eetion"
+    ],
+    "sn": [
+      -12,
+      "snow"
+    ],
+    "æt": [
+      -13,
+      "Æthiopians"
+    ],
+    "pæ": [
+      -15,
+      "Pæan"
+    ],
+    "hy": [
+      -12,
+      "hymning"
+    ],
+    "vu": [
+      -12,
+      "Vulcan"
+    ],
+    "ty": [
+      -11,
+      "Tyrrhenian"
+    ],
+    "ly": [
+      -10,
+      "lying"
+    ],
+    "ku": [
+      -18,
+      "Kuhner"
+    ],
+    "ic": [
+      -15,
+      "Icarian"
+    ],
+    "ms": [
+      -18,
+      "ms"
+    ],
+    "ug": [
+      -17,
+      "ugliest"
+    ],
+    "ip": [
+      -13,
+      "Iphigenia"
+    ],
+    "ec": [
+      -13,
+      "echoed"
+    ],
+    "ia": [
+      -14,
+      "ia"
+    ],
+    "oi": [
+      -12,
+      "Oileus"
+    ],
+    "læ": [
+      -17,
+      "Læm"
+    ],
+    "bœ": [
+      -15,
+      "Bœotians"
+    ],
+    "io": [
+      -15,
+      "Ionum"
+    ],
+    "ii": [
+      -18,
+      "iis"
+    ],
+    "ej": [
+      -17,
+      "ejus"
+    ],
+    "œt": [
+      -18,
+      "Œtylus"
+    ],
+    "æp": [
+      -16,
+      "Æpy"
+    ],
+    "pt": [
+      -16,
+      "Pteleum"
+    ],
+    "œc": [
+      -17,
+      "Œchalia"
+    ],
+    "ct": [
+      -16,
+      "Cteatus"
+    ],
+    "za": [
+      -16,
+      "Zacynthus"
+    ],
+    "œn": [
+      -15,
+      "Œneus"
+    ],
+    "tl": [
+      -15,
+      "Tlepolemus"
+    ],
+    "gy": [
+      -15,
+      "Gyrtone"
+    ],
+    "cœ": [
+      -16,
+      "Cœneus"
+    ],
+    "ja": [
+      -11,
+      "javelins"
+    ],
+    "ae": [
+      -12,
+      "aegis"
+    ],
+    "ig": [
+      -14,
+      "ignorant"
+    ],
+    "mæ": [
+      -15,
+      "Mæonians"
+    ],
+    "tm": [
+      -17,
+      "Tmolus"
+    ],
+    "æa": [
+      -14,
+      "Æacus"
+    ],
+    "xa": [
+      -13,
+      "Xanthus"
+    ],
+    "uc": [
+      -18,
+      "Ucalegon"
+    ],
+    "æu": [
+      -20,
+      "Æu"
+    ],
+    "ll": [
+      -18,
+      "ll"
+    ],
+    "xe": [
+      -19,
+      "Xenoph"
+    ],
+    "iv": [
+      -15,
+      "ivory"
+    ],
+    "ya": [
+      -15,
+      "yawn"
+    ],
+    "hæ": [
+      -17,
+      "Hæmon"
+    ],
+    "ko": [
+      -17,
+      "Koppen's"
+    ],
+    "lu": [
+      -12,
+      "lungs"
+    ],
+    "je": [
+      -14,
+      "Jelf's"
+    ],
+    "ny": [
+      -13,
+      "nymph"
+    ],
+    "zo": [
+      -16,
+      "zoned"
+    ],
+    "sæ": [
+      -19,
+      "sæpe"
+    ],
+    "jc": [
+      -20,
+      "Jctus"
+    ],
+    "dæ": [
+      -17,
+      "Dætor"
+    ],
+    "ud": [
+      -18,
+      "udder"
+    ],
+    "ib": [
+      -18,
+      "Ib"
+    ],
+    "ew": [
+      -15,
+      "ewe"
+    ],
+    "pœ": [
+      -17,
+      "Pœonians"
+    ],
+    "os": [
+      -15,
+      "osiers"
+    ],
+    "oo": [
+      -17,
+      "oozed"
+    ],
+    "ah": [
+      -13,
+      "Ah"
+    ],
+    "aq": [
+      -18,
+      "aqua"
+    ],
+    "bg": [
+      -20,
+      "bg"
+    ],
+    "ak": [
+      -16,
+      "akin"
+    ],
+    "gæ": [
+      -20,
+      "Gæa"
+    ],
+    "kr": [
+      -14,
+      "Kronos"
+    ],
+    "æl": [
+      -20,
+      "Ælian"
+    ],
+    "ix": [
+      -17,
+      "Ixion"
+    ],
+    "mœ": [
+      -18,
+      "Mœrebat"
+    ],
+    "kl": [
+      -17,
+      "Klonius"
+    ],
+    "oh": [
+      -12,
+      "oh"
+    ],
+    "ær": [
+      -19,
+      "Æratæ"
+    ],
+    "œd": [
+      -17,
+      "Œd"
+    ],
+    "tz": [
+      -19,
+      "Tzetzes"
+    ],
+    "oy": [
+      -18,
+      "oysters"
+    ],
+    "æm": [
+      -18,
+      "Æmon"
+    ],
+    "iæ": [
+      -19,
+      "Iæra"
+    ],
+    "ky": [
+      -16,
+      "Kypke"
+    ],
+    "æq": [
+      -19,
+      "æquore"
+    ],
+    "rd": [
+      -20,
+      "rd"
+    ],
+    "mn": [
+      -17,
+      "Mnesus"
+    ],
+    "gh": [
+      -14,
+      "ghost"
+    ],
+    "tæ": [
+      -20,
+      "tædis"
+    ],
+    "oe": [
+      -14,
+      "Oetylus"
+    ],
+    "cn": [
+      -17,
+      "Cnossus"
+    ],
+    "mt": [
+      -16,
+      "Mt"
+    ],
+    "ry": [
+      -19,
+      "rye"
+    ],
+    "eb": [
+      -16,
+      "ebbed"
+    ],
+    "ay": [
+      -15,
+      "aye"
+    ],
+    "og": [
+      -17,
+      "Ogygian"
+    ],
+    "vy": [
+      -19,
+      "vying"
+    ],
+    "dm": [
+      -19,
+      "Dmetor"
+    ],
+    "ka": [
+      -15,
+      "Kappa"
+    ],
+    "ub": [
+      -20,
+      "ubi"
+    ],
+    "æd": [
+      -20,
+      "ædium"
+    ],
+    "ææ": [
+      -17,
+      "Ææa"
+    ],
+    "ft": [
+      -20,
+      "ft"
+    ],
+    "fæ": [
+      -20,
+      "fænus"
+    ],
+    "ok": [
+      -18,
+      "Okeanos"
+    ],
+    "kt": [
+      -19,
+      "Kteatos"
+    ],
+    "œp": [
+      -20,
+      "Œpus'"
+    ]
+  }
+}
