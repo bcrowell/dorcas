@@ -136,6 +136,7 @@ def dag_word_one(s,lingos)
   e = word_to_dag(s,h,template_scores,lingos)
   success,path,score,if_error_error_message = longest_path(e,debug:debug)
   string = path.map { |j| h[j][2] }.join('')
+  if char_is_rtl(string[0]) then string = reverse_string(string)  end # fixme: won't handle punctuation in bidi text (weak and neutral characters)
   i = path[-1] # index of the rightmost character we were able to get to
   xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
   if !success then
@@ -221,6 +222,10 @@ def word_to_dag(s,h,template_scores,lingos,slop:0)
   # Converts an input representing some hits to a directed acyclic graph. Input s is a Spatter object.
   # Input h should be in the form output by prepearl(), a list of elements like [score,x,c].
   # It's OK if lingos is nil or missing an entry for a given script.
+  # The graph is directed from left to right. A successful traversal of the graph in the case of an RTL script
+  # will have the letters in backwards order, which it's up to the calling routine to handle once it's decided that
+  # that's the traversal it wants. In the code below, we do handle RTL properly when we drill down to the level
+  # of bigrams, but I haven't tested that code at all.
   n = h.length
   em = s.em # estimate of em width, used only to provide the proper scaling invariance for tension
   # Build a bunch of arrays, all with the same indexing from 0 to n-1.
@@ -245,7 +250,7 @@ def word_to_dag(s,h,template_scores,lingos,slop:0)
   0.upto(n-1) { |i|
     break if l[i]>leftmost+max_end_slop
     e[0].push([i,template_scores[0]])
-    would_be_starting_char[i] = 1
+    if char_is_ltr(h[i][2]) then would_be_starting_char[i] = 1 end # completely different logic below for RTL case
   }
   if e[0].length==0 then e[0]=[0,0] end # can happen if max_end_slop<0
   # Possible transitions from one character to another, or from one character to the final vertex:
@@ -265,16 +270,36 @@ def word_to_dag(s,h,template_scores,lingos,slop:0)
         script = char_to_script_and_case(c1)[0]
         if lingos.has_key?(script) then
           lingo = lingos[script]
-          if would_be_starting_char.has_key?(i) && !(lingo.bigram_can_be_word_initial?(c1+c2)) then reject_bigram=true end
-          # ... also has the effect of rejecting stuff like τo, where the o is a latin o rather than an omicron
-          if !(lingo.bigram_can_exist?(c1+c2)) then reject_bigram=true end
+          if char_is_ltr(c1) then
+            if would_be_starting_char.has_key?(i) && !(lingo.bigram_can_be_word_initial?(c1+c2)) then reject_bigram=true end
+            # ... also has the effect of rejecting stuff like τo, where the o is a latin o rather than an omicron
+            if !(lingo.bigram_can_exist?(c1+c2)) then reject_bigram=true end
+          else
+            if !(lingo.bigram_can_exist?(c2+c1)) then reject_bigram=true end
+          end
         end
       end
       #if reject_bigram then print "rejecting word-initial bigram #{c1+c2}\n" end
       next if reject_bigram
       e[i+1].push([j,score])
     }
-    if r[i]>rightmost-max_end_slop then e[i+1].push([n,0.0]) end # transition to the final vertex
+    if r[i]>rightmost-max_end_slop then # transition to the final vertex
+      e[i+1].push([n,0.0])
+      # --- Handle word-initial bigrams for RTL scripts:
+      #     The following is completely untested.
+      c1 = h[i][2]
+      if char_is_rtl(c1) then
+        if !(lingos.nil?) then
+          script = char_to_script_and_case(c1)[0]
+          if lingos.has_key?(script) then
+            lingo = lingos[script]
+            0.upto(i-1) { |j|
+              e[j+1] = e[j+1].select { |a| ii,score=a; ii!=i || lingo.bigram_can_be_word_initial?(c1+h[j][2]) }
+            }
+          end
+        end
+      end
+    end
   }
   return e
 end

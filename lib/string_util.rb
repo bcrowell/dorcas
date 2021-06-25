@@ -28,6 +28,16 @@ def common_script(c1,c2)
   return char_to_code_block(c1)
 end
 
+def char_is_rtl(c)
+  script_name,garbage = char_to_script_and_case(c)
+  script = Script.new(script_name)
+  return script.rtl
+end
+
+def char_is_ltr(c)
+  return !char_is_rtl(c)
+end
+
 def char_to_script_and_case(c)
   # Returns, e.g., ['greek','uppercase'] or ['hebrew',''].
   script = char_to_code_block(c)
@@ -213,3 +223,8 @@ def escape_double_quotes(s)
   return s.gsub(/"/,'\\"') # escape double quotes
 end
 
+def reverse_string(s)
+  r = 0
+  s.chars.each { |c| r = c+r }
+  return r
+end

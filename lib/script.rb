@@ -8,9 +8,11 @@ class Script
       @name = char_to_code_block(s) # returns greek, latin, or hebrew
     end
     # Make sure the name instance variable uniquely identifies the script, so that memoization works in font.metrics().
+    @rtl = (s=='hebrew')
+    @ltr = !@rtl
   end
 
-  attr_reader :name
+  attr_reader :name,:rtl,:ltr
 
   def to_s()
     return "script: #{self.name}"
