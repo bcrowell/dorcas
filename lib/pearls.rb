@@ -228,7 +228,7 @@ def path_to_string(h,path)
   return reverse_if_rtl(path.map { |j| h[j][2] }.join('')) # fixme: won't handle punctuation in bidi text (weak and neutral characters)
 end
 
-def longest_path(e,debug:false)
+def longest_path(e,early_quitting_penalty:nil,debug:false)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
@@ -237,6 +237,8 @@ def longest_path(e,debug:false)
   # J is a choice we can make after having already chosen i, and w is the associated weight of that edge.
   # There are fake vertices -1 and n representing the start and end of the graph.
   # The vertex i=-1 represents the idea that we've "chosen" to start. The choice n represents choosing to reach the end of the graph.
+  # It's pretty common that we don't get to the end, which just means that we actually need to split into multiple words, so the algorithm
+  # needs permission to quit early, and some criterion for doing that.
   # This algorithm is written to prefer depth over score, i.e., we prefer to include all characters, even if the resulting score is low.
   # Test.rb has unit tests for this routine.
   # Returns [success,best_path,best_score,if_error,error_message]
@@ -265,16 +267,26 @@ def longest_path(e,debug:false)
       end
     }
   }
-  # We may not actually have a connection from left to right. If so, then return the path that gets us closest.
+  # We may not actually have a connection from left to right. If so, then pick something shorter. early_quitting_penalty
+  options_scores = []
+  options_data = []
   n.downto(0) { |i|
     if best_score[i+1]>-infinity then
       path = best_path[i+1]
       success = (i==n)
       path = path.select {|j| j<n}
-      return [success,path,best_score[i+1],false,nil]
+      this_score = best_score[i+1]
+      data = [success,path,this_score,false,nil]
+      if early_quitting_penalty.nil? then return data end
+      # ... If it's the classical problem, then just return the deepest path, regardless of score. This is used in unit tests.
+      this_score += early_quitting_penalty[i]
+      options_scores.push(this_score)
+      options_data.push(options_data)
     end
   }
-  die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.")
+  if options_scores.length==0 then die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.") end
+  i,garbage = greatest(options_scores)
+  return options_data[i]
 end
 
 def word_to_dag(s,h,template_scores,lingos,slop:0)
