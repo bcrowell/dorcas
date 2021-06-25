@@ -176,7 +176,7 @@ def score_path_fancy(s,path,e,h,lingos,em,target_x:nil)
   end
   # --
   length_score = 0.0
-  if !target_x.nil? then a=h[path[-1]]; xr=a[1]+s.widths[a[2]]; length_score=(xr-target_x)*1000.0/em.to_f end
+  if !target_x.nil? then a=h[path[-1]]; xr=a[1]+s.widths[a[2]]; length_score=(xr-target_x)*keep_goingness()/em.to_f end
   # --
   total = template_score+tension_score+lingo_score+length_score
   return [total,template_score,tension_score,lingo_score]
@@ -194,13 +194,18 @@ def stiffness()
   return 1.0 # a constant used in scoring; it controls the importance of the tension (plausibility of the spacing/kerning)
 end
 
+def keep_goingness()
+  # If considering a shorter path through a dag, this is how much we're penalized, per em width.
+  return 5.0
+end
+
 def longest_path_fancy(s,h,e,target_x:nil,debug:false)
   em = s.em
   if target_x.nil? then
     early_quitting_penalty = nil
   else
     xr = h.map { |a| a[1]+s.widths[a[2]] } # approx right-hand edge of each character
-    early_quitting_penalty = xr.map { |r| (r-target_x)/em.to_f*1000.0 } # fixme -- adjustable parameter
+    early_quitting_penalty = xr.map { |r| (r-target_x)/em.to_f*keep_goingness() } 
   end
   success,path,best_score,if_error,error_message = longest_path(e,early_quitting_penalty:early_quitting_penalty,debug:debug)
   if path_to_string(h,path)=~/Μν/ then # qwe
