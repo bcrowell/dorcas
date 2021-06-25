@@ -120,56 +120,51 @@ def dag_word_one(s,lingos)
   # the remaining hits that we weren't able to process.
   debug = false
   #debug = (mumble_word(s)=='ταυρωντε')
-  #debug = (mumble_word(s)=='hecatoub') 
-  #debug = (mumble_word(s)=='Zηνς') 
   infinity = 1.0e9
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   n = h.length
   if n==0 then return [true,'',nil] end
   template_scores = h.map { |a| a[0]-1.0 }
-  # ...It doesn't actually seem to matter much whether I subtract 0.5 (the
-  #    nominal threshold of my scoring scale) or 1.0 (which makes sense if you figure that a score of 1-epsilon means a probability
-  #    epsilon of error, and ln(1-epsilon)~-epsilon). The latter does cause "halls" to be read as "hals."
+  # ...Results don't seem super sensitive to the choice of the constant 1.0. Choosing 0.5 makes it do more stuff like reading μ as ιι.
   # Build a graph e, which will be an array of edges; e[i+1] is a list of [j,weight], where j is such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
   e = word_to_dag(s,h,template_scores,lingos)
-  success,path,score,if_error_error_message = longest_path(e,debug:debug)
-  string = path.map { |j| h[j][2] }.join('')
-  if char_is_rtl(string[0]) then string = reverse_string(string)  end # fixme: won't handle punctuation in bidi text (weak and neutral characters)
-  i = path[-1] # index of the rightmost character we were able to get to
-  xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
-  if !success then
-    # We didn't make it all the way to the end. Interpret this as multiple words.
-    remainder = s.select(lambda { |a| a[1]>xr })
-    # ... all chars whose left edge lies to the right of that; typically there's a big gap, which is why we failed
-  else
+  string,remainder,success,path,score,if_error_error_message = longest_path(s,h,e,debug:debug)
+  if success then
     remainder = nil
+    path,string = consider_more_paths(path,string,e,h,template_scores,lingos)
   end
   hits = path.map { |j| h[j] }
-
-  if debug then print "n=#{n}\nh=[[score,x,c],...]=#{h}\nwt=#{wt}\nsuccess=#{success}, path=#{path}\ne=#{e}\n" end
-
-  if false and hits.length>=2 then # debug test print tension
-    print "======== #{string} ========\n"
-    tt = []
-    0.upto(hits.length-2) { |i|
-      spot1,spot2 = hits[i],hits[i+1]
-      t = spot1.tension(spot2,s.em)[0]
-      tt.push(t)
-      print "  #{spot1[2]}#{spot2[2]} t=#{t}   "
-    }
-    print "\n"
-    mean,sd = find_mean_sd(tt)
-    strain = tt.map { |t| tension_to_strain(t) }.sum
-    print "mean tension = #{mean}, sd=#{sd}, strain=#{strain}\n"
-    
-  end
 
   return [success,string,hits,remainder]
 end
 
-def longest_path(e,debug:false)
+def consider_more_paths(path,string,e,h,template_scores,lingos)
+  return [path,string]
+end
+
+def longest_path(s,h,e,debug:false)
+  success,path,best_score,if_error,error_message = longest_path_basic(e,debug:debug)
+  if !if_error then
+    string = reverse_if_rtl(path.map { |j| h[j][2] }.join('')) # fixme: won't handle punctuation in bidi text (weak and neutral characters)
+    i = path[-1] # index of the rightmost character we were able to get to
+    xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
+    if !success then
+      # We didn't make it all the way to the end. Interpret this as multiple words.
+      remainder = s.select(lambda { |a| a[1]>xr })
+      # ... all chars whose left edge lies to the right of that; typically there's a big gap, which is why we failed
+    else
+      remainder = nil
+    end
+  else
+    string = ''
+    remainder = nil
+  end
+  return [string,remainder,success,path,best_score,if_error,error_message]
+end
+
+def longest_path_basic(e,debug:false)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.

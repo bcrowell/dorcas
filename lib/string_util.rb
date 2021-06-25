@@ -223,6 +223,11 @@ def escape_double_quotes(s)
   return s.gsub(/"/,'\\"') # escape double quotes
 end
 
+def reverse_if_rtl(s)
+  if s=='' then return s end
+  if char_is_rtl(s[0]) then return reverse_string(s) else return s end
+end
+
 def reverse_string(s)
   r = 0
   s.chars.each { |c| r = c+r }
