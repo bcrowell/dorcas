@@ -130,24 +130,38 @@ def dag_word_one(s,lingos)
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
   e = word_to_dag(s,h,template_scores,lingos)
-  string,remainder,success,path,score,if_error_error_message = longest_path(s,h,e,debug:debug)
+  string,remainder,success,path,score,if_error_error_message = longest_path_fancy(s,h,e,debug:debug)
   if success then
     remainder = nil
-    path,string = consider_more_paths(path,string,e,h,template_scores,lingos)
+    path,string = consider_more_paths(path,e,h,lingos,s.em)
   end
   hits = path.map { |j| h[j] }
-
   return [success,string,hits,remainder]
 end
 
-def consider_more_paths(path,string,e,h,template_scores,lingos)
-  return [path,string]
+def consider_more_paths(path,e,h,lingos,em)
+  return [path,path_to_string(h,path)]
 end
 
-def longest_path(s,h,e,debug:false)
-  success,path,best_score,if_error,error_message = longest_path_basic(e,debug:debug)
+def score_path_fancy(path,e,h,lingos,em)
+  template_score = 0.0
+  path.each { |i| template_score += h[i][0] }
+  tension_score = 0.0
+  0.upto(path.length-2) { |m|
+    spot1,spot2 = h[path[m]],h[path[m+1]]
+    strain = tension_to_strain(spot1.tension(spot2,em)[0])
+    score = -stiffness()*strain
+  }
+end
+
+def stiffness()
+  return 0.5 # a constant used in scoring; it controls the importance of the tension (plausibility of the spacing/kerning)
+end
+
+def longest_path_fancy(s,h,e,debug:false)
+  success,path,best_score,if_error,error_message = longest_path(e,debug:debug)
   if !if_error then
-    string = reverse_if_rtl(path.map { |j| h[j][2] }.join('')) # fixme: won't handle punctuation in bidi text (weak and neutral characters)
+    string = path_to_string(h,path)
     i = path[-1] # index of the rightmost character we were able to get to
     xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
     if !success then
@@ -164,7 +178,11 @@ def longest_path(s,h,e,debug:false)
   return [string,remainder,success,path,best_score,if_error,error_message]
 end
 
-def longest_path_basic(e,debug:false)
+def path_to_string(h,path)
+  return reverse_if_rtl(path.map { |j| h[j][2] }.join('')) # fixme: won't handle punctuation in bidi text (weak and neutral characters)
+end
+
+def longest_path(e,debug:false)
   # The longest-path problem on a DAG has a well-known solution, which involves first finding a topological order:
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
@@ -255,8 +273,7 @@ def word_to_dag(s,h,template_scores,lingos,slop:0)
     (i+1).upto(n-1) { |j|
       spot1,spot2 = h[i],h[j]
       strain = tension_to_strain(spot1.tension(spot2,s.em)[0])
-      stiffness = 0.5
-      score = template_scores[j] + stiffness*strain
+      score = template_scores[j] - stiffness()*strain
       xl = l[j]
       next unless xl<xr+max_sp && xl>xr+min_sp
       reject_bigram = false
