@@ -208,9 +208,6 @@ def longest_path_fancy(s,h,e,target_x:nil,debug:false)
     early_quitting_penalty = xr.map { |r| (r-target_x)/em.to_f*keep_goingness() } 
   end
   success,path,best_score,if_error,error_message = longest_path(e,early_quitting_penalty:early_quitting_penalty,debug:debug)
-  if path_to_string(h,path)=~/Μν/ then # qwe
-    longest_path(e,early_quitting_penalty:early_quitting_penalty,debug:true) # run again with debugging
-  end
   if if_error then return ['',nil,success,path,best_score,if_error,error_message] end
   string = path_to_string(h,path)
   remainder = get_remainder(success,s,h,path,em/5.0)
