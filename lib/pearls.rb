@@ -28,12 +28,6 @@ def dumb_split(s,algorithm,lingos,threshold:0.3)
       x_split = ((l[i+1][1]+l[i][1])*0.5).round
       s1 = s.select(lambda { |a| a[1]<=x_split})
       s2 = s.select(lambda { |a| a[1]>x_split})
-      if false and l[i+1][1]=519 and dumb_split(s2,algorithm,lingos)=~/gamemuon/ then
-        # lhs=ι rhs=gamemuon s sc
-        # 519 484 17 11
-        print "lhs=#{dumb_split(s1,algorithm,lingos)} rhs=#{dumb_split(s2,algorithm,lingos)}\n"
-        print "#{l[i+1][1]} #{l[i][1]} #{s.widths[l[i][2]]} #{inter}\n"
-      end
       return dumb_split(s1,algorithm,lingos)+" "+dumb_split(s2,algorithm,lingos) 
     end
   }
@@ -138,31 +132,19 @@ end
 def consider_more_paths(path,remainder,e,h,lingos,s)
   infinity = 1.0e8
   debug = false
-  if false then
-    string = path_to_string(h,path)
-    if string=~/urul/ then
-      debug = true
-      total,template_score,tension_score,lingo_score = score_path_fancy(s,path,e,h,lingos,s.em)
-      print "\n  #{string} #{path} #{[total,template_score,tension_score,lingo_score]}\n"
-    end
-  end
   choices = [path]
   remainders = [remainder]
   xr = h.map { |a| a[1]+s.widths[a[2]] } # approx right-hand edge of each character
   target_x = clown(xr[-1])
   # Try knocking out each letter of the longest path to get other possibilities.
   path.each { |i|
-    debug2 = (debug)
-    if debug2 then print "  considering deleting letter #{i} = #{h[i][2]} \n" end
     ee = clown(e)
     hh = clown(h)
     (-1).upto(ee.length-2) { |j|
       ee[j+1] = ee[j+1].map { |a| if a[0]==i then [i,-infinity] else a end}
     }
     hh[i][0] = -infinity
-    if debug2 && i==7 then debug_print_graph(ee,hh); print " 6 is #{h[6]}\n" end
     string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee,target_x:target_x)
-    if debug2 then print "  considering #{string2}, path2=#{path2}, score=#{score_path_fancy(s,path2,ee,hh,lingos,s.em)}, if_error=#{if_error}\n" end
     if !if_error then choices.push(path2); remainders.push(remainder2) end
   }
   scores = []
@@ -172,7 +154,6 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
   }
   i,garbage = greatest(scores)
   path2 = choices[i]
-  if debug then print "  selected path #{i} = #{path2}, #{path_to_string(h,path2)}\n" end
   return [path2,path_to_string(h,path2),remainders[i]]
 end
 
@@ -268,7 +249,6 @@ def longest_path(e,early_quitting_penalty:nil,debug:false)
   best_path[0] = []
   (-1).upto(n-1) { |i| # we already know the best path in which we've chosen i
     next if best_path[i+1].nil?
-    #if debug then print "i=#{i}, best_path=#{best_path}\n" end
     best_score_to_i = best_score[i+1]
     e[i+1].each { |edge|
       j,w = edge
@@ -296,24 +276,13 @@ def longest_path(e,early_quitting_penalty:nil,debug:false)
       if early_quitting_penalty.nil? then return data end
       # ... If it's the classical problem, then just return the deepest path, regardless of score. This is used in unit tests.
       if i<=n-1 then this_score += early_quitting_penalty[i] end
-      if debug && i<=n-1 then print "debugging... i=#{i}, n=#{n}, path.length=#{path.length} penalty=#{early_quitting_penalty[i]}\n" end # qwe
       options_scores.push(this_score)
       options_data.push(clown(data))
     end
   }
   if options_scores.length==0 then die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.") end
   m,garbage = greatest(options_scores)
-  if debug then print "options_scores=#{options_scores}\nbest score is for m=#{m}, score=#{options_scores[m]} data=#{options_data[m]}\n" end # qwe
   return options_data[m]
-end
-
-def is_array_of_integers(a)
-  # for debugging
-  if !a.kind_of?(Array) then return false end
-  if a.length==0 then return true end
-  if a[0].kind_of?(Array) then return false end
-  if a[0].class==1.class then return true end
-  return false
 end
 
 def word_to_dag(s,h,template_scores,lingos,slop:0)
