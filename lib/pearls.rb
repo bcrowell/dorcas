@@ -130,44 +130,48 @@ def dag_word_one(s,lingos)
   # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
   e = word_to_dag(s,h,template_scores,lingos)
   string,remainder,success,path,score,if_error,error_message = longest_path_fancy(s,h,e,debug:debug)
-  path,string = consider_more_paths(path,e,h,lingos,s)
+  path,string,remainder = consider_more_paths(path,remainder,e,h,lingos,s)
   hits = path.map { |j| h[j] }
   return [success,string,hits,remainder]
 end
 
-def consider_more_paths(path,e,h,lingos,s)
+def consider_more_paths(path,remainder,e,h,lingos,s)
+  infinity = 1.0e8
   debug = false
   if false then
     string = path_to_string(h,path)
-    if string=~/delig/ then
+    if string=~/urul/ then
       debug = true
       total,template_score,tension_score,lingo_score = score_path_fancy(path,e,h,lingos,s.em)
-      print "\n  #{string} #{[total,template_score,tension_score,lingo_score]}\n"
+      print "\n  #{string} #{path} #{[total,template_score,tension_score,lingo_score]}\n"
     end
   end
   choices = [path]
+  remainders = [remainder]
   # Try knocking out each letter of the longest path to get other possibilities.
   path.each { |i|
     debug2 = (debug)
     if debug2 then print "  considering deleting letter #{i} = #{h[i][2]} \n" end
     ee = clown(e)
+    hh = clown(h)
     (-1).upto(ee.length-2) { |j|
-      ee[j+1] = ee[j+1].map { |a| if a[0]==i then [i,-999.9] else a end}
+      ee[j+1] = ee[j+1].map { |a| if a[0]==i then [i,-infinity] else a end}
     }
-    string2,remainder,success,path2,score,if_error,error_message = longest_path_fancy(s,h,ee)
-    if debug2 then print "  considering #{string2}, path2=#{path2}, score=#{score_path_fancy(path2,e,h,lingos,s.em)}, if_error=#{if_error}\n" end
-    if !if_error then choices.push(path2) end
+    hh[i][0] = -infinity
+    if debug2 && i==7 then debug_print_graph(ee,hh); print " 6 is #{h[6]}\n" end
+    string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee)
+    if debug2 then print "  considering #{string2}, path2=#{path2}, score=#{score_path_fancy(path2,ee,hh,lingos,s.em)}, if_error=#{if_error}\n" end
+    if !if_error then choices.push(path2); remainders.push(remainder2) end
   }
   scores = []
   choices.each { |path2|
-    if debug then print "  finally considering path2=#{path2}, score=#{score_path_fancy(path2,e,h,lingos,s.em)}\n" end
     total_score,template_score,tension_score,lingo_score = score_path_fancy(path2,e,h,lingos,s.em)
     scores.push(total_score)
   }
   i,garbage = greatest(scores)
   path2 = choices[i]
   if debug then print "  selected path #{i} = #{path2}, #{path_to_string(h,path2)}\n" end
-  return [path2,path_to_string(h,path2)]
+  return [path2,path_to_string(h,path2),remainders[i]]
 end
 
 def score_path_fancy(path,e,h,lingos,em)
@@ -205,22 +209,19 @@ end
 
 def longest_path_fancy(s,h,e,debug:false)
   success,path,best_score,if_error,error_message = longest_path(e,debug:debug)
-  if !if_error then
-    string = path_to_string(h,path)
-    i = path[-1] # index of the rightmost character we were able to get to
-    xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
-    if !success then
-      # We didn't make it all the way to the end. Interpret this as multiple words.
-      remainder = s.select(lambda { |a| a[1]>xr })
-      # ... all chars whose left edge lies to the right of that; typically there's a big gap, which is why we failed
-    else
-      remainder = nil
-    end
-  else
-    string = ''
-    remainder = nil
-  end
+  if if_error then return ['',nil,success,path,best_score,if_error,error_message] end
+  string = path_to_string(h,path)
+  remainder = get_remainder(success,s,h,path,s.em/5.0)
   return [string,remainder,success,path,best_score,if_error,error_message]
+end
+
+def get_remainder(success,s,h,path,slop)
+  if success then return nil end
+  i = path[-1] # index of the rightmost character we were able to get to
+  xr = h[i][1]+s.widths[h[i][2]] # x coord of right edge of that character
+  remainder = s.select(lambda { |a| a[1]>xr+slop })
+  # ... all chars whose left edge lies to the right of that; typically there's a big gap, which is why we failed
+  return remainder  
 end
 
 def path_to_string(h,path)
@@ -232,11 +233,11 @@ def longest_path(e,debug:false)
   #   https://en.wikipedia.org/wiki/Longest_path_problem
   # I get a topological order for free from from my x coordinates, so the problem is pretty easy. Just explore all paths from the left to the right.
   # E is a list of lists of edges, with e[i+1] being the list of elements in the form [j,w], where
-  # j is a choice we can make after having already chosen i, and w is the associated weight of that edge.
+  # The array e has indices running from 0 to n+1, which represent vertices. If we've already chosen character i, the index is [i+1].
+  # J is a choice we can make after having already chosen i, and w is the associated weight of that edge.
   # There are fake vertices -1 and n representing the start and end of the graph.
   # The vertex i=-1 represents the idea that we've "chosen" to start. The choice n represents choosing to reach the end of the graph.
   # This algorithm is written to prefer depth over score, i.e., we prefer to include all characters, even if the resulting score is low.
-  # These two arrays have indices running from 0 to n+1, which represent vertices. If we've already chosen character i, the index is [i+1].
   # Test.rb has unit tests for this routine.
   # Returns [success,best_path,best_score,if_error,error_message]
   n = e.length-1
@@ -379,3 +380,15 @@ def prepearl(s,threshold)
   return letters.sort { |p,q| p[1] <=> q[1]}
 end
 
+def debug_print_graph(e,h)
+  (-1).upto(e.length-2) { |i|
+    x = e[i+1].map { |edge| "[#{edge[0]} #{debug_print_graph_helper(edge[0],h)},#{sprintf('%4.2f',edge[1])}]" }
+    print "  #{sprintf('%4d',i)}  #{debug_print_graph_helper(i,h)}  |  #{x.join(' ')}\n"
+    if i>=20 then print "cutting off after 20 lines\n"; return end
+  }
+end
+
+def debug_print_graph_helper(i,h)
+  if i==-1 || i>h.length-1 then return ' ' end
+  return h[i][2]
+end
