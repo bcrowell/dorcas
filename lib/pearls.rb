@@ -138,12 +138,7 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
   target_x = clown(xr[-1])
   # Try knocking out each letter of the longest path to get other possibilities.
   path.each { |i|
-    ee = clown(e)
-    hh = clown(h)
-    (-1).upto(ee.length-2) { |j|
-      ee[j+1] = ee[j+1].map { |a| if a[0]==i then [i,-infinity] else a end}
-    }
-    hh[i][0] = -infinity
+    ee,hh = knock_out_spot(e,h,i,infinity)
     string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee,target_x:target_x)
     if !if_error then choices.push(path2); remainders.push(remainder2) end
   }
@@ -155,6 +150,16 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
   i,garbage = greatest(scores)
   path2 = choices[i]
   return [path2,path_to_string(h,path2),remainders[i]]
+end
+
+def knock_out_spot(e,h,i,infinity)
+  ee = clown(e)
+  hh = clown(h)
+  (-1).upto(ee.length-2) { |j|
+    ee[j+1] = ee[j+1].map { |a| if a[0]==i then [i,-infinity] else a end}
+  }
+  hh[i][0] = -infinity
+  return [ee,hh]
 end
 
 def score_path_fancy(s,path,e,h,lingos,em,target_x:nil)
@@ -195,8 +200,7 @@ def stiffness()
 end
 
 def keep_goingness()
-  # If considering a shorter path through a dag, this is how much we're penalized, per em width.
-  return 5.0
+  return 5.0   # If considering a shorter path through a dag, this is how much we're penalized, per em width.
 end
 
 def longest_path_fancy(s,h,e,target_x:nil,debug:false)
