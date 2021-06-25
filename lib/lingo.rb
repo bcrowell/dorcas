@@ -30,6 +30,10 @@ class Lingo
   #    ],
   # ...
 
+  def is_word(s)
+    return self.words.has_key?(remove_accents(s).downcase)
+  end
+
   def bigram_can_be_word_initial?(bigram)
     return retrieve_bigram_boolean('word_initial_no_accents',bigram)
   end

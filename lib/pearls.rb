@@ -124,38 +124,59 @@ def dag_word_one(s,lingos)
   h = prepearl(s,-infinity)  # looks like a list of [score,x,c].
   n = h.length
   if n==0 then return [true,'',nil] end
-  template_scores = h.map { |a| a[0]-1.0 }
-  # ...Results don't seem super sensitive to the choice of the constant 1.0. Choosing 0.5 makes it do more stuff like reading μ as ιι.
+  template_scores = h.map { |a| template_score_to_additive(a[0]) }
   # Build a graph e, which will be an array of edges; e[i+1] is a list of [j,weight], where j is such that we have an edge from the right side
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
   e = word_to_dag(s,h,template_scores,lingos)
   string,remainder,success,path,score,if_error_error_message = longest_path_fancy(s,h,e,debug:debug)
-  if success then
-    remainder = nil
-    path,string = consider_more_paths(path,e,h,lingos,s.em)
-  end
+  path,string = consider_more_paths(path,e,h,lingos,s.em)
   hits = path.map { |j| h[j] }
   return [success,string,hits,remainder]
 end
 
 def consider_more_paths(path,e,h,lingos,em)
+  if false then
+    string = path_to_string(h,path)
+    if string=='indeed' || string=='delightiug' then
+      total,template_score,tension_score,lingo_score = score_path_fancy(path,e,h,lingos,em)
+      print "\n  #{string} #{[total,template_score,tension_score,lingo_score]}\n"
+    end
+  end
   return [path,path_to_string(h,path)]
 end
 
 def score_path_fancy(path,e,h,lingos,em)
   template_score = 0.0
-  path.each { |i| template_score += h[i][0] }
+  path.each { |i| template_score += template_score_to_additive(h[i][0]) }
+  # --
   tension_score = 0.0
   0.upto(path.length-2) { |m|
     spot1,spot2 = h[path[m]],h[path[m+1]]
     strain = tension_to_strain(spot1.tension(spot2,em)[0])
-    score = -stiffness()*strain
+    tension_score += (-stiffness()*strain)
   }
+  # --
+  lingo_score = 0.0
+  script = char_to_script_and_case(h[0][2])[0]
+  if !(lingos.nil?) and lingos.has_key?(script) then
+    s = path_to_string(h,path)
+    if lingos[script].is_word(s) then lingo_score=1.0 end
+  end
+  total = template_score+tension_score+lingo_score
+  return [total,template_score,tension_score,lingo_score]
+end
+
+def template_score_to_additive(score)
+  return score-1.0
+  # ...Results don't seem super sensitive to the choice of the constant 1.0. Choosing 0.5 makes it do more stuff like reading μ as ιι.
+  #    Since 1.0 is the nominal high end of my scale, this choice means that we can only lose, not gain, by including a character.
+  #    If we imagine that the probability of error P is proportional to 1.0-s, then the independent probability that every letter is right
+  #    is Π s = exp Σ ln s, which, using the Taylor series, is approximately exp Σ (s-1).
 end
 
 def stiffness()
-  return 0.5 # a constant used in scoring; it controls the importance of the tension (plausibility of the spacing/kerning)
+  return 1.0 # a constant used in scoring; it controls the importance of the tension (plausibility of the spacing/kerning)
 end
 
 def longest_path_fancy(s,h,e,debug:false)
