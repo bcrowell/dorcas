@@ -129,21 +129,45 @@ def dag_word_one(s,lingos)
   # of character i to the left side of character j. e[0] is a list of possible starting chars, e[n] a list of possible ending chars.
   # In other words, e[i+1] is a list of choices we can make after having chosen i, along with their scores. The array e has indices running from 0 to n.
   e = word_to_dag(s,h,template_scores,lingos)
-  string,remainder,success,path,score,if_error_error_message = longest_path_fancy(s,h,e,debug:debug)
-  path,string = consider_more_paths(path,e,h,lingos,s.em)
+  string,remainder,success,path,score,if_error,error_message = longest_path_fancy(s,h,e,debug:debug)
+  path,string = consider_more_paths(path,e,h,lingos,s)
   hits = path.map { |j| h[j] }
   return [success,string,hits,remainder]
 end
 
-def consider_more_paths(path,e,h,lingos,em)
+def consider_more_paths(path,e,h,lingos,s)
+  debug = false
   if false then
     string = path_to_string(h,path)
-    if string=='indeed' || string=='delightiug' then
-      total,template_score,tension_score,lingo_score = score_path_fancy(path,e,h,lingos,em)
+    if string=~/delig/ then
+      debug = true
+      total,template_score,tension_score,lingo_score = score_path_fancy(path,e,h,lingos,s.em)
       print "\n  #{string} #{[total,template_score,tension_score,lingo_score]}\n"
     end
   end
-  return [path,path_to_string(h,path)]
+  choices = [path]
+  # Try knocking out each letter of the longest path to get other possibilities.
+  path.each { |i|
+    debug2 = (debug)
+    if debug2 then print "  considering deleting letter #{i} = #{h[i][2]} \n" end
+    ee = clown(e)
+    (-1).upto(ee.length-2) { |j|
+      ee[j+1] = ee[j+1].map { |a| if a[0]==i then [i,-999.9] else a end}
+    }
+    string2,remainder,success,path2,score,if_error,error_message = longest_path_fancy(s,h,ee)
+    if debug2 then print "  considering #{string2}, path2=#{path2}, score=#{score_path_fancy(path2,e,h,lingos,s.em)}, if_error=#{if_error}\n" end
+    if !if_error then choices.push(path2) end
+  }
+  scores = []
+  choices.each { |path2|
+    if debug then print "  finally considering path2=#{path2}, score=#{score_path_fancy(path2,e,h,lingos,s.em)}\n" end
+    total_score,template_score,tension_score,lingo_score = score_path_fancy(path2,e,h,lingos,s.em)
+    scores.push(total_score)
+  }
+  i,garbage = greatest(scores)
+  path2 = choices[i]
+  if debug then print "  selected path #{i} = #{path2}, #{path_to_string(h,path2)}\n" end
+  return [path2,path_to_string(h,path2)]
 end
 
 def score_path_fancy(path,e,h,lingos,em)
