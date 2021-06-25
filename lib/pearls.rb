@@ -142,12 +142,14 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
     string = path_to_string(h,path)
     if string=~/urul/ then
       debug = true
-      total,template_score,tension_score,lingo_score = score_path_fancy(path,e,h,lingos,s.em)
+      total,template_score,tension_score,lingo_score = score_path_fancy(s,path,e,h,lingos,s.em)
       print "\n  #{string} #{path} #{[total,template_score,tension_score,lingo_score]}\n"
     end
   end
   choices = [path]
   remainders = [remainder]
+  xr = h.map { |a| a[1]+s.widths[a[2]] } # approx right-hand edge of each character
+  target_x = clown(xr[-1])
   # Try knocking out each letter of the longest path to get other possibilities.
   path.each { |i|
     debug2 = (debug)
@@ -159,13 +161,13 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
     }
     hh[i][0] = -infinity
     if debug2 && i==7 then debug_print_graph(ee,hh); print " 6 is #{h[6]}\n" end
-    string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee)
-    if debug2 then print "  considering #{string2}, path2=#{path2}, score=#{score_path_fancy(path2,ee,hh,lingos,s.em)}, if_error=#{if_error}\n" end
+    string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee,target_x:target_x)
+    if debug2 then print "  considering #{string2}, path2=#{path2}, score=#{score_path_fancy(s,path2,ee,hh,lingos,s.em)}, if_error=#{if_error}\n" end
     if !if_error then choices.push(path2); remainders.push(remainder2) end
   }
   scores = []
   choices.each { |path2|
-    total_score,template_score,tension_score,lingo_score = score_path_fancy(path2,e,h,lingos,s.em)
+    total_score,template_score,tension_score,lingo_score = score_path_fancy(s,path2,e,h,lingos,s.em,target_x:target_x)
     scores.push(total_score)
   }
   i,garbage = greatest(scores)
@@ -174,7 +176,7 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
   return [path2,path_to_string(h,path2),remainders[i]]
 end
 
-def score_path_fancy(path,e,h,lingos,em)
+def score_path_fancy(s,path,e,h,lingos,em,target_x:nil)
   template_score = 0.0
   path.each { |i| template_score += template_score_to_additive(h[i][0]) }
   # --
@@ -188,10 +190,14 @@ def score_path_fancy(path,e,h,lingos,em)
   lingo_score = 0.0
   script = char_to_script_and_case(h[0][2])[0]
   if !(lingos.nil?) and lingos.has_key?(script) then
-    s = path_to_string(h,path)
-    if lingos[script].is_word(s) then lingo_score=1.0 end
+    string = path_to_string(h,path)
+    if lingos[script].is_word(string) then lingo_score=1.0 end
   end
-  total = template_score+tension_score+lingo_score
+  # --
+  length_score = 0.0
+  if !target_x.nil? then a=h[path[-1]]; xr=a[1]+s.widths[a[2]]; length_score=(xr-target_x)*1000.0/em.to_f end
+  # --
+  total = template_score+tension_score+lingo_score+length_score
   return [total,template_score,tension_score,lingo_score]
 end
 
@@ -207,11 +213,21 @@ def stiffness()
   return 1.0 # a constant used in scoring; it controls the importance of the tension (plausibility of the spacing/kerning)
 end
 
-def longest_path_fancy(s,h,e,debug:false)
-  success,path,best_score,if_error,error_message = longest_path(e,debug:debug)
+def longest_path_fancy(s,h,e,target_x:nil,debug:false)
+  em = s.em
+  if target_x.nil? then
+    early_quitting_penalty = nil
+  else
+    xr = h.map { |a| a[1]+s.widths[a[2]] } # approx right-hand edge of each character
+    early_quitting_penalty = xr.map { |r| (r-target_x)/em.to_f*1000.0 } # fixme -- adjustable parameter
+  end
+  success,path,best_score,if_error,error_message = longest_path(e,early_quitting_penalty:early_quitting_penalty,debug:debug)
+  if path_to_string(h,path)=~/Μν/ then # qwe
+    longest_path(e,early_quitting_penalty:early_quitting_penalty,debug:true) # run again with debugging
+  end
   if if_error then return ['',nil,success,path,best_score,if_error,error_message] end
   string = path_to_string(h,path)
-  remainder = get_remainder(success,s,h,path,s.em/5.0)
+  remainder = get_remainder(success,s,h,path,em/5.0)
   return [string,remainder,success,path,best_score,if_error,error_message]
 end
 
@@ -267,7 +283,7 @@ def longest_path(e,early_quitting_penalty:nil,debug:false)
       end
     }
   }
-  # We may not actually have a connection from left to right. If so, then pick something shorter. early_quitting_penalty
+  # We may not actually have a connection from left to right. If so, then pick something shorter. 
   options_scores = []
   options_data = []
   n.downto(0) { |i|
@@ -279,14 +295,25 @@ def longest_path(e,early_quitting_penalty:nil,debug:false)
       data = [success,path,this_score,false,nil]
       if early_quitting_penalty.nil? then return data end
       # ... If it's the classical problem, then just return the deepest path, regardless of score. This is used in unit tests.
-      this_score += early_quitting_penalty[i]
+      if i<=n-1 then this_score += early_quitting_penalty[i] end
+      if debug && i<=n-1 then print "debugging... i=#{i}, n=#{n}, path.length=#{path.length} penalty=#{early_quitting_penalty[i]}\n" end # qwe
       options_scores.push(this_score)
-      options_data.push(options_data)
+      options_data.push(clown(data))
     end
   }
   if options_scores.length==0 then die("I can't get started with you. This shouldn't happen, because best_score[0] is initialized to 0.") end
-  i,garbage = greatest(options_scores)
-  return options_data[i]
+  m,garbage = greatest(options_scores)
+  if debug then print "options_scores=#{options_scores}\nbest score is for m=#{m}, score=#{options_scores[m]} data=#{options_data[m]}\n" end # qwe
+  return options_data[m]
+end
+
+def is_array_of_integers(a)
+  # for debugging
+  if !a.kind_of?(Array) then return false end
+  if a.length==0 then return true end
+  if a[0].kind_of?(Array) then return false end
+  if a[0].class==1.class then return true end
+  return false
 end
 
 def word_to_dag(s,h,template_scores,lingos,slop:0)
