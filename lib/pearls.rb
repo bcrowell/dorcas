@@ -142,6 +142,16 @@ def consider_more_paths(path,remainder,e,h,lingos,s)
     string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee,target_x:target_x)
     if !if_error then choices.push(path2); remainders.push(remainder2) end
   }
+  # Double knockouts. This incurs a big performance hit, but does, e.g., fix Agamemuou and make it into Agamemnon.
+  path.each { |i|
+    path.each { |j|
+      next if j==i
+      ee,hh = knock_out_spot(e,h,i,infinity)
+      ee,hh = knock_out_spot(ee,hh,j,infinity)
+      string2,remainder2,success,path2,score,if_error,error_message = longest_path_fancy(s,hh,ee,target_x:target_x)
+      if !if_error then choices.push(path2); remainders.push(remainder2) end
+    }
+  }
   scores = []
   choices.each { |path2|
     total_score,template_score,tension_score,lingo_score = score_path_fancy(s,path2,e,h,lingos,s.em,target_x:target_x)
