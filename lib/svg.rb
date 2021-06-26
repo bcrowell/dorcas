@@ -85,7 +85,7 @@ def patset_as_svg(dir,basic_svg_filename,unsorted_pats,scale,set)
       bw_filename[name] = basic_png_filename
       pat.visual.save(dir_and_file_to_path(dir,basic_png_filename))
       images.push([basic_png_filename,x,y,pat.bw.width,pat.bw.height,1.0])
-      snowmen.push(pat.snowman(set))
+      snowmen.push(pat.snowman(set:set))
       bboxen.push(pat.real_bbox)
     end
     rough_font_size = max_height*0.27

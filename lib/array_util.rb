@@ -147,3 +147,29 @@ def flip_array(a)
   }
   return b
 end
+
+def four_point_2d_interp(a,x,y,method)
+  # X and y are floating point values to be treated as if they were indices into the array a.
+  # They should be in the ranges [0,w-1) and [0,h-1).
+  # Return an interpolated value.
+  # Method="nested" if a should be indexed as a[i][j], "comma" if it should be a[i,j].
+  i = x.to_i
+  j = y.to_i
+  if method=='nested' then
+    a1 = a[i][j]; a2 = a[i+1][j]; a3 = a[i][j+1]; a4 = a[i+1][j+1]
+  else
+    a1 = a[i,j]; a2 = a[i+1,j]; a3 = a[i,j+1]; a4 = a[i+1,j+1]
+  end
+  return four_point_2d_interp_helper(a1,a2,a3,a4,x,y)
+end
+
+def four_point_2d_interp_helper(a1,a2,a3,a4,x,y)
+  # Let a1, ... a4 be four samples of a function on a square (top-left to bottom-right, 0,0 to 1,1).
+  # Return an interpolated value at x,y.
+  eps = 0.001
+  wl = 1.0/(x.abs+eps)
+  wr = 1.0/((1.0-x).abs+eps)
+  wt = 1.0/(y.abs+eps)
+  wb = 1.0/((1.0-y).abs+eps)
+  return (a1*wl*wt+a2*wr*wt+a3*wl*wb+a4*wr*wb)/(wl*wt+wr*wt+wl*wb+wr*wb)
+end

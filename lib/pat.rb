@@ -12,13 +12,18 @@ class Pat
     @real_bbox = nil # mark it as not ready to calculate, will be wrong if calculated before fix_red() is executed
     garbage,@pink,@bw=Pat.fix_red(bw,red,baseline,line_spacing,c,@bbox)
     @real_bbox = [] # mark it as ready to calculate and memoize
+    @real_x_height = nil # will later be memoized
     @threshold = 0.5 # once this has been set, don't change it without deleting all memoized data by calling set_threshold on everything that has a Fat mixin
+    @symm = nil # memoization for the συμμετρίαι() method; if changing anything about the image, this becomes wrong
     # Mix in Fat methods for all objects, memoizing for speed:
     Fat.bless(@bw,@threshold)
     Fat.bless(@red,@threshold)
     Fat.bless(@pink,@threshold)
     @stats = ink_stats_pat(image_to_ink_array(@bw),image_to_ink_array(@pink)) # use pink for this, because that's what we're actually using in correlations
   end
+
+  attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
+  attr_accessor :pink,:stats
 
   def ref_x
     # The left side of real_bbox. Can be unreliable if real_bbox is wrong because of flyspecks.
@@ -61,9 +66,6 @@ class Pat
     return array_ascii_art(self.bw.bool_array,fn:lambda { |x| if x==true then '*' else if x.nil? then 'n' else ' ' end end} )
   end
 
-  attr_reader :bw,:red,:line_spacing,:baseline,:bbox,:c
-  attr_accessor :pink,:stats
-
   def width()
     return bw.width
   end
@@ -86,7 +88,9 @@ class Pat
 
   def write_bw(bw)
     @bw = bw
-    Fat.bless(@bw,@threshold) # eliminates any old memoized data
+    # Eliminate any old memoized data:
+    Fat.bless(@bw,@threshold)
+    @symm = nil
   end
 
   def Pat.char_to_filename(dir,c)
@@ -235,25 +239,30 @@ class Pat
     return [bw,red,data,line_spacing]
   end
 
-  def real_x_height(set)
+  def real_x_height(set:nil)
     # Gives a precise geometrical estimate of the x height, but can be wrong if there are flyspecks.
     # A pat object doesn't know what set it's part of, so for this purpose we need that as an argument.
+    # Once this routine is called once with the proper set, future calls will return a memoized copy of the result.
+    if !(@real_x_height.nil?) then return @real_x_height end
     script = Script.new(self.c)
-    return set.real_x_height(script:script)
+    result = set.real_x_height(script:script)
+    @real_x_height = result
+    return result
   end
 
-  def snowman(set)
+  def snowman(set:nil)
     # Generate some kind of approximate kerning information. This consists of [vert,horiz], containing 16 numbers, where
     # vert is an array like [top,xheight,baseline,bottom], and horiz is an array indexed as [side][color][slab].
     # Breaks the character up into three layers (slab=0, 1, 2) on each side (0=left, 1=right).
     # For color=0, gives the skinny snowman consisting of the width of the black template.
     # For color=1, gives the fatter one that is the white (i.e., not pink).
     # All x coordinates are relative to the left side of the template image.
-    # A pat object doesn't know what set it's part of, so for this purpose we need that as an argument.
+    # A pat object doesn't know what set it's part of, so for this purpose we need that as an argument. However, set can be nil if
+    # real_x_height() has already been called once, resulting in memoization.
     # The computations take about 1 second for 100 characters, and are memoized.
     w,h = self.bw.width,self.bw.height
     bl = self.real_baseline
-    xh = self.real_x_height(set)
+    xh = self.real_x_height(set:set)
     vert = [xh/6,bl-xh,bl,h] # top is not 0 because often we have a strip of white at the top
     if !(@snowman.nil?) then return @snowman end # memoized
     black = image_to_boolean_ink_array(self.bw) # true means black
@@ -369,7 +378,49 @@ class Pat
     return [boolean_ink_array_to_image(r_with_baseline_fix),boolean_ink_array_to_image(r),boolean_ink_array_to_image(bw_boolean)]
   end
 
+  def συμμετρίαι(image:self.bw,ref:[self.ref_x,self.ref_y],indexing_method:'comma')
+    # Symmetries of this template. Returns a hash whose keys are strings describing certain symmetries, and whose
+    # values are correlation coefficients describing how well the symmetry fits. Results are on a % scale from -100 to 100.
+    # This is designed to be insensitive to quantization of coordinates, at the expense of being slow.
+    # Also insensitive to background, amplitude, and threshold.
+    # This method can also be used to compute these methods of symmetries on a swatch out of another image; this
+    # is the purpose of the arguments image, ref, and indexing_method.
+    # X-height needs to have been memoized before calling this routine, because the pat doesn't know what set it's part of.
+    w,h = self.width,self.height
+    x_offset,y_offset = [ref[0]-self.ref_x,ref[1]-self.ref_y]
+    result = {}
+    ['rot'].each { |symm|
+      x0,y0,op = [nil,nil,nil]
+      if symm=='rot' then x0,y0 = self.belly_button(); op=lambda { |u,v| [-u,-v] } end
+      p = []
+      q = []
+      0.upto(w-1) { |x|
+        0.upto(h-1) { |y|
+          next if has_ink(self.pink[x,y])
+          dx,dy=[x-x0,y-y0]
+          dx2,dy2 = op.call(dx,dy)
+          x2,y2 = [x0+dx2,y0+dy2]
+          next if x2<0 || x2>=w-1 || y2<0 || y2>=h-1
+          p.push(image[x+x_offset,y+y_offset])
+          q.push(four_point_2d_interp(self.bw,x2+x_offset,y2+y_offset,indexing_method))
+        }
+      }
+      result[symm] = (correlation_of_lists(p,q)*100.0).round
+    }
+    return result
+  end
+
+  def belly_button(set:nil)
+    # The center of the middle box of the snowman. Floating point.
+    vert,horiz = self.snowman(set:set)
+    y = (vert[1]+vert[2])*0.5
+    x = (horiz[0][0][1]+horiz[1][0][1])*0.5
+    return [x,y]
+  end
+
 end
+
+#---------- end of class Pat
 
 def deglitch_helper(box,array,i,j)
   if !box.contains?(i,j) then array[i][j] = false end
@@ -438,8 +489,6 @@ def nearest_above(a,i,j)
   }
   return j
 end
-
-#---------- end of class Pat
 
 def char_to_pat(c,output_dir,seed_font,dpi,script)
   if dpi<=0 or dpi>2000 then die("dpi=#{dpi} fails sanity check") end
@@ -554,6 +603,7 @@ def red_one_side(c,dir,font,side,image_orig,dpi,script)
     }
   }
   return red
+
 end
 
 

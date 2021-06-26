@@ -16,6 +16,16 @@ def find_mean_sd(x)
   return [mean,sd]
 end
 
+def correlation_of_lists(a,b)
+  mean_a,sd_a = find_mean_sd(a)
+  mean_b,sd_b = find_mean_sd(b)
+  sum = 0.0
+  0.upto(a.length-1) { |i|
+    sum += (a[i]-mean_a)*(b[i]-mean_b)
+  }
+  return sum/(a.length*sd_a*sd_b)
+end
+
 def find_sup_sub_median(x,x0)
   # Submedian is just my made-up term for the median of all data that lie below some value x0 (typically the mean).
   sub = find_median(x.select{ |a| a<=x0})

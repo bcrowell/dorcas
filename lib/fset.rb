@@ -93,6 +93,7 @@ class Fset
     end
     it = Fset.new(l,data)
     it.file_or_dir = dir
+    it.memoize_x_heights
     return it
   end
 
@@ -123,7 +124,15 @@ class Fset
     if data.nil? then die("Zip file #{filename} does not contain a file _data.json") end
     it = Fset.new(l,data)
     it.file_or_dir = filename
+    it.memoize_x_heights
     return it
+  end
+
+  def memoize_x_heights
+    self.pats.each { |pat|
+      pat.real_x_height(set:self)
+      # ... calculate the result and throw it away, so it gets memoized, and can be retrieved without knowing what set the pat is part of
+    }
   end
 
   def Fset.grow_from_seed(job,page,verbosity:2)
@@ -148,6 +157,7 @@ class Fset
       }
       job.set = Fset.new(pats,{}) # fixme -- will it be a problem that data is empty?
     }
+    job.set.memoize_x_heights
   end
 
 end

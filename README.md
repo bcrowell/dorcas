@@ -199,7 +199,7 @@ If you OCR a page from scratch, there are two stages. In the first stage, the pr
 letters of the alphabet and writes a .spa ("spatter") file containing a list of every possible detection of a letter,
 including those that have low scores indicating they aren't very good matches. In the second stage, it reads the
 .spa file and tries to string everything together. If you rerun the job without changing any of the parameters that
-would have detected the spatter file, then the program will just read the .spa file back in and avoid the time-consuming
+would have affected the spatter file, then the program will just read the .spa file back in and avoid the time-consuming
 step of scanning the original page image.
 
 # Portability
