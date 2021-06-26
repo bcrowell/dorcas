@@ -13,12 +13,12 @@ fails.
 
 ## What the system is designed to do
 
-* Handles text in any mixture of languages.
+* Handle text in any mixture of languages.
 
-* Doesn't depend on a neural network as an unmodifiable, unfixable, and inscrutable black box.
-     Instead, use some variant of old-school methods such as convolution and template matching.
+* Not depend on a neural network as an unmodifiable, unfixable, and inscrutable black box.
+     Instead, use old-school methods such as convolution and template matching.
 
-* Handle RTL alphabetic scripts.
+* Handle RTL alphabetic scripts such as Hebrew, and bidirectional texts.
 
 * Take advantage of symmetrical multiprocessing.
 
@@ -27,7 +27,7 @@ fails.
 * May be somewhat slow, but still usable on a book-length text if you let it run for a weekend.
 
 * May need to look at a fairly large document in order to get an initial fix on the font.
-     May need a certain amount of human involvement at this stage.
+     May need considerable human involvement at this stage. Will probably never be a turn-key system like Tesseract.
 
 * Won't handle CJK, vertical scripts, or handwriting.
 

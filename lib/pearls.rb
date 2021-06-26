@@ -11,7 +11,7 @@ def babble(s,threshold:0.5)
   return l.map { |x| x[2] }.join
 end
 
-def dumb_split(s,algorithm,lingos,threshold:0.3)
+def dumb_split(s,algorithm,lingos,threshold:0.0)
   # S is a spatter object that we hope is a single line of text.
   # Does word splitting based on the simplest algorithm that could possibly output anything legible.
   # Simply splits the line wherever there's too much whitespace, then returns an interpretation of on each word.
@@ -187,7 +187,8 @@ def score_path_fancy(s,path,e,h,lingos,em,target_x:nil)
   script = char_to_script_and_case(h[0][2])[0]
   if !(lingos.nil?) and lingos.has_key?(script) then
     string = path_to_string(h,path)
-    if lingos[script].is_word(string) then lingo_score=1.0 end
+    f = lingos[script].word_log_freq(string) # "the" is -4, "slayings" and "te" (Latin) are -20
+    if f>-20 then lingo_score=0.125*f+2.5 end # gives a bonus of 2 points for "the," none for "slayings" or "te"
   end
   # --
   length_score = 0.0

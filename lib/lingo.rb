@@ -34,6 +34,11 @@ class Lingo
     return self.words.has_key?(remove_accents(s).downcase)
   end
 
+  def word_log_freq(w)
+    ww = remove_accents(w).downcase
+    if self.words.has_key?(ww) then return self.words[ww] else return -9999 end
+  end
+
   def bigram_can_be_word_initial?(bigram)
     return retrieve_bigram_boolean('word_initial_no_accents',bigram)
   end

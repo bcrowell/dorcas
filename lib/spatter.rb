@@ -90,7 +90,9 @@ class Spatter
     # Return a list of new Spatter objects, each of which is estimated to be a line of text.
     # This is meant to be the dumbest algorithm that has any hope of working. Won't cope well if the text is rotated or lines are curved at all.
     if self.total_hits==0 then return [] end
-    if self.spread<0.5*self.line_spacing then return [self] end
+    if self.spread<0.7*self.line_spacing then return [self] end
+    # ... It doesn't seem super sensitive to the numerical constant, but setting it lower, at 0.5, occasionally results in bogus output
+    #     due to flyspecks, accents, etc., between lines.
     # Make a histogram running along the vertical axis.
     f = 0.25 # each bin is this fraction of line spacing
     bin_width = (self.line_spacing*f).round
