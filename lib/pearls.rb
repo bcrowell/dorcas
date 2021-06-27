@@ -192,7 +192,7 @@ def score_path_fancy(s,path,e,h,lingos,em,target_x:nil)
   end
   # --
   length_score = 0.0
-  if !target_x.nil? then a=h[path[-1]]; xr=a[1]+s.widths[a[2]]; length_score=(xr-target_x)*keep_goingness()/em.to_f end
+  if !target_x.nil? then a=h[path[-1]]; xr=a[1]+s.widths[a[2]]; length_score=keep_goingness((xr-target_x)/em.to_f) end
   # --
   total = template_score+tension_score+lingo_score+length_score
   return [total,template_score,tension_score,lingo_score]
@@ -210,12 +210,21 @@ def stiffness()
   return 1.0 # a constant used in scoring; it controls the importance of the tension (plausibility of the spacing/kerning)
 end
 
-def keep_goingness()
-  return 1.0
-  # If considering a shorter path through a dag, this is how much we're penalized, per em width.
-  # Picking a big value, like 5.0, causes it to do dumb thinks like render "the" as "thu," because the u is slightly wider.
-  # A small value, like 0.5, causes it to split up words into short two-letter nonsense words.
-  # At 1.0-1.5, "the stranger" is run together as "thoetranger."
+def keep_goingness(x)
+  # If considering a shorter path through a dag, this is how much we're penalized.
+  # If x is large and negative, we didn't get to the end of the word, and we're penalized.
+  thr = -0.15
+  # ... If we're short by this many em widths, we don't care. Try not to make it do dumb stuff like using a wide letter that's
+  #     a bad match just because the good match is slightly shorter.
+  a = 1.5
+  # ... penalty per em width
+  #     Picking a big value, like 5.0, causes it to do dumb thinks like render "the" as "thu," because the u is slightly wider.
+  #     A small value, like 0.5, causes it to split up words into short two-letter nonsense words.
+  #     At 1.0-1.5, "the stranger" is run together as "thoetranger."
+  # I tried setting a maximum penalty, but it either had no effect or produced bad results.
+  if x>=thr then return 0 end
+  penalty = a*(x-thr)
+  return penalty
 end
 
 def longest_path_fancy(s,h,e,target_x:nil,debug:false)
@@ -224,7 +233,7 @@ def longest_path_fancy(s,h,e,target_x:nil,debug:false)
     early_quitting_penalty = nil
   else
     xr = h.map { |a| a[1]+s.widths[a[2]] } # approx right-hand edge of each character
-    early_quitting_penalty = xr.map { |r| (r-target_x)/em.to_f*keep_goingness() } 
+    early_quitting_penalty = xr.map { |r| keep_goingness((r-target_x)/em.to_f) } 
   end
   success,path,best_score,if_error,error_message = longest_path(e,early_quitting_penalty:early_quitting_penalty,debug:debug)
   if if_error then return ['',nil,success,path,best_score,if_error,error_message] end
