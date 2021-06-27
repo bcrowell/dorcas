@@ -34,6 +34,13 @@ fails.
 * It runs on Linux. I've made an effort to make it fairly portable, but actually porting it to Windows would require some effort, and
     is not something I would work on myself.
 
+# General description of how the software works
+
+Broadly speaking, there are two stages to the process, a training part and then the actual processing of text that you want to OCR.
+During the training part, you build up a set of templates, one for each letter of the alphabet(s), that are based on the actual
+document. A limitation this software is that it must be trained on the same font that wll be used on the actual document. Currently,
+this even has to be the same size and resolution. For example, if you're trying to OCR
+
 ## Usage
 
 `dorcas foo.job` ... reads parameters from a json file
@@ -230,3 +237,4 @@ On linux, this should work when there are multiple processes. On windows, openin
 locks the file.
 
 In temp_file_name() and verb_clean(), we assume temporary files can be created with the filename pattern /tmp/dorcas*.
+
