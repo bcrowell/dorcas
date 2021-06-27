@@ -33,7 +33,7 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
       #status = `ps -o state -p #{pid}`.chomp # posix, https://stackoverflow.com/a/10592618/1142217
       #print "process #{pid} has status #{process_running?(pid)}\n"
       if File.exists?(sem) then
-        print "  Process #{pid} has finished.\n"
+        console "  Process #{pid} has finished.\n"
         ndone += 1
       end
       i += 1
@@ -128,13 +128,13 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   no_return_ink = (options['no_return_ink']==true)
   preserve_file = (options['preserve_file']==true)
   # Get inputs as ChunkyPNG, converting or reading if necessary:
-  if verbosity>=3 then print "reading inputs\n" end
+  if verbosity>=3 then console "reading inputs\n" end
   image  = image_any_type_to_chunky(image_raw)
   kernel = image_any_type_to_chunky(kernel_raw)
   # The sums in the following are to prevent the kernel from wrapping around.
   w = boost_for_no_large_prime_factors(image.width+kernel.width)
   h = boost_for_no_large_prime_factors(image.height+kernel.height)
-  if verbosity>=3 then print "padding\n" end
+  if verbosity>=3 then console "padding\n" end
   image_padded  = pad_image_right(image,w,h,background)
   kernel_padded = pad_image_right(kernel,w,h,0.0)
   image_file = temp_file_name()+".png"
@@ -142,11 +142,11 @@ def convolution_convenience_function(image_raw,kernel_raw,background,norm:1.0,hi
   output_file = temp_file_name()+".png"
   image_padded.save(image_file)
   kernel_padded.save(kernel_file)
-  if verbosity>=3 then print "convolving\n" end
+  if verbosity>=3 then console "convolving\n" end
   max = convolve_png_files(image_file,kernel_file,output_file,1,norm,high_pass_x,high_pass_y)
   FileUtils.rm_f(image_file)
   FileUtils.rm_f(kernel_file)
-  if verbosity>=3 then print "reading in output\n" end
+  if verbosity>=3 then console "reading in output\n" end
   im = image_from_file_to_grayscale(output_file).crop(0,0,image.width-1,image.height-1) # ChunkyPNG object, cropped back to original size
   ink = nil
   if !no_return_ink then ink=image_to_ink_array(im) end

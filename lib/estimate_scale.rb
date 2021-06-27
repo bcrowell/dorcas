@@ -6,7 +6,7 @@ def estimate_scale(image,peak_to_bg,guess_dpi:300,guess_font_size:12,spacing_mul
   #   2 -> a couple of brief lines of summary
   #   3 -> lots of step-by-step diagnostics, and writing of graphs
   proj = project_onto_y(image,0,image.width/2-1)
-  if verbosity>=1 then print "Analyzing line spacing based on the left half of the page.\n" end
+  if verbosity>=2 then console "Analyzing line spacing based on the left half of the page.\n" end
   # ... Doing only the left half of the image serves two purposes. If the image is rotated a little, then this mitigates the problem.
   #     Also, if there are two columns of text, then this will pick up only one. This could of course be the wrong choice in
   #     some cases, e.g., if there's a picture on the left side of the page.
@@ -62,14 +62,14 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,
       if blurred[ii]>blurred[i] then ok=false; break end
     }
     if not ok then next end
-    if verbosity>=4 then print "  found midpoint at #{i}\n" end
+    if verbosity>=4 then console "  found midpoint at #{i}\n" end
     middies.push(i)
   }
 
   # Make a copy of proj that's folded like an accordion pleat, so that we have a single average projection of a line of text.
   verbosity=2
   # The center goes at array index c.
-  if verbosity>=4 then print "  half_period=#{half_period}\n" end
+  if verbosity>=4 then console "  half_period=#{half_period}\n" end
   c = (half_period).round
   na = 2*c
   a = []
@@ -94,7 +94,7 @@ def estimate_font_height(proj,n,nn,line_spacing,avg,peak_to_bg,spacing_multiple,
     # bg2 seems to be higher, probably because crap gets in the tiny, narrow pure-white spaces between lines
     bg = greatest([bg1,bg2])[1]
     a = a.map{ |x| (x-bg)/(peak-bg)} # scale so that 1=max and 0=bg (approximately)
-    if verbosity>=4 then print "half_period=#{half_period}, peak=#{peak}, bg=#{bg}\n" end
+    if verbosity>=4 then console "half_period=#{half_period}, peak=#{peak}, bg=#{bg}\n" end
     if verbosity>=3 then make_graph("accordion.pdf",nil,a,"row","average projection") end
   
     # Try to guess x-height.
@@ -130,9 +130,9 @@ def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spac
 
   guess_period = metrics_to_estimated_line_spacing(guess_dpi,guess_font_size,spacing_multiple:spacing_multiple)
 
-  if verbosity>=3 then print "guess_period=#{guess_period}\n" end
+  if verbosity>=3 then console "guess_period=#{guess_period}\n" end
   cheng_period = estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,1.4,verbosity)
-  if verbosity>=3 then print "cheng_period=#{cheng_period}\n" end
+  if verbosity>=3 then console "cheng_period=#{cheng_period}\n" end
 
   # Now refine the estimate using the cepstrum technique.
   guess_freq = (nn/cheng_period).round
@@ -143,10 +143,10 @@ def estimate_line_spacing(proj,proj_windowed,n,nn,guess_dpi,guess_font_size,spac
   if min_freq<3 then min_freq=3 end # shouldn't actually happen
   if max_freq==guess_freq then max_freq=guess_freq+1 end
   if max_freq>nn-1 then max_freq=nn-1 end
-  if verbosity>=3 then print "inputs to cepstrum: min_freq=#{min_freq}, max_freq=#{max_freq}\n" end
+  if verbosity>=3 then console "inputs to cepstrum: min_freq=#{min_freq}, max_freq=#{max_freq}\n" end
   period = estimate_line_spacing_cepstrum(proj,proj_windowed,window,nn,cheng_period,guess_freq,min_freq,max_freq,verbosity)
 
-  if verbosity>=2 then print "Line spacing is estimated to have period #{period}.\n" end
+  if verbosity>=2 then console "Line spacing is estimated to have period #{period}.\n" end
 
   return period
 end
@@ -186,7 +186,7 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,p
   if tooth_width<1 then tooth_width=1 end
   results_energy = []
   results_periods = []
-  if verbosity>=3 then print "Cheng comb, length=#{y.length}, period=#{period_lo}-#{period_hi}, n_teeth=#{n_teeth}, tooth_width=#{tooth_width}\n" end
+  if verbosity>=3 then console "Cheng comb, length=#{y.length}, period=#{period_lo}-#{period_hi}, n_teeth=#{n_teeth}, tooth_width=#{tooth_width}\n" end
   period_lo.upto(period_hi) { |period|
     results_energy_this_period = []
     results_inputs_this_period = []
@@ -208,7 +208,7 @@ def estimate_line_spacing_cheng_comb(proj,proj_windowed,window,nn,guess_period,p
   }
   m,energy = greatest(results_energy)
   period = results_periods[m]
-  if verbosity>=3 then print "Cheng comb gives best period=#{period}\n" end
+  if verbosity>=3 then console "Cheng comb gives best period=#{period}\n" end
   if verbosity>=3 then make_graph("cheng.pdf",results_periods,results_energy,"period","energy") end
   return period
 end
@@ -238,7 +238,7 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   min_period = (nn/max_freq).round
   max_period = (nn/min_freq).round
   best_cepstrum,garbage = greatest_in_range(cepstrum,min_period,max_period)
-  if verbosity>=3 then print "best period from cepstrum = #{best_cepstrum}\n" end
+  if verbosity>=3 then console "best period from cepstrum = #{best_cepstrum}\n" end
 
   if best_cepstrum.nil? then
     warn("couldn't estimate line spacing using cepstrum technique, taking it to be the guessed value #{guess_period}")
@@ -255,7 +255,7 @@ def estimate_line_spacing_cepstrum(proj_raw,proj_windowed,window,nn,guess_period
   if verbosity>=3 then make_graph("cepstrum.pdf",graph_x,graph_y,"period","cepstrum") end
 
   period = fit_gaussian_to_peak(cepstrum,best_cepstrum-2,best_cepstrum+2,[best_cepstrum,1,cepstrum[best_cepstrum]])
-  if verbosity>=3 then print "gaussian fit = #{period}\n" end
+  if verbosity>=3 then console "gaussian fit = #{period}\n" end
 
   return period
 end

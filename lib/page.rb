@@ -35,9 +35,9 @@ class Page
     return Page.new(image_from_file_to_grayscale(png_filename),png_filename:png_filename)
   end
 
-  def analyze(spacing_multiple,guess_dpi,guess_font_size)
+  def analyze(spacing_multiple,guess_dpi,guess_font_size,verbosity:1)
     # Has the side-effect of mixing in Fat module for efficiency.
-    print "Input file is #{self.png_filename}\n"
+    if verbosity>=2 then console "Input file is #{self.png_filename}\n" end
     s = ink_stats_1(self.image,self.ink)
     self.peak_to_bg = s['dark']/s['submedian']
     text_line_spacing,x_height = estimate_scale(self.image,self.peak_to_bg,
@@ -45,7 +45,7 @@ class Page
     s['line_spacing'] = text_line_spacing
     s['x_height'] = x_height
     s = ink_stats_2(self.image,self.ink,s,(text_line_spacing*0.3).round)
-    print "ink stats:\n#{stats_to_string(s)}"
+    if verbosity>=2 then console console "ink stats:\n#{stats_to_string(s)}" end
     if x_height<0.35*text_line_spacing/spacing_multiple then 
       warn("x-height appears to be small compared to line spacing for spacing_multiple=#{spacing_multiple}")
     end

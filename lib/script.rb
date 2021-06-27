@@ -40,7 +40,7 @@ class Script
   def Script.generate_table_for_char_to_short_name()
     h = {}
     ['latin','greek','hebrew'].each { |n|
-      print "#{n}\n"
+      console "#{n}\n"
       script = Script.new(n)
       l = script.all_letters()
       if n=='latin' then l=l+'ÆæŒœ.,;:-?/<>[]{}_+=!#%^&~' end # fixme -- some characters have special significance to the shell and cause errors
@@ -49,7 +49,7 @@ class Script
       #     mistakes (smooth rho, phi and theta in symbol font). Duplications and characters out of order in this list have no effect at run time.
       l.chars.uniq.each { |c|
         nn = char_to_short_name_slow(c)
-        #print "  #{c} --> #{nn}\n"
+        #console "  #{c} --> #{nn}\n"
         h[c] = nn
       }
     }

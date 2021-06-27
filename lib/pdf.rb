@@ -6,7 +6,7 @@ def extract_pdf_page(text_file,dpi,cache_dir)
   stem = $1
   png = dir_and_file_to_path(cache_dir,"#{stem}_#{sprintf("%03d",page)}.png")
   if File.exists?(png) then return png end
-  print "Extracting page #{page} from #{pdf} to #{png}\n"
+  console "Extracting page #{page} from #{pdf} to #{png}\n"
   temp_file = temp_file_name()
   shell_out("qpdf \"#{pdf}\" --pages . #{page} -- #{temp_file}")
   shell_out("convert -density #{dpi} #{temp_file} -set colorspace Gray -separate -average #{png}")

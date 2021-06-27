@@ -42,7 +42,7 @@ def write_svg_reports_helper(dir,output_dir,file_base,info,data,job)
   end
   scale = 1.0
   err,message,filename = patset_as_svg(dir,file_base,pats,scale,job.set)
-  print sprintf(info,filename)
+  console sprintf(info,filename)
   if err!=0 then warn(message) end
 end
 
@@ -173,12 +173,12 @@ def summarize_composites_as_svg(report_dir,svg_filename,char_name,composites)
   }
   images_svg = images.join("\n")
   svg = "#{svg_header()}  #{images_svg} </svg>"
-  print "  Writing summary of composites and clusters to #{svg_filename}\n"
+  console "  Writing summary of composites and clusters to #{svg_filename}\n"
   File.open(svg_filename,'w') { |f| f.print svg }
 end
 
 def matches_as_svg(dir,svg_filename,char_name,text_file,text,pat,hits,composites)
-  print "Writing svg file #{svg_filename}\n"
+  console "Writing svg file #{svg_filename}\n"
   images = []
   filename = dir_and_file_to_path(dir,"matches_#{char_name}.png")
   pat.visual.save(filename)
@@ -328,7 +328,7 @@ def png_report(monitor_file,text,hits,chars,set,verbosity:2)
     v[short_name] = set.pat(c).visual(black_color:ChunkyPNG::Color::rgba(255,0,0,130),red_color:nil) # semitransparent red
     hits[c].each { |x|
       score,i,j = x
-      if verbosity>=3 then print "    ",x,"\n" end
+      if verbosity>=3 then console "    ",x,"\n" end
       monitor_image = compose_safe(monitor_image,v[short_name],i,j)
     }
   }

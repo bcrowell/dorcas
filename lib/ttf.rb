@@ -54,10 +54,10 @@ def ttf_render_string(s,out_file,ttf_file_path,dpi,point_size,font_height,descen
     close F;
     print "__output__",$bounds[0],",",$bounds[2],",",$bounds[5],",",$bounds[1],"\\n" # left, right, top, bottom -- https://metacpan.org/pod/GD
   PERL
-  if verbosity>=4 then print code; print "escaped s=#{escape_double_quotes(s)}\n" end
+  if verbosity>=4 then console code; console "escaped s=#{escape_double_quotes(s)}\n" end
   output = run_perl_code(code)
   left,right,top,bottom = output.split(/,/).map {|x| x.to_i}
-  if verbosity>=3 then print "lrtb=#{[left,right,top,bottom]}\n" end
+  if verbosity>=3 then console "lrtb=#{[left,right,top,bottom]}\n" end
   return [baseline,left,right,top,bottom]
 end
 

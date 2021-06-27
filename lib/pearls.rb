@@ -375,7 +375,7 @@ def word_to_dag(s,h,template_scores,lingos,slop:0)
           end
         end
       end
-      #if reject_bigram then print "rejecting word-initial bigram #{c1+c2}\n" end
+      #if reject_bigram then console "rejecting word-initial bigram #{c1+c2}\n" end
       next if reject_bigram
       e[i+1].push([j,score])
     }
@@ -421,8 +421,8 @@ end
 def debug_print_graph(e,h)
   (-1).upto(e.length-2) { |i|
     x = e[i+1].map { |edge| "[#{edge[0]} #{debug_print_graph_helper(edge[0],h)},#{sprintf('%4.2f',edge[1])}]" }
-    print "  #{sprintf('%4d',i)}  #{debug_print_graph_helper(i,h)}  |  #{x.join(' ')}\n"
-    if i>=20 then print "cutting off after 20 lines\n"; return end
+    console "  #{sprintf('%4d',i)}  #{debug_print_graph_helper(i,h)}  |  #{x.join(' ')}\n"
+    if i>=20 then console "cutting off after 20 lines\n"; return end
   }
 end
 

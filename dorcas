@@ -56,7 +56,7 @@ class HomeDir
 end
 
 
-def main()
+def main(verbosity:1)
   start = Time.now
 
   cache_dir = dir_and_file_to_path(dir_and_file_to_path(Dir.home,".dorcas"),"cache") # variable is needed for `dorcas clean` as well as for real OCRing jobs
@@ -72,9 +72,9 @@ def main()
   job_list = Job.list_from_file(job_file,cache_dir)
   if job_list.length<1 then die("empty list of pages in job file") end
   job=job_list[0].without_image_info
-  if false then
+  if verbosity>=2 then
     if job_list.length==1 then summary=job_list[0].to_s else summary=job.to_s end
-    print "Parameters for this job:#{summary}\n"
+    console "Parameters for this job:#{summary}\n"
   end
 
   report_dir = dir_and_file_to_path(job.output,"_reports")
@@ -88,9 +88,9 @@ def main()
   count = 0
   job_list.each { |one_page_job|
     count += 1
-    if job_list.length>1 then print "======\nProcessing page image #{one_page_job.image}, page #{count} of #{job_list.length}.\n======\n" end
+    if job_list.length>1 then console "======\nProcessing page image #{one_page_job.image}, page #{count} of #{job_list.length}.\n======\n" end
     page = Page.from_file(one_page_job.image,cache_dir) # handles extracting a page from a pdf, if that syntax was used
-    print "fingerprint: #{one_page_job.fingerprint_pre_spatter} #{page.fingerprint}\n"
+    if verbosity>=3 then console "fingerprint: #{one_page_job.fingerprint_pre_spatter} #{page.fingerprint}\n" end
     one_page_job.image = page.png_filename
     page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size)
     results.push(run_job(one_page_job,page,report_dir))
@@ -98,7 +98,7 @@ def main()
   postprocess(job,results,report_dir)
 
   finish = Time.now
-  print "Total time for this entire run = #{finish-start} seconds.\n"
+  if verbosity>=2 then console "Total time for this entire run = #{finish-start} seconds.\n" end
 end
 
 def run_job(job,page,report_dir)
@@ -136,7 +136,7 @@ end
 def create_directories(job,report_dir)
   if File.exists?(job.output) then FileUtils.rm_rf(job.output) end # has safety features, https://stackoverflow.com/a/12335711
   if not File.exists?(job.output) then Dir.mkdir(job.output) end
-  if not File.exists?(job.cache_dir) then print "Creating directory #{job.cache_dir}\n"; FileUtils.mkdir_p(job.cache_dir) end
+  if not File.exists?(job.cache_dir) then console "Creating directory #{job.cache_dir}\n"; FileUtils.mkdir_p(job.cache_dir) end
   if not File.exists?(report_dir) then Dir.mkdir(report_dir) end
 end
 
@@ -151,6 +151,10 @@ def warn(message)
   $stderr.print "              WARNING\n"
   $stderr.print message,"\n"
   $stderr.print "****************************************************************************************************************\n"
+end
+
+def console(*x)
+  $stderr.print *x
 end
 
 main()

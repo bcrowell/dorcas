@@ -45,8 +45,8 @@ def three_stage_guess_pars(page,xheight,n_chars,meta_threshold:0.5,verbosity:1)
   sigma = xheight/10.0 # gives 3 for Giles, which seemed to work pretty well; varying sigma mainly just renormalizes scores
   a = (xheight/3.0).round # gives 10 for Giles; reducing it by a factor of 2 breaks peak detection; doubling it has little effect
 
-  if verbosity>=1 then
-    print "threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits=#{[threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]}\n"
+  if verbosity>=2 then
+    console "threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits=#{[threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]}\n"
   end
 
   return [threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits]

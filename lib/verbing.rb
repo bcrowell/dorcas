@@ -19,10 +19,10 @@ def verb_view(args)
   unless File.directory?(report_dir) then Dir.mkdir(report_dir) end
   pats = set.pats.map { |x| [true,x]}
   set.pats.each { |p|
-    print p.c," ",p.συμμετρίαι(set),"\n" # qwe
+    console p.c," ",p.συμμετρίαι(set),"\n" # qwe
   }
   err,message,filename = patset_as_svg(report_dir,svg_file,pats,5.0,set)
-  if err!=0 then warn(message) else print "Report written to #{filename}\n" end
+  if err!=0 then warn(message) else console "Report written to #{filename}\n" end
 end
 
 def verb_clean(cache_dir)
@@ -51,10 +51,10 @@ def verb_squirrel(args)
 end
 
 def verb_insert(args)
-  if args.length==1 and args[0]=='help' then print "usage: dorcas insert old.set ρ bw.png new.set\n"; return end
+  if args.length==1 and args[0]=='help' then console "usage: dorcas insert old.set ρ bw.png new.set\n"; return end
 
   set_file,raw_char_name,widget,output = args
-  print "set_file,raw_char_name,widget,output=#{[set_file,raw_char_name,widget,output]}\n"
+  console "set_file,raw_char_name,widget,output=#{[set_file,raw_char_name,widget,output]}\n"
   if not File.exists?(set_file) then die("input file #{set_file} does not exist") end
   if not File.exists?(widget) then die("input file #{widget} does not exist") end
   if raw_char_name.length==1 then char_name=char_to_short_name(raw_char_name) else char_name=raw_char_name end
@@ -79,16 +79,16 @@ def verb_insert(args)
   shell_out("zip -j #{output} #{temp_file}",echo:if_echo) # inserts it under the name stem
   shell_out("printf \"@ #{stem}\\n@=#{pat_filename}\\n\" | zipnote -w #{output}",echo:if_echo) # https://serverfault.com/a/726257
 
-  print "data inserted in #{set_file} from #{char_name}, #{widget}, and written to #{output}\n"
+  console "data inserted in #{set_file} from #{char_name}, #{widget}, and written to #{output}\n"
 
   FileUtils.rm_f(temp_file)
 end
 
 def verb_extract(args)
-  if args.length==1 and args[0]=='help' then print "usage: dorcas extract old.set ρ bw.png\n"; return end
+  if args.length==1 and args[0]=='help' then console "usage: dorcas extract old.set ρ bw.png\n"; return end
 
   set_file,raw_char_name,output = args
-  print "set_file,raw_char_name,output=#{[set_file,raw_char_name,output]}\n"
+  console "set_file,raw_char_name,output=#{[set_file,raw_char_name,output]}\n"
   if not File.exists?(set_file) then die("input file #{set_file} does not exist") end
   if raw_char_name.length==1 then char_name=char_to_short_name(raw_char_name) else char_name=raw_char_name end
   if short_name_to_long_name(char_name).nil? then die("not the short name of any character: #{char_name}") end
@@ -124,7 +124,7 @@ def verb_extract(args)
   else
     create_text_file(output,content)
   end
-  print "data extracted from #{set_file}, #{char_name} to #{output}\n"
+  console "data extracted from #{set_file}, #{char_name} to #{output}\n"
 
   FileUtils.rm_f(temp_file)
   FileUtils.rm_f(temp_file2)
