@@ -49,7 +49,7 @@ class Match
     self.batch_code = batch_code
 
     self.three_stage_prep(page,set,if_monitor_file:if_monitor_file)
-    print "  Done with fft for #{self.characters}.\n" if verbosity>=1
+    console "  Done with fft for #{self.characters}.\n" if verbosity>=1
     count1,hits2 = self.three_stage_pass_2(page,set)
     hits3 = self.three_stage_pass_3(page,set,hits2)
     self.three_stage_cleanup(page)
@@ -58,11 +58,12 @@ class Match
     return hits3
   end
 
-  def three_stage_prep(page,set,if_monitor_file:true)
+  def three_stage_prep(page,set,if_monitor_file:true,verbosity:1)
     # This runs the first of the three stages, using fft convolution. This is the part that parallelizes well to multiple cores, and for
     # performance should be called with many characters at once in self.characters.
     # It stores all the hits from the first stage in self.hits, and these can
     # then be run through the later stages using three_stage_complete(), which can be called one character at a time if desired.
+    if verbosity>=1 then console "Scanning the page for characters, pass 1 of 3.\n" end
     die("stats= #{page.stats.keys}, does not contain required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     die("batch_code is nil") if self.batch_code.nil?
@@ -95,6 +96,7 @@ class Match
     # Returns [count1,hits2], where 
     #   count1 is a hash whose keys are characters and whose values are the number of hits from pass 1
     #   hits2 is a hash whose keys are characters and whose values are lists of hits in the format [score,x,y]
+    if verbosity>=1 then console "Scanning the page for	characters, pass 2 of 3.\n" end
 
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     stats = page.stats
@@ -140,9 +142,11 @@ class Match
 
     if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
 
+    if verbosity>=1 then console "Scanning the page for	characters, pass 3 of 3.\n" end
+
     n = guess_n_cores()
     μοῖραι = portion_out_characters(chars,n)
-    if verbosity>=1 then print "  pass 3, μοῖραι=#{μοῖραι}\n" end
+    if verbosity>=1 then console "  pass 3, μοῖραι=#{μοῖραι}\n" end
     files_to_delete = []
     page_file = temp_file_name()
     files_to_delete.push(page_file)
@@ -212,7 +216,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   images = []
   0.upto(nhits-1) { |k|
     score,i,j = hits[k]
-    if i+wp>wt or j+hp>ht then print "Not doing swatch #{k}, hangs past edge of page.\n"; next end
+    if i+wp>wt or j+hp>ht then console "Not doing swatch #{k}, hangs past edge of page.\n"; next end
     sw = text.crop(i,j,wp,hp)
     remove_impinging_flyspecks(sw,pat,stats)
     enhance_contrast(sw,stats['background'],stats['threshold'],stats['dark'])
@@ -226,9 +230,9 @@ def find_clusters_of_swatches(images,char,cluster_threshold)
   # Images is a list of cunkypng images. Char is just for informational output.
   c = correlate_swatches(images,char)
   clusters = find_clusters(c,cluster_threshold)
-  print "clusters:\n"
+  console "clusters:\n"
   clusters.each { |cl|
-    print "  #{cl}\n"
+    console "  #{cl}\n"
   }
   return clusters
 end
@@ -272,25 +276,25 @@ def correlate_swatches(images,char)
       u = mean_product_simple_list_of_floats(flat[i],flat[j])
       return (u-mean[i]*mean[j])/(sd[i]*sd[j])
   },symm:true)
-  print "correlation matrix for character '#{char}' swatches 0-#{n-1}:\n"
-  print array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round}),"\n"
+  console "correlation matrix for character '#{char}' swatches 0-#{n-1}:\n"
+  console array_to_string(c,"  ","%3d",fn:lambda {|x| (x*100).round}),"\n"
   return c
 end
 
 def match_prep_monitor_file_helper(if_monitor_file,page)
   if !if_monitor_file then return nil end
   monitor_file = temp_file_name_short(prefix:"mon")+".png"
-  monitor_file = "mon.png"; print "---- using deterministic name mon.png for convenience, won't work with parallelism ---\n"
+  monitor_file = "mon.png";
   monitor_image = clown(page.image).grayscale
   monitor_image.save(monitor_file)
-  #print "  monitor file: #{monitor_file} (can be viewed live using okular)\n"
+  #console "  monitor file: #{monitor_file} (can be viewed live using okular)\n"
   # ...  https://unix.stackexchange.com/questions/167808/image-viewer-with-auto-reload-on-file-change
   return monitor_file
 end
 
 def match_clean_monitor_file_helper(if_monitor_file,monitor_file)
   if !if_monitor_file then return end
-  #print "  monitor file #{monitor_file} not being deleted for convenience ---\n"
+  #console "  monitor file #{monitor_file} not being deleted for convenience ---\n"
   #FileUtils.rm_f(monitor_file)
 end
 

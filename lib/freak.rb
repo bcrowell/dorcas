@@ -1,5 +1,5 @@
 # coding: utf-8
-def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_hits,xheight:30,verbosity:2,batch_code:'')
+def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_hits,xheight:30,verbosity:1,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -10,7 +10,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
   image_bg = ink_to_png_8bit_grayscale(stats['background'])
   image_ampl = ink_to_png_8bit_grayscale(stats['background'])-ink_to_png_8bit_grayscale(stats['dark']) # positive
   image_thr = ink_to_png_8bit_grayscale(stats['threshold'])
-  print "image_bg,image_ampl,image_thr,xheight = #{[image_bg,image_ampl,image_thr,xheight]}\n"
+  #console "image_bg,image_ampl,image_thr,xheight = #{[image_bg,image_ampl,image_thr,xheight]}\n"
 
   # Convolve allows a high-pass filter to get rid of any modulation of background.
   # But this is not really needed when using the peak detection kernel, which makes the results
@@ -25,9 +25,10 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
 
   n = guess_n_cores()
   μοῖραι = portion_out_characters(all_chars,n)
-  if verbosity>=1 then print "  pass 1, μοῖραι=#{μοῖραι}\n" end
+  if verbosity>=2 then console "  pass 1, μοῖραι=#{μοῖραι}\n" end
+  if verbosity>=3 then console "    μοῖραι=#{μοῖραι}\n" end
   write_debugging_images = false
-  if write_debugging_images then print "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
+  if write_debugging_images then console "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
 
   semaphore_files = []
   μοῖραι.each { |chars|
@@ -46,7 +47,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
 
   # run it
   hits = convolve(all_codes,[outfile],batch_code,semaphore_files)
-  if verbosity>=1 then print "    ... done\n" end
+  if verbosity>=2 then console "    ... done\n" end
   return [hits,files_to_delete]
 
 end
@@ -82,12 +83,12 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   pats.each { |pat|
     pat_widths.push(pat.width)
     pat_heights.push(pat.height)
-    #print "... #{pat.width}, #{pat.height}\n"
+    #console "... #{pat.width}, #{pat.height}\n"
   }
   max_pat_width = pat_widths.max
   max_pat_height = pat_heights.max
 
-  #print "text.width=#{text.width}, max_pat_width=#{max_pat_width}, a=#{a}, #{text.width+max_pat_width+2*a+1}\n"
+  #console "text.width=#{text.width}, max_pat_width=#{max_pat_width}, a=#{a}, #{text.width+max_pat_width+2*a+1}\n"
   w = boost_for_no_large_prime_factors(text.width+max_pat_width+2*a+1)
   h = boost_for_no_large_prime_factors(text.height+max_pat_height+2*a+1)
 
@@ -105,7 +106,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   if laxness<0 then laxness=0.0 end
   if laxness>=1 then laxness=1.0; do_kernel=false else do_kernel=true end
 
-  #print "laxness=#{laxness}, do_kernel=#{do_kernel}\n"
+  #console "laxness=#{laxness}, do_kernel=#{do_kernel}\n"
 
   # Do a scoring algorithm that worked well for me before when coded naively:
   #   S0 = Sum [ (signal & b) - k (signal & w) - k (! signal) & b ]
@@ -166,7 +167,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
       code.concat(freak_gen_get_image("#{name_space[t]}",temp_file,255,255,w,h,rot:true))
       # generate code to analyze it
     }
-    if verbosity>=3 then print "Nb=#{nb} for #{char_names[count]}\n" end
+    if verbosity>=3 then console "Nb=#{nb} for #{char_names[count]}\n" end
     code.push("r #{name_space['b']},f #{1.0+1.0/k},s *")
     code.push("r #{name_space['w']}")
     code.push("a -") # linear combination of black and white templates
@@ -197,7 +198,7 @@ def freak_generate_code_and_prep_files(outfile,batch_code,text,pats,a,sigma,imag
   code = code.map { |x| x.gsub(/,/,"\n") }.join("\n")+"\n"
   code = code.gsub(/__COMMA__/,',')
 
-  #print code
+  #console code
 
   return [code,files_to_delete]
 end

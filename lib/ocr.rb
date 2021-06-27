@@ -19,7 +19,9 @@ def ocr_one_page(job,page,report_dir,lingos,verbosity:1)
     File.open(cached_spatter_filename,"wb") { |file| Marshal.dump(spatter,file) }
   end
   if verbosity>=2 then console "spatter:\n  #{spatter.report}\n" end
+  if verbosity>=1 then console "Splitting the page into lines.\n" end
   lines = spatter.plow()
+  if verbosity>=1 then console "Interpreting lines. Text will be printed to stdout.\n" end
   #lines.each { |l|      print "line:\n  #{l.report}\n"    }
   #lines.each { |l| print babble(l),"\n"  }
   if false # mumble algorithm actually gives surprisingly good results, given how simple it is
