@@ -281,16 +281,16 @@ The following is a brief outline of how the technical innards of the software wo
 
 1. Analyze the page image and estimate line spacing, along with statistics such as an estimate of how dark the ink is and how light the page is.
 
-2a. Use convolution to locate points where a given character seems to occur on the page. This is done using a two-dimensional FFT.
+2. (a) Use convolution to locate points where a given character seems to occur on the page. This is done using a two-dimensional FFT.
       In order to enhance the precision and selectivity of this character detection, we also convolve with a small
       kernel (about 20x20 pixels) designed to enhance pointlike peaks and get rid of background and vertical and horizontal streaks.
       Each matched character is recorded with its position on the page and a score representing the amplitude of the peak.
 
-2b. At a second stage of filtering, we use simple correlation to get a new score for each character. This is mainly useful because
-      it has an absolute normalization (the correlation coefficient varying from -1 to 1). Characters with low scores are thrown out.
+    (b) At a second stage of filtering, we use simple correlation to get a new score for each character. This is mainly useful because
+    it has an absolute normalization (the correlation coefficient varying from -1 to 1). Characters with low scores are thrown out.
 
-2c. At a final stage, a slower algorithm is used to examine each surviving match more carefully and give it a final score ranging from
-        0 to 1. Low-scoring matches are discarded.
+    (c) At a final stage, a slower algorithm is used to examine each surviving match more carefully and give it a final score ranging from
+    0 to 1. Low-scoring matches are discarded.
 
 3. The page is split into lines of text by histogramming its projection onto the y axis, looking for low points in the histogram,
      splitting at those points, and recursing until we have strips about as narrow as our previous estimate of the line spacing.
