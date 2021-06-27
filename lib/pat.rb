@@ -402,7 +402,7 @@ class Pat
           x2,y2 = [x0+dx2,y0+dy2]
           next if x2<0 || x2>=w-1 || y2<0 || y2>=h-1
           p.push(image[x+x_offset,y+y_offset])
-          q.push(four_point_2d_interp(self.bw,x2+x_offset,y2+y_offset,indexing_method))
+          q.push(four_point_2d_interp(image,x2+x_offset,y2+y_offset,indexing_method))
         }
       }
       result[symm] = (correlation_of_lists(p,q)*100.0).round

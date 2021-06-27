@@ -67,10 +67,10 @@ def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
   if debug then 
     print array_ascii_art(pat.bw.bool_array,fn:lambda { |x| if x==true then '*' else if x.nil? then 'n' else ' ' end end} )
   end
-  if true then # qwe
+  if false then
     my_trigger = nil
-    [[886,154,['e','u']],[284,228,['a','u']]].each { |trigger|
-      next if (dx-trigger[0]).abs>50 || (dy-trigger[1]).abs>50
+    [[862,120,['e','u']],[264,192,['a','u']]].each { |trigger|
+      next if (dx-trigger[0]).abs>10 || (dy-trigger[1]).abs>10
       trigger[2].each { |c|
         if pat.c==c then debug=true; my_trigger=trigger end
       }
@@ -92,9 +92,9 @@ def squirrel(text,pat,dx,dy,max_scooch:1,smear:2,debug:false,k:3.0)
     # Rerun it once, with the optimum registration, just to get debugging output as requested.
     squirrel_no_registration_adjustment(text,pat,other[i][0],other[i][1],smear,k,false)
   end
-  if debug && x[0]>0.7 then
-    print "  trigger=#{my_trigger}, dx=#{dx}, dy=#{dy}, score=#{x[0]}\n"
-    print "  symm=#{pat.συμμετρίαι}\n"
+  if debug && x[0]>0.6 then
+    print "  dx=#{dx}, dy=#{dy}, score=#{x[0]}\n"
+    print "    symm: self=#{pat.c}, #{pat.συμμετρίαι}, swatch=#{pat.συμμετρίαι(image:text,ref:[dx+pat.ref_x,dy+pat.ref_y])}\n"
   end
   return x
 end

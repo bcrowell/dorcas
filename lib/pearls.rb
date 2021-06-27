@@ -211,7 +211,11 @@ def stiffness()
 end
 
 def keep_goingness()
-  return 5.0   # If considering a shorter path through a dag, this is how much we're penalized, per em width.
+  return 1.0
+  # If considering a shorter path through a dag, this is how much we're penalized, per em width.
+  # Picking a big value, like 5.0, causes it to do dumb thinks like render "the" as "thu," because the u is slightly wider.
+  # A small value, like 0.5, causes it to split up words into short two-letter nonsense words.
+  # At 1.0-1.5, "the stranger" is run together as "thoetranger."
 end
 
 def longest_path_fancy(s,h,e,target_x:nil,debug:false)

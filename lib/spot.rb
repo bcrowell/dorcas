@@ -6,7 +6,7 @@ module Spot
   def Spot.bless(a,set,pat)
     a.extend(Spot)
     a.ref_x = pat.ref_x
-    a.snowman = clown(pat.snowman(set))
+    a.snowman = clown(pat.snowman(set:set))
   end
 
   attr_accessor :snowman,:ref_x
