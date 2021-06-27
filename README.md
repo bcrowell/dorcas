@@ -230,6 +230,40 @@ The input file is a JSON hash with keys and values described below. Comments are
         actually indicate a problem with a red mask that is not close enough to the character, i.e., the kerning
         in the real document is tighter than estimated by the software.
 
+## Technical description
+
+The following is a brief outline of how the technical innards of the software work.
+
+1. Analyze the page image and estimate line spacing, along with statistics such as an estimate of how dark the ink is and how light the page is.
+
+2. (a) Use convolution to locate points where a given character seems to occur on the page. This is done using a two-dimensional FFT.
+      In order to enhance the precision and selectivity of this character detection, we also convolve with a small
+      kernel (about 20x20 pixels) designed to enhance pointlike peaks and get rid of background and vertical and horizontal streaks.
+      Each matched character is recorded with its position on the page and a score representing the amplitude of the peak.
+
+    (b) At a second stage of filtering, we use simple correlation to get a new score for each character. This is mainly useful because
+    it has an absolute normalization (the correlation coefficient varying from -1 to 1). Characters with low scores are thrown out.
+
+    (c) At a final stage, a slower algorithm is used to examine each surviving match more carefully and give it a final score ranging from
+    0 to 1. Low-scoring matches are discarded.
+
+3. The page is split into lines of text by histogramming its projection onto the y axis, looking for low points in the histogram,
+     splitting at those points, and recursing until we have strips about as narrow as our previous estimate of the line spacing.
+
+4. Each line is tentatively split into words where there appear to be spaces.
+
+5. For each word, we make a directed acyclic graph whose edges have weights equal to that character's score. Each edge is a possible
+     pair of characters in a row. We discard edges corresponding
+     to impossibe bigrams such as "qx," or "rd" at the beginning of a word. An edge is disallowed if the spacing between the characters
+     isn't reasonable based on automatically estimated kerning data. If the kerning is possible but a little too close or far apart
+     based on this estimate, then a penalty is subtracted from the score for that edge. Some characters in different scripts look very similar
+     to one another, e.g., Latin y and Greek γ. We try to catch and correct such misreadings when a character in one script is
+     embedded in a word written in a different script. Once the graph is constructed, we find the longest path through the graph.
+
+6. If we have a dictionary available for the relevant language, then a dictionary word has a bonus added to its score.
+     So far we have only one candidate, so there is nothing to compare the score with. But now we go back and look at possible
+     alternate readings of the word, assigning them scores as well. Finally we pick the reading with the highest score.
+
 ## Temporary files and cache
 
 Results of expensive calculations are stored in ~/.dorcas/cache. 
@@ -275,36 +309,3 @@ locks the file.
 
 In temp_file_name() and verb_clean(), we assume temporary files can be created with the filename pattern /tmp/dorcas*.
 
-## Technical description
-
-The following is a brief outline of how the technical innards of the software work.
-
-1. Analyze the page image and estimate line spacing, along with statistics such as an estimate of how dark the ink is and how light the page is.
-
-2. (a) Use convolution to locate points where a given character seems to occur on the page. This is done using a two-dimensional FFT.
-      In order to enhance the precision and selectivity of this character detection, we also convolve with a small
-      kernel (about 20x20 pixels) designed to enhance pointlike peaks and get rid of background and vertical and horizontal streaks.
-      Each matched character is recorded with its position on the page and a score representing the amplitude of the peak.
-
-    (b) At a second stage of filtering, we use simple correlation to get a new score for each character. This is mainly useful because
-    it has an absolute normalization (the correlation coefficient varying from -1 to 1). Characters with low scores are thrown out.
-
-    (c) At a final stage, a slower algorithm is used to examine each surviving match more carefully and give it a final score ranging from
-    0 to 1. Low-scoring matches are discarded.
-
-3. The page is split into lines of text by histogramming its projection onto the y axis, looking for low points in the histogram,
-     splitting at those points, and recursing until we have strips about as narrow as our previous estimate of the line spacing.
-
-4. Each line is tentatively split into words where there appear to be spaces.
-
-5. For each word, we make a directed acyclic graph whose edges have weights equal to that character's score. Each edge is a possible
-     pair of characters in a row. We discard edges corresponding
-     to impossibe bigrams such as "qx," or "rd" at the beginning of a word. An edge is disallowed if the spacing between the characters
-     isn't reasonable based on automatically estimated kerning data. If the kerning is possible but a little too close or far apart
-     based on this estimate, then a penalty is subtracted from the score for that edge. Some characters in different scripts look very similar
-     to one another, e.g., Latin y and Greek γ. We try to catch and correct such misreadings when a character in one script is
-     embedded in a word written in a different script. Once the graph is constructed, we find the longest path through the graph.
-
-6. If we have a dictionary available for the relevant language, then a dictionary word has a bonus added to its score.
-     So far we have only one candidate, so there is nothing to compare the score with. But now we go back and look at possible
-     alternate readings of the word, assigning them scores as well. Finally we pick the reading with the highest score.
