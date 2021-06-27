@@ -34,12 +34,49 @@ fails.
 * It runs on Linux. I've made an effort to make it fairly portable, but actually porting it to Windows would require some effort, and
     is not something I would work on myself.
 
-# General description of how the software works
+## General description of how the software works
+
+The approach used by this software is called template matching. This is an old problem in computer science, with a variety of
+applications. For example, if you've used software to assemble a panoramic photo from a series of snapshots, it was using
+template matching to figure out how to connect one shot to its neighbor. When the crew of a submarine is trying to identify
+ships on the horizon by their silhouettes, they're doing template matching.
 
 Broadly speaking, there are two stages to the process, a training part and then the actual processing of text that you want to OCR.
 During the training part, you build up a set of templates, one for each letter of the alphabet(s), that are based on the actual
 document. A limitation this software is that it must be trained on the same font that wll be used on the actual document. Currently,
-this even has to be the same size and resolution. For example, if you're trying to OCR
+this even has to be the same size and resolution. For example, if you're trying to OCR a book, you could use the first page of the
+book to get samples of most of the characters you need. For an uncommon character like Latin z, you might have to hunt for a page
+that has it.
+
+This training process is somewhat automated, so that you don't have to go through the document and click on individual characters
+to tell the software what's what. To get the automation to work, the idea is to start with what I refer to as a "seed font," a
+font that looks as similar as possible to the font you're training on. There can actually be more than one seed font. In the
+book that was my original use case, I found that the Latin alphabet was a decent match to Nimbus Roman, while the lowercase
+Greek was similar to GFS Porson, and the uppercase Greek to Liberation Serif Italic.
+
+Once you tell the software the seed fonts to use, it has some general idea of what the characters look like. You turn it loose
+on a page of text, and it finds things that it thinks are possible matches. You give it feedback about which of these are wrong
+and which are right. Once it has an initial set of templates taken from the actual document's font, you can have it run through
+more pages of text and collect more examples. It averages these examples together to create composites. For example, the book
+that I originally was working on was set in metal type, and in some cases the letter "h" had a nick in the top of the arch.
+These flaws tend to go away in the composite version of the templates.
+
+During this training process, the software generates reports for you showing a large picture of each template, along with
+graphical representations of other information such as where it thinks that character's baseline is and how much white space
+it thinks exists around the character in which other characters are not expected to intrude. You need to look at these reports
+carefully for glitches and mistakes. For example, a character may have a flyspeck to its right that actually originated from
+a piece of some other character next to it. In this situation, you could open the template in software like Gimp or Photoshop
+and edit out the flyspeck. In general, there will be a process of iteration as you improve the set of templates. This may
+be time-consuming, although I'm working on making it more efficient.
+
+Once you have a good enough set of templates, you can go ahead and scan text. The software does reasonably well at this
+without having access to any linguistic information at all. However, the results can be considerably improved by supplying
+it with a dictionary of words for each language it's going to see. For example, my original application was a book
+in which the ancient Greek text of the Odyssey was interspersed with English translation. For this scan, I prepared
+a dictionary of all the words occurring in the corpus of Homeric Greek, plus an English dictionary of words occurring in a set of
+six different English translations of the Iliad and the Odyssey from Project Gutenberg.
+
+Technical details of how the software actually works under the hood are given later in this document.
 
 ## Usage
 
@@ -193,7 +230,7 @@ The input file is a JSON hash with keys and values described below. Comments are
         actually indicate a problem with a red mask that is not close enough to the character, i.e., the kerning
         in the real document is tighter than estimated by the software.
 
-# Temporary files and cache
+## Temporary files and cache
 
 Results of expensive calculations are stored in ~/.dorcas/cache. 
 
@@ -209,7 +246,7 @@ including those that have low scores indicating they aren't very good matches. I
 would have affected the spatter file, then the program will just read the .spa file back in and avoid the time-consuming
 step of scanning the original page image.
 
-# Portability
+## Portability
 
 The following is a list of the things that would require work if porting this software to a non-Unix system.
 
@@ -238,3 +275,36 @@ locks the file.
 
 In temp_file_name() and verb_clean(), we assume temporary files can be created with the filename pattern /tmp/dorcas*.
 
+## Technical description
+
+The following is a brief outline of how the technical innards of the software work.
+
+1. Analyze the page image and estimate line spacing, along with statistics such as an estimate of how dark the ink is and how light the page is.
+
+2a. Use convolution to locate points where a given character seems to occur on the page. This is done using a two-dimensional FFT.
+      In order to enhance the precision and selectivity of this character detection, we also convolve with a small
+      kernel (about 20x20 pixels) designed to enhance pointlike peaks and get rid of background and vertical and horizontal streaks.
+      Each matched character is recorded with its position on the page and a score representing the amplitude of the peak.
+
+2b. At a second stage of filtering, we use simple correlation to get a new score for each character. This is mainly useful because
+      it has an absolute normalization (the correlation coefficient varying from -1 to 1). Characters with low scores are thrown out.
+
+2c. At a final stage, a slower algorithm is used to examine each surviving match more carefully and give it a final score ranging from
+        0 to 1. Low-scoring matches are discarded.
+
+3. The page is split into lines of text by histogramming its projection onto the y axis, looking for low points in the histogram,
+     splitting at those points, and recursing until we have strips about as narrow as our previous estimate of the line spacing.
+
+4. Each line is tentatively split into words where there appear to be spaces.
+
+5. For each word, we make a directed acyclic graph whose edges have weights equal to that character's score. Each edge is a possible
+     pair of characters in a row. We discard edges corresponding
+     to impossibe bigrams such as "qx," or "rd" at the beginning of a word. An edge is disallowed if the spacing between the characters
+     isn't reasonable based on automatically estimated kerning data. If the kerning is possible but a little too close or far apart
+     based on this estimate, then a penalty is subtracted from the score for that edge. Some characters in different scripts look very similar
+     to one another, e.g., Latin y and Greek γ. We try to catch and correct such misreadings when a character in one script is
+     embedded in a word written in a different script. Once the graph is constructed, we find the longest path through the graph.
+
+6. If we have a dictionary available for the relevant language, then a dictionary word has a bonus added to its score.
+     So far we have only one candidate, so there is nothing to compare the score with. But now we go back and look at possible
+     alternate readings of the word, assigning them scores as well. Finally we pick the reading with the highest score.
