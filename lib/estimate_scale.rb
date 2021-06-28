@@ -281,9 +281,11 @@ def fit_gaussian_to_peak(data,lo,hi,guesses)
     cat("__output__",coef(summary(model))["mu","Estimate"],"\n")
   R_CODE
   result = run_r_code(r).to_f
-  if result<lo or result>hi then 
+  if result<lo or result>hi then
+    result_bad = shallow_copy(result)
     result=0.5*(lo+hi)
-    warn("When attempting to find the line spacing, the result failed a sanity check. Falling back to a possibly more reasonable default value.\n"+
+    warn("When attempting to find the line spacing, the result of #{result_bad} failed a sanity check and did not fall in the range #{lo} to #{hi}.\n"+
+         "Falling back to a possibly more reasonable default value of #{result}.\n"+
          "But the fact that this occurred probably means in reality that there is something wrong, e.g., that you picked\n"+
          "the first page of a pdf file, which didn't actually have any text on it, or that there is only a single line of text.")
   end

@@ -1,5 +1,5 @@
 # coding: utf-8
-def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_hits,xheight:30,verbosity:1,batch_code:'')
+def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_hits,xheight:30,verbosity:2,batch_code:'')
   # Pure frequency-domain analysis, using fft.
   # Text is a chunkypng object that was read using image_from_file_to_grayscale, and
   # stats are ink stats calculated from that, so the conversion to and from ink
@@ -25,7 +25,6 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
 
   n = guess_n_cores()
   μοῖραι = portion_out_characters(all_chars,n)
-  if verbosity>=2 then console "  pass 1, μοῖραι=#{μοῖραι}\n" end
   if verbosity>=3 then console "    μοῖραι=#{μοῖραι}\n" end
   write_debugging_images = false
   if write_debugging_images then console "Debugging images will be written to files score_*.png. This is controlled by write_debugging_images.\n" end
@@ -47,7 +46,7 @@ def freak(page,all_chars,set,outfile,stats,threshold1,boxes,sigma,a,laxness,max_
 
   # run it
   hits = convolve(all_codes,[outfile],batch_code,semaphore_files)
-  if verbosity>=2 then console "    ... done\n" end
+  if verbosity>=3 then console "    ... done\n" end
   return [hits,files_to_delete]
 
 end

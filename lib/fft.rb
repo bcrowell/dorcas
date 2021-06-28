@@ -18,28 +18,9 @@ def convolve(code_array,retrieve_hits_from_files,batch_code,semaphore_files)
     lower_priority(pid)
     pids.push(pid)
   }
-  # The following allows us to do other things while the child processes are running, such as print status messages
-  # or update a monitor image. However, if a child dies without writing the semaphore file, this will never exit.
-  # There doesn't seem to be any platform-independent way to do this in ruby: 
-  #   https://stackoverflow.com/questions/10589935/get-process-status-by-pid-in-ruby
-  #   https://apidock.com/ruby/Process/kill/class
-  #   https://stackoverflow.com/questions/141162/how-can-i-determine-if-a-different-process-id-is-running-using-java-or-jruby-on/200568#200568
-  while true
-    sleep 5 # seconds
-    i = 0
-    ndone = 0
-    semaphore_files.each { |sem|
-      pid = pids[i]
-      #status = `ps -o state -p #{pid}`.chomp # posix, https://stackoverflow.com/a/10592618/1142217
-      #print "process #{pid} has status #{process_running?(pid)}\n"
-      if File.exists?(sem) then
-        #console "  Process #{pid} has finished.\n"
-        ndone += 1
-      end
-      i += 1
-    }
-    if ndone>=pids.length then break end
-  end
+  # I used to have a loop here that would poll the files in semaphore_files and print updates to the console, the idea being
+  # that I could do other stuff to monitor progress. For that code, see git prior to 2021 June 27.
+  # For reasons I don't understand, this was causing me to have zombie processes sometimes.
   pids.each { |pid|
     Process.wait(pid)
   }

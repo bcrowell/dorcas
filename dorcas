@@ -98,7 +98,7 @@ def main(verbosity:1)
   postprocess(job,results,report_dir)
 
   finish = Time.now
-  if verbosity>=2 then console "Total time for this entire run = #{finish-start} seconds.\n" end
+  if verbosity>=1 then console "Total time for this entire run = #{((finish-start)/60.0).round} minutes.\n" end
 end
 
 def run_job(job,page,report_dir)

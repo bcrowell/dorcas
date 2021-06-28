@@ -7,9 +7,19 @@ On this book, I was not able to get usable results with Tesseract, the most wide
 used open-source OCR system. Compared to Tesseract, Dorcas uses a completely different
 approach that is fundamentally better suited to this type of problem. In fancy
 terminology, it uses template matching and convolution rather than neural networks.
-What this means is that you have to put some effort into training it on a specific
-font, but once you've done that, it can interpret that font in contexts where Tesseract
+What this means is that you have to put some effort into training it on the font used in a specific
+book, but once you've done that, it can interpret that font in contexts where Tesseract
 fails.
+
+Dorcas is a specialized tool that is unsuitable for general-purpose OCR work.
+The expectation is that the training on that font will not carry over at all to
+other documents, unless you happen to come across another text that happens to use exactly the
+same hot-metal or typewriter font. Essentially you expect to build a set of letter templates for the font used in a certain book, OCR
+that book, and then throw away the font. But it is possible to use a preexisting set of templates as the starting
+point for training on a new font. E.g., maybe around 1830 James Cornish and Sons typeset their Greek in a certain version of
+Porson, and Hubert & Co. in Gottingen used something very similar in 1920. The same applies if you can find a modern
+truetype font like GFS Porson, which can be used as a seed to grow an accurate set of templates for one of its
+metal-type ancestors.
 
 ## What the system is designed to do
 
@@ -231,6 +241,8 @@ The input file is a JSON hash with keys and values described below. Comments are
         in the real document is tighter than estimated by the software.
 
 ## Technical description
+
+Unlike many OCR systems, Dorcas does not require training on a "ground truth" document whose OCR results are already available.
 
 The following is a brief outline of how the technical innards of the software work.
 

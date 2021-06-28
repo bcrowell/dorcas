@@ -49,7 +49,7 @@ class Match
     self.batch_code = batch_code
 
     self.three_stage_prep(page,set,if_monitor_file:if_monitor_file)
-    console "  Done with fft for #{self.characters}.\n" if verbosity>=1
+    console "  Done with fft for #{self.characters}.\n" if verbosity>=2
     count1,hits2 = self.three_stage_pass_2(page,set)
     hits3 = self.three_stage_pass_3(page,set,hits2)
     self.three_stage_cleanup(page)
@@ -96,7 +96,7 @@ class Match
     # Returns [count1,hits2], where 
     #   count1 is a hash whose keys are characters and whose values are the number of hits from pass 1
     #   hits2 is a hash whose keys are characters and whose values are lists of hits in the format [score,x,y]
-    if verbosity>=1 then console "Scanning the page for	characters, pass 2 of 3.\n" end
+    if verbosity>=1 then console "Scanning the page for characters, pass 2 of 3.\n" end
 
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
     stats = page.stats
@@ -142,11 +142,11 @@ class Match
 
     if threshold3<0.8 then zz=0.8-threshold3; k=[0.5,3-7*zz].max else k=3.0 end
 
-    if verbosity>=1 then console "Scanning the page for	characters, pass 3 of 3.\n" end
+    if verbosity>=1 then console "Scanning the page for characters, pass 3 of 3.\n" end
 
     n = guess_n_cores()
     μοῖραι = portion_out_characters(chars,n)
-    if verbosity>=1 then console "  pass 3, μοῖραι=#{μοῖραι}\n" end
+    if verbosity>=3 then console "    μοῖραι=#{μοῖραι}\n" end
     files_to_delete = []
     page_file = temp_file_name()
     files_to_delete.push(page_file)
