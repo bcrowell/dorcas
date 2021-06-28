@@ -74,7 +74,7 @@ def extract_matching_swatches(job,page,report_dir,verbosity:2)
   match = Match.new(characters:all_chars,meta_threshold:job.threshold,force_loc:job.force_location)
   # ... force_loc not yet reimplemented
   match.batch_code = Process.pid.to_s
-  match.three_stage_prep(page,job.set)
+  match.three_stage_prep(page,job.set,job.page_number.to_s)
 
   results = {}
   job.characters.each { |x|

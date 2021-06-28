@@ -29,7 +29,7 @@ class Job
   attr_accessor :verb,:image,:seed_fonts,:spacing_multiple,:threshold,:cluster_threshold,:adjust_size,:keys,:output,:characters,
           :guess_dpi,:guess_font_size,:prefer_cluster,:force_location,:no_matching,:set
   attr_accessor :set_filename # used for reports and fingerprinting
-  attr_accessor :cache_dir
+  attr_accessor :cache_dir,:page_number
 
   def to_s
     x = self.to_hash
@@ -161,21 +161,23 @@ class Job
     unless data.has_key?('image') then die("input data do not contain an image key") end
     image_stuff = data['image']
     if image_stuff.kind_of?(Array) then filespec_list=image_stuff else filespec_list=[image_stuff] end
-    image_list = []
+    image_list = [] # list of [filename,page_number]
     filespec_list.each { |s|
       if s=~/(.*\.pdf)\[(\d+)-(\d+)\]$/ then # page range
         file,p1,p2 = $1,$2.to_i,$3.to_i
-        p1.upto(p2) { |page_number| image_list.push("#{file}[#{page_number}]") }
+        p1.upto(p2) { |page_number| image_list.push(["#{file}[#{page_number}]",page_number]) }
       else
-        image_list.push(s)
+        image_list.push([s,0])
       end
     }
     jobs = []
-    image_list.each { |im|
+    image_list.each { |a|
+      im,page_num = a
       d = clown(data)
       d['image'] = im
       j = Job.new(d)
       j.cache_dir = cache_dir
+      j.page_number = page_num
       jobs.push(j)
     }
     return jobs

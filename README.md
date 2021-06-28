@@ -13,11 +13,11 @@ fails.
 
 Dorcas is a specialized tool that is unsuitable for general-purpose OCR work.
 The expectation is that the training on that font will not carry over at all to
-other documents, unless you happen to come across another text that happens to use exactly the
+other documents, unless you happen to come across another text in exactly the
 same hot-metal or typewriter font. Essentially you expect to build a set of letter templates for the font used in a certain book, OCR
 that book, and then throw away the font. But it is possible to use a preexisting set of templates as the starting
-point for training on a new font. E.g., maybe around 1830 James Cornish and Sons typeset their Greek in a certain version of
-Porson, and Hubert & Co. in Gottingen used something very similar in 1920. The same applies if you can find a modern
+point for training on a new font. E.g., maybe around 1860 James Cornish and Sons typeset their Greek in a certain version of
+Porson, and Hubert & Co. in Goettingen used something very similar in 1920. The same applies if you can find a modern
 truetype font like GFS Porson, which can be used as a seed to grow an accurate set of templates for one of its
 metal-type ancestors.
 
@@ -189,7 +189,9 @@ The input file is a JSON hash with keys and values described below. Comments are
 
 * image - Name of a PNG file containing the text that we want to do OCR on. As a convenience feature, if this is
           specified in the form "foo.pdf[37]", then page q37 of the pdf file will be rendered at 500 dpi, converted to grayscale, saved
-          in the current working directory as foo_037.png, and used as the input. (This feature requires imagemagick and qpdf.)
+          in the cache directory as foo_037.png, and used as the input. The output of the OCR will be written to 037.txt.
+          A page range can also be specified, e.g., "foo.pdf[51-100]".
+          Ignore imagemagick's erroneous warning "RGB color space not permitted." (This feature requires imagemagick and qpdf.)
 
 * set - Name of a directory or .set file containing output from a previous run. When running with the seed verb, this
           parameter is optional. If it is supplied, then preexisting templates are copied over at the start. Default: null.

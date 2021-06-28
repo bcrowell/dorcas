@@ -41,14 +41,14 @@ class Match
     return self.characters.length
   end
 
-  def execute(page,set,batch_code:'',if_monitor_file:true,verbosity:1)
+  def execute(page,set,page_code,batch_code:'',if_monitor_file:true,verbosity:1)
     # Three-stage matching consisting of freak, simple correlation, and squirrel.
     # Page must have .stats containing an 'x_height' key, which is used to estimate parameters for peak detection kernel and maximum number of hits.
     # Stats should also contain keys 'background', 'dark', and 'threshold'.
 
     self.batch_code = batch_code
 
-    self.three_stage_prep(page,set,if_monitor_file:if_monitor_file)
+    self.three_stage_prep(page,set,page_code,if_monitor_file:if_monitor_file)
     console "  Done with fft for #{self.characters}.\n" if verbosity>=2
     count1,hits2 = self.three_stage_pass_2(page,set)
     hits3 = self.three_stage_pass_3(page,set,hits2)
@@ -58,7 +58,7 @@ class Match
     return hits3
   end
 
-  def three_stage_prep(page,set,if_monitor_file:true,verbosity:1)
+  def three_stage_prep(page,set,page_code,if_monitor_file:true,verbosity:1)
     # This runs the first of the three stages, using fft convolution. This is the part that parallelizes well to multiple cores, and for
     # performance should be called with many characters at once in self.characters.
     # It stores all the hits from the first stage in self.hits, and these can
@@ -83,7 +83,11 @@ class Match
     xheight = page.stats['x_height']
     self.pars = three_stage_guess_pars(page,xheight,self.n_chars,meta_threshold:self.meta_threshold)
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
-    outfile = 'peaks.txt' # gets appended to; each hit is marked by batch code and character's label
+    outfile = temp_file_name()
+    # ...Gets appended to; each hit is marked by batch code and character's label.
+    #    I used to make this peaks.txt, so it was easy to watch it with tail -f, etc., but that created problems when I started accumulating
+    #    multiple pages of results in the same file.
+    if verbosity>=2 then console "Writing fft results to #{outfile}\n" end
     self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,@boxes,
                     sigma,a,laxness,max_hits,batch_code:self.batch_code)
   end
