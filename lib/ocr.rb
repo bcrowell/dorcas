@@ -27,7 +27,7 @@ def ocr_one_page(job,page,report_dir,lingos,verbosity:1)
     if outfile.nil? then describe="stdout" else describe=outfile end
     console "Interpreting lines. Text will be printed to #{describe}\n"
   end
-  if outfile.nil? then f=stdout else f=File.open(outfile,'w') end
+  if outfile.nil? then f=$stdout else f=File.open(outfile,'w') end
   #lines.each { |l|      f.print "line:\n  #{l.report}\n"    }
   #lines.each { |l| f.print babble(l),"\n"  }
   if false # mumble algorithm actually gives surprisingly good results, given how simple it is

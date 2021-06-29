@@ -22,7 +22,7 @@ class Match
     end
     @scripts = scripts
     if characters.nil? then
-      characters = scripts.map { |s| s.alphabet(c:"both") }.inject('') {|s1,s2| s1+s2} # both upper and lower case in every script
+      characters = scripts.map { |s| s.alphabet_with_common_punctuation(c:"both") }.inject('') {|s1,s2| s1+s2} # both upper and lower case in every script
     end
     @characters = characters
     @meta_threshold = meta_threshold
@@ -90,6 +90,7 @@ class Match
     if verbosity>=2 then console "Writing fft results to #{outfile}\n" end
     self.hits,self.files_to_delete = freak(page,self.characters,set,outfile,page.stats,threshold1,@boxes,
                     sigma,a,laxness,max_hits,batch_code:self.batch_code)
+    self.files_to_delete.push(outfile)
   end
 
   def three_stage_pass_2(page,set,chars:self.characters,verbosity:2)
@@ -139,7 +140,7 @@ class Match
     return [count1,hits2]
   end
 
-  def three_stage_pass_3(page,set,hits2,chars:self.characters,verbosity:2)
+  def three_stage_pass_3(page,set,hits2,chars:self.characters,verbosity:1)
     # hits2 is a hash whose keys are characters and whose values are lists of hits in the format [score,x,y], where score is from pass 2
     # hits3 is in the same format, but filtered again, and with score from pass 3 possibly perturbed x and y
     threshold1,threshold2,threshold3,sigma,a,laxness,smear,max_hits = self.pars
@@ -160,6 +161,7 @@ class Match
     outfiles = []
     pids = []
     μοῖραι.each { |these_chars|
+      next if these_chars==''
       hh = these_chars.chars.each.map { |c| hits2[c] }   # hits in format needed for spawned process
       pp = these_chars.chars.each.map { |c| set.pat(c) } # pats in format needed for spawned process
       infiles = []
@@ -173,11 +175,14 @@ class Match
       files_to_delete.push(outfile)
       outfiles.push(outfile)
       myself = find_exe(nil,"dorcas")
+      if verbosity>=4 then console "  spawning a squirrel\n" end
       pid = Process.spawn(myself,"squirrel",page_file,infiles[0],infiles[1],infiles[2],outfile)
       lower_priority(pid)
       pids.push(pid)
     }
+    if verbosity>=4 then console "  waiting for squirrels\n" end
     pids.each { |pid| Process.wait(pid)  }
+    if verbosity>=4 then console "  done waiting for squirrels\n" end
 
     hits3 = {}
     outfiles.each { |outfile|
@@ -218,6 +223,7 @@ def swatches(hits,text,pat,stats,char,cluster_threshold)
   wt,ht = text.width,text.height
   wp,hp = pat.width,pat.height
   images = []
+  #print "in swatches, nhits=#{nhits}\n"
   0.upto(nhits-1) { |k|
     score,i,j = hits[k]
     if i+wp>wt or j+hp>ht then console "Not doing swatch #{k}, hangs past edge of page.\n"; next end
@@ -235,8 +241,10 @@ def find_clusters_of_swatches(images,char,cluster_threshold)
   c = correlate_swatches(images,char)
   clusters = find_clusters(c,cluster_threshold)
   console "clusters:\n"
+  count = 0
   clusters.each { |cl|
-    console "  #{cl}\n"
+    count += 1 # prefer_cluster uses 1-based numbering
+    console "  cluster #{count}: #{cl}\n"
   }
   return clusters
 end

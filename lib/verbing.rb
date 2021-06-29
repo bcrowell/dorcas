@@ -45,6 +45,7 @@ def verb_squirrel(args)
     c = pat.c
     h = hits[patnum]
     patnum += 1
+    if h.nil? then warn("no matches found for character #{c}"); next end
     result[c] = h.map { |a| squirrel(page.image,pat,a[1],a[2],max_scooch:max_scooch,smear:smear,k:k) }.select { |a| a[0]>threshold }
   }
   File.open(out_file,"wb") { |file| Marshal.dump(result,file) }

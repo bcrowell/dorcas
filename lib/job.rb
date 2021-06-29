@@ -108,7 +108,11 @@ class Job
       # The following is the documented behavior.
       if string.nil? then
         if @verb=='seed' then
-          string=Script.new(script).alphabet(c:c)
+          if c=='lowercase' then
+            string=Script.new(script).alphabet_with_common_punctuation(c:c) # lump punctuation together with lowercase
+          else
+            string=Script.new(script).alphabet(c:c)
+          end
         else
           string=select_script_and_case_from_string(set.all_characters,script,c)
         end
@@ -167,7 +171,8 @@ class Job
         file,p1,p2 = $1,$2.to_i,$3.to_i
         p1.upto(p2) { |page_number| image_list.push(["#{file}[#{page_number}]",page_number]) }
       else
-        image_list.push([s,0])
+        if s=~/.*\.pdf\[(\d+)\]$/ then page_number=$1.to_i else page_number=0 end
+        image_list.push([s,page_number])
       end
     }
     jobs = []

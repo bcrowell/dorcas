@@ -326,6 +326,7 @@ def png_report(monitor_file,text,hits,chars,set,verbosity:2)
   chars.chars.each { |c|
     short_name = char_to_short_name(c)
     v[short_name] = set.pat(c).visual(black_color:ChunkyPNG::Color::rgba(255,0,0,130),red_color:nil) # semitransparent red
+    if hits[c].nil? then next end # already gave warning
     hits[c].each { |x|
       score,i,j = x
       if verbosity>=3 then console "    ",x,"\n" end

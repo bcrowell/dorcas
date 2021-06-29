@@ -18,6 +18,10 @@ class Script
     return "script: #{self.name}"
   end
 
+  def alphabet_with_common_punctuation(c:"lowercase")
+    return self.alphabet(c)+self.common_punctuation()
+  end
+
   def alphabet(c:"lowercase")
     # c can be lowercase, uppercase, or both
     # For scripts that don't have case, c is ignored.
@@ -27,6 +31,13 @@ class Script
     if c=='lowercase' then return self.alphabet_helper(true) end
     if c=='uppercase' then return self.alphabet_helper(false).upcase end
     die("illegal value of c=#{c}, must be both, lowercase, or uppercase")
+  end
+
+  def common_punctuation
+    if self.name=='latin' then result=".,'\";:-" end
+    if self.name=='greek' then result=".,';-" end # incomplete - fixme
+    if self.name=='hebrew' then result=".," end # ? -- fixme
+    return result
   end
 
   def has_case

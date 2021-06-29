@@ -1,6 +1,7 @@
 def ink_stats_pat(bw,red)
   data = []
   wp,hp = ink_array_dimensions(bw)
+  if !same_dimensions(bw,red) then die("bw and red have different dimensions") end
   0.upto(wp-1) { |i|
     0.upto(hp-1) { |j|
       if red[i][j]>0.0 then next end

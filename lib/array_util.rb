@@ -72,6 +72,10 @@ def array_dimensions(b)
   return [b.length,b[0].length]
 end
 
+def same_dimensions(a,b)
+  return a.length==b.length && a[0].length==b[0].length
+end
+
 def scoot_array(b,dx,dy,value_for_padding)
   w,h = array_dimensions(b)
   a = generate_array(w,h,lambda {|i,j| value_for_padding})

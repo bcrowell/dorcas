@@ -93,7 +93,9 @@ def main(verbosity:1)
     if verbosity>=3 then console "fingerprint: #{one_page_job.fingerprint_pre_spatter} #{page.fingerprint}\n" end
     one_page_job.image = page.png_filename
     page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size)
-    results.push(run_job(one_page_job,page,report_dir))
+    results_this_page = run_job(one_page_job,page,report_dir)
+    if verbosity>=3 then console "pushing results, length=#{results_this_page.length}\n" end
+    results.push(results_this_page)
   }
   postprocess(job,results,report_dir)
 
@@ -151,10 +153,6 @@ def warn(message)
   $stderr.print "              WARNING\n"
   $stderr.print message,"\n"
   $stderr.print "****************************************************************************************************************\n"
-end
-
-def console(*x)
-  $stderr.print *x
 end
 
 main()

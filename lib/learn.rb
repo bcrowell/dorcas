@@ -1,13 +1,13 @@
 # coding: utf-8
 
-def postprocess_learn(job,results,report_dir,verbosity:1)
+def postprocess_learn(job,results,report_dir,verbosity:3)
   # Results is a list, each of whose elements is a hash whose keys are characters and whose values are of the form [hits,images].
   # Start by merging these into a single hash whose keys are characters and whose values are lists of elements of the form [pagenum,hits,images].
   results2 = {}
   count = 0
   results.each { |results_one_page|
     results_one_page.each { |char,v|
-      hits,images = v                                                                                                                                       
+      hits,images = v
       if !(images.nil?) then 
         if !(results2.has_key?(char)) then results2[char] = [] end
         results2[char].push([count,hits,images])
@@ -19,7 +19,7 @@ def postprocess_learn(job,results,report_dir,verbosity:1)
     # l should be a list of elements of the form [pagenum,hits,images].
     pagenum,hits,images = l
     if images.nil? then n_matches=0 else n_matches=images.length end
-    print "postprocessing character #{char}\n"
+    print "postprocessing character #{char}, #{n_matches} lists of images from different pages\n"
     all_images = []
     l.each { |p|
       pagenum,hits,images = p
@@ -107,9 +107,10 @@ def match_character(match,char,job,page,script,report_dir,matches_svg_file,name,
   hits3 = match.three_stage_pass_3(page,job.set,hits2) # returns a hash whose keys are chars and values are liss of [score,x,y]
   match.three_stage_cleanup(page)
 
-  if verbosity>=1 then print "  Filtered #{count1[char]} to #{hits2.length} to #{hits3.length} after second and third passes.\n" end
+  if verbosity>=1 then console "  Filtered #{count1[char]} to #{hits2.length} to #{hits3[char].length} for character #{char} after second and third passes.\n" end
 
   images = swatches(hits3[char],page.image,pat,page.stats,char,job.cluster_threshold) # returns a list of chunkypng images
+  #print "char=#{char}, images.length=#{images.length}, hits3[char].length=#{hits3[char].length} in match_character\n"
   char_name = char_to_short_name(char)
   return [hits3[char],images]
 end
