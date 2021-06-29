@@ -22,7 +22,7 @@ class Match
     end
     @scripts = scripts
     if characters.nil? then
-      characters = scripts.map { |s| s.alphabet_with_common_punctuation(c:"both") }.inject('') {|s1,s2| s1+s2} # both upper and lower case in every script
+      characters = scripts.map { |s| s.alphabet_with_large_punctuation(c:"both") }.inject('') {|s1,s2| s1+s2} # both upper and lower case in every script
     end
     @characters = characters
     @meta_threshold = meta_threshold

@@ -114,7 +114,8 @@ class Job
             string=Script.new(script).alphabet(c:c)
           end
         else
-          string=select_script_and_case_from_string(set.all_characters,script,c)
+          string=select_script_and_case_from_string(Script.remove_small_punctuation(set.all_characters),script,c)
+          #print "set.all_characters=#{set.all_characters}, script=#{script}, c=#{c}, string=#{string}\n"
         end
       end
       processed_chars.push([script,c,string])

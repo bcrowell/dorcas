@@ -187,8 +187,13 @@ def score_path_fancy(s,path,e,h,lingos,em,target_x:nil)
   script = char_to_script_and_case(h[0][2])[0]
   if !(lingos.nil?) and lingos.has_key?(script) then
     string = path_to_string(h,path)
-    f = lingos[script].word_log_freq(string) # "the" is -4, "slayings" and "te" (Latin) are -20
-    if f>-20 then lingo_score=0.125*f+2.5 end # gives a bonus of 2 points for "the," none for "slayings" or "te"
+    if string=~/[[:alpha:]]/ then # don't do the following code for things like a colon standing by itself with space on either side
+      string2 = clown(string)
+      string2.gsub!(/^([:punct:]+)/,'') # remove all leading punctuation
+      string2.gsub!(/([:punct:]+)$/,'') # remove all trailing punctuation
+      f = lingos[script].word_log_freq(string2) # "the" is -4, "slayings" and "te" (Latin) are -20
+      if f>-20 then lingo_score=0.125*f+2.5 end # gives a bonus of 2 points for "the," none for "slayings" or "te"
+    end
   end
   # --
   length_score = 0.0

@@ -18,8 +18,8 @@ class Script
     return "script: #{self.name}"
   end
 
-  def alphabet_with_common_punctuation(c:"lowercase")
-    return self.alphabet(c)+self.common_punctuation()
+  def alphabet_with_large_punctuation(c:"lowercase")
+    return self.alphabet(c)+self.large_punctuation()
   end
 
   def alphabet(c:"lowercase")
@@ -33,8 +33,21 @@ class Script
     die("illegal value of c=#{c}, must be both, lowercase, or uppercase")
   end
 
+  def large_punctuation
+    # Punctuation that's big enough that it makes sense to scan for it using the same algorithm as for letters of the alphabet -- not "minnows."
+    if self.name=='latin' then result="?" end
+    if self.name=='greek' then result="" end
+    if self.name=='hebrew' then result="" end
+    return result
+  end
+
+  def Script.remove_small_punctuation(x)
+    # Get rid of punctuation marks that are "minnows" -- too small to scan for using the same algorithm as for letters of the alphabet.
+    return x.gsub(/[.,'\";:-\[\]]/,'')
+  end
+
   def common_punctuation
-    if self.name=='latin' then result=".,'\";:-" end
+    if self.name=='latin' then result=".,'\";:-?" end
     if self.name=='greek' then result=".,';-" end # incomplete - fixme
     if self.name=='hebrew' then result=".," end # ? -- fixme
     return result

@@ -71,6 +71,10 @@ class Spatter
     return self.hits.keys.map { |c| self.hits[c].length }.sum
   end
 
+  def empty?
+    return self.total_hits==0
+  end
+
   def top
     if @top.nil? then @top=self.hits.keys.map { |c| maxmin_helper(self.hits[c],2,-1) }.min.round end
     return @top
@@ -86,9 +90,10 @@ class Spatter
     return self.bottom-self.top
   end
 
-  def plow
+  def plow(depth:0)
     # Return a list of new Spatter objects, each of which is estimated to be a line of text.
     # This is meant to be the dumbest algorithm that has any hope of working. Won't cope well if the text is rotated or lines are curved at all.
+    # The depth arg is just an internal thing to keep track of recursion depth.
     if self.total_hits==0 then return [] end
     if self.spread<0.7*self.line_spacing then return [self] end
     # ... It doesn't seem super sensitive to the numerical constant, but setting it lower, at 0.5, occasionally results in bogus output
@@ -129,7 +134,9 @@ class Spatter
     y_split = self.top+(b+0.5)*bin_width # approximate pixel coord of middle of bin
     s1 = self.select(lambda { |a| a[2]<=y_split})
     s2 = self.select(lambda { |a| a[2]>y_split})
-    return s1.plow().concat(s2.plow())
+    if s1.empty? || s2.empty? then return [self] end # otherwise we sometimes get infinite recursion in the line below
+    if depth>300 then die("recursion too deep") end
+    return s1.plow(depth:depth+1).concat(s2.plow(depth:depth+1))
   end
 
   def select(fn)
