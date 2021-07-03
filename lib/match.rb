@@ -64,7 +64,7 @@ class Match
     # It stores all the hits from the first stage in self.hits, and these can
     # then be run through the later stages using three_stage_complete(), which can be called one character at a time if desired.
     if verbosity>=1 then console "Scanning the page for characters, pass 1 of 3.\n" end
-    die("stats= #{page.stats.keys}, does not contain required stats") unless array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
+    die("stats= #{page.stats.keys}, does not contain required stats") unless !(page.stats.nil?) && array_subset?(['x_height','background','dark','threshold'],page.stats.keys)
     die("set is nil") if set.nil?
     die("batch_code is nil") if self.batch_code.nil?
     @boxes = {}

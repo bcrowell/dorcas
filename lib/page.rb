@@ -35,13 +35,17 @@ class Page
     return Page.new(image_from_file_to_grayscale(png_filename),png_filename:png_filename)
   end
 
-  def analyze(spacing_multiple,guess_dpi,guess_font_size,verbosity:1)
+  def analyze(spacing_multiple,guess_dpi,guess_font_size,verbosity:1,set_x_height:nil)
     # Has the side-effect of mixing in Fat module for efficiency.
     if verbosity>=2 then console "Input file is #{self.png_filename}\n" end
     s = ink_stats_1(self.image,self.ink)
     self.peak_to_bg = s['dark']/s['submedian']
-    text_line_spacing,x_height = estimate_scale(self.image,self.peak_to_bg,
-                        spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size)
+    if set_x_height.nil? then
+      text_line_spacing,x_height = estimate_scale(self.image,self.peak_to_bg,
+                        spacing_multiple:spacing_multiple,guess_dpi:guess_dpi,guess_font_size:guess_font_size,set_x_height:set_x_height)
+    else
+      text_line_spacing,x_height = 1.0,set_x_height # I don't think assuming 1.0 causes problems...?
+    end
     s['line_spacing'] = text_line_spacing
     s['x_height'] = x_height
     s = ink_stats_2(self.image,self.ink,s,(text_line_spacing*0.3).round)
