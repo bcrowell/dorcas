@@ -2,7 +2,10 @@ dorcas
 ======
 
 Dorcas is an OCR system that can handle text in a mixture of languages. My original
-use case was a 19th century book containing Greek words mixed together with English.
+use case was a 19th century book containing Greek words mixed together with English:
+
+[Giles, The Odyssey of Homer: construed literally and word for word](https://github.com/bcrowell/giles)
+
 On this book, I was not able to get usable results with Tesseract, the most widely
 used open-source OCR system. Compared to Tesseract, Dorcas uses a completely different
 approach that is fundamentally better suited to this type of problem. In fancy

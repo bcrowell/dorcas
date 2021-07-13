@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'etc'
 
 def guess_n_cores()
@@ -14,6 +15,16 @@ def lower_priority(pid)
   Process.setpriority(Process::PRIO_PROCESS, pid, 10) 
   # https://ruby-doc.org/core-2.6.3/Process.html#method-c-setpriority
   # not sure what this does on Windows
+end
+
+def lower_io_priority(pid)
+  # The following only actually works on linux. On other systems it will cause an error, which we have to rescue.
+  # To verify that this worked, do "ionice -p xxx", where xxx is the process ID.
+  # This priority should be inherited by processes that we spawn as well.
+  begin
+    `ionice -c idle -p #{Process.pid} >/dev/null 2>&1`
+  rescue
+  end
 end
 
 def portion_out_characters(chars,n)

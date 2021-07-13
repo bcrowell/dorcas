@@ -68,9 +68,10 @@ class Script
       script = Script.new(n)
       l = script.all_letters()
       if n=='latin' then l=l+'ÆæŒœ.,;:-?/<>[]{}_+=!#%^&~' end # fixme -- some characters have special significance to the shell and cause errors
-      if n=='greek' then l=l+"ΆΈΊΌΐάέήίϊόύώỏἀἁἃἄἅἈἐἑἒἔἕἘἙἜἡἢἣἤἥἦἨἩἫἬἮἰἱἲἴἵἶἸὀὁὂὃὄὅὊὍὐὑὓὔὕὖὗὝὡὢὣὤὥὧὨὩὰὲὴὶὸὺὼᾐᾗᾳᾴᾶῂῆῇῖῥῦῳῶῷῸᾤᾷἂἷὌᾖὉἧἷἂῃἌὬὉἷὉἷῃὦἌἠἳᾔἉᾦἠἳᾔὠᾓὫἝὈἭἼϋὯῴἆῒῄΰῢἆὙὮᾧὮᾕὋἍἹῬἽᾕἓἯἾᾠἎῗἾῗἯἊὭἍᾑ" end
+      if n=='greek' then l=l+"ΆΈΊΌΐάέήίϊόύώỏἀἁἃἄἅἈἐἑἒἔἕἘἙἜἡἢἣἤἥἦἨἩἫἬἮἰἱἲἴἵἶἸὀὁὂὃὄὅὊὍὐὑὓὔὕὖὗὝὡὢὣὤὥὧὨὩὰὲὴὶὸὺὼᾐᾗᾳᾴᾶῂῆῇῖῥῦῳῶῷῸᾤᾷἂἷὌᾖὉἧἷἂῃἌὬὉἷὉἷῃὦἌἠἳᾔἉᾦἠἳᾔὠᾓὫἝὈἭἼϋὯῴἆῒῄΰῢἆὙὮᾧὮᾕὋἍἹῬἽᾕἓἯἾᾠἎῗἾῗἯἊὭἍᾑᾰῐῠᾱῑῡᾸῘῨᾹῙῩ" end
       # ... This includes every character occurring in the Project Gutenberg editions of Homer, except for some that seem to be
       #     mistakes (smooth rho, phi and theta in symbol font). Duplications and characters out of order in this list have no effect at run time.
+      #     Also includes vowels with macron and vrachy, which occur in Project Perseus texts sometimes.
       l.chars.uniq.each { |c|
         nn = char_to_short_name_slow(c)
         #console "  #{c} --> #{nn}\n"

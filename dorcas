@@ -59,6 +59,8 @@ end
 def main(verbosity:1)
   start = Time.now
 
+  lower_io_priority(Process.pid) # only has any effect if we're on Linux; should be inherited by child processes
+
   cache_dir = dir_and_file_to_path(dir_and_file_to_path(Dir.home,".dorcas"),"cache") # variable is needed for `dorcas clean` as well as for real OCRing jobs
 
   if ARGV.length==0 then die("see README for usage") end
@@ -92,8 +94,7 @@ def main(verbosity:1)
     page = Page.from_file(one_page_job.image,cache_dir) # handles extracting a page from a pdf, if that syntax was used
     if verbosity>=3 then console "fingerprint: #{one_page_job.fingerprint_pre_spatter} #{page.fingerprint}\n" end
     one_page_job.image = page.png_filename
-    if one_page_job.verb=='seed' then set_x_height=nil else set_x_height=job.set.real_x_height end
-    page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size,set_x_height:set_x_height)
+    page.analyze(one_page_job.spacing_multiple,one_page_job.guess_dpi,one_page_job.guess_font_size)
     results_this_page = run_job(one_page_job,page,report_dir)
     if verbosity>=3 then console "pushing results, length=#{results_this_page.length}\n" end
     results.push(results_this_page)
