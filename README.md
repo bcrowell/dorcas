@@ -47,6 +47,18 @@ metal-type ancestors.
 * It runs on Linux. I've made an effort to make it fairly portable, but actually porting it to Windows would require some effort, and
     is not something I would work on myself.
 
+## Dependencies:
+
+debian packages: ruby python3 r-cran-minpack.lm unicode libgd-perl ruby-zip python3-numpy python3-pil
+
+optional debian packages: imagemagick qpdf
+
+## Test-driving the software
+
+Install the dependencies listed above. Copy the file ocr.job out of the "sample" subdirectory and into
+the main directory. Do the command "./dorcas ocr.job". This will OCR the file sample/banquet.png.
+On my machine this takes 7 minutes.
+
 ## General description of how the software works
 
 The approach used by this software is called template matching. This is an old problem in computer science, with a variety of
@@ -65,14 +77,16 @@ This training process is somewhat automated, so that you don't have to go throug
 to tell the software what's what. To get the automation to work, the idea is to start with what I refer to as a "seed font," a
 font that looks as similar as possible to the font you're training on. There can actually be more than one seed font. In the
 book that was my original use case, I found that the Latin alphabet was a decent match to Nimbus Roman, while the lowercase
-Greek was similar to GFS Porson, and the uppercase Greek to Liberation Serif Italic.
+Greek was similar to GFS Porson, and the uppercase Greek to Liberation Serif Italic. A sample job file for this seed font
+process is given in sample/seed.job.
 
 Once you tell the software the seed fonts to use, it has some general idea of what the characters look like. You turn it loose
 on a page of text, and it finds things that it thinks are possible matches. You give it feedback about which of these are wrong
 and which are right. Once it has an initial set of templates taken from the actual document's font, you can have it run through
 more pages of text and collect more examples. It averages these examples together to create composites. For example, the book
 that I originally was working on was set in metal type, and in some cases the letter "h" had a nick in the top of the arch.
-These flaws tend to go away in the composite version of the templates.
+These flaws tend to go away in the composite version of the templates. A sample job file for this learning
+process	is given in sample/seed.job.
 
 During this training process, the software generates reports for you showing a large picture of each template, along with
 graphical representations of other information such as where it thinks that character's baseline is and how much white space
@@ -82,7 +96,10 @@ a piece of some other character next to it. In this situation, you could open th
 and edit out the flyspeck. In general, there will be a process of iteration as you improve the set of templates. This may
 be time-consuming, although I'm working on making it more efficient.
 
-Once you have a good enough set of templates, you can go ahead and scan text. The software does reasonably well at this
+Once you have a good enough set of templates, you can go ahead and OCR text. A sample job file for this purpose is
+ocr.job, which can be used as described above under "Test-driving the software."
+
+The software does reasonably well at OCR work
 without having access to any linguistic information at all. However, the results can be considerably improved by supplying
 it with a dictionary of words for each language it's going to see. For example, my original application was a book
 in which the ancient Greek text of the Odyssey was interspersed with English translation. For this scan, I prepared
@@ -104,12 +121,6 @@ Technical details of how the software actually works under the hood are given la
 `dorcas clean` ... removes any scratch files left behind in /tmp and ~/.dorcas
 
 `dorcas view foo.set reports` ... write a visual report on the pattern set foo.set to report/foo.svg; also works with a set in directory form
-
-## Dependencies:
-
-debian packages: ruby python3 r-cran-minpack.lm unicode libgd-perl ruby-zip python3-numpy python3-pil
-
-optional debian packages: imagemagick qpdf
 
 ## Method of use
 

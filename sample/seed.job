@@ -1,0 +1,16 @@
+{
+  "verb":"seed",
+  "image":"/home/bcrowell/giles/giles_odyssey.pdf[10]",
+  "set":"giles88",
+  "output":"giles89",
+  "characters":[
+    ["latin","lowercase",":-[]?.,"]
+  ],
+  "seed_fonts":[
+    ["Nimbus Roman","latin","lowercase"],
+    ["Nimbus Roman","latin","uppercase"],
+    ["GFS Porson","greek","lowercase"],
+    ["/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf","greek","uppercase"]
+    // ["/usr/share/fonts/truetype/ttf-bitstream-vera/VeraIt.ttf","greek","uppercase"]
+  ]
+}

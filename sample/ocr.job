@@ -1,0 +1,6 @@
+{
+  "verb":"ocr",
+  "image":"sample/banquet.png",
+  "set":"giles",
+  "threshold":0.3
+}

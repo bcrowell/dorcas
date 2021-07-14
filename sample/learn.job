@@ -1,0 +1,20 @@
+{
+  "verb":"learn",
+  "image":"/home/bcrowell/giles/giles_odyssey.pdf[12]",
+  "set":"giles91",
+  "output":"giles92",
+  "threshold":0.0,
+  "cluster_threshold":0.75,
+  "characters":[
+    ["latin","lowercase","?"]
+  ],
+  "force_location":[    ["?",880,816]  ],
+  "prefer_cluster":[["?",2]],
+  "seed_fonts":[
+    ["Nimbus Roman","latin","lowercase"],
+    ["Nimbus Roman","latin","uppercase"],
+    ["GFS Porson","greek","lowercase"],
+    ["/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf","greek","uppercase"]
+    // ["/usr/share/fonts/truetype/ttf-bitstream-vera/VeraIt.ttf","greek","uppercase"]
+  ]
+}
