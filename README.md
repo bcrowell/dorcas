@@ -57,7 +57,28 @@ optional debian packages: imagemagick qpdf
 
 Install the dependencies listed above. Copy the file ocr.job out of the "sample" subdirectory and into
 the main directory. Do the command "./dorcas ocr.job". This will OCR the file sample/banquet.png.
-On my machine this takes 7 minutes.
+On my machine this takes 7 minutes. Using the version of the software from 2021 July 14, here's
+the output that I get:
+
+    appearance ξεινω Μεντη to thoetranger dentes
+    ἡγητορι leader Υαφιων of the quphians Εὑρε
+    δ αρα und she found then μνηστηρας αγηνορας
+    the haughty suitors ρἱ μευ the επειτα then
+    ετερπον were delighting θυμον their mind πεσ
+    σοις with draughts προπαροιθεν in front θυραων
+    of the doors ἡμενοι sitting ευῥινοισιν un skins
+    βοων of bulls ρὑς which αυτοι themselves
+    εκτανον slew Κηρυκες δε but heralds και and
+    οτρηροι θεραποντες busy attendants αυτοισιν
+    upon them οἱ μευ αρα some indeed εμισγον
+    were mixing ρινον wine και ὑδωρ und water ενι
+    κρητηρσιν in bowls ρ δε but others αυτε again
+    νιζον were wiping τραπεζας thotables σπογγοισι
+    πολυτρητοισι with their porons sponges και
+    and προτιθεντο were putting them forwards
+    και and δατευντο were dealing forth πολλα
+    κρεα many meats
+
 
 ## General description of how the software works
 
