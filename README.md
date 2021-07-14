@@ -64,7 +64,8 @@ On my machine this takes 7 minutes.
 The approach used by this software is called template matching. This is an old problem in computer science, with a variety of
 applications. For example, if you've used software to assemble a panoramic photo from a series of snapshots, it was using
 template matching to figure out how to connect one shot to its neighbor. When the crew of a submarine is trying to identify
-ships on the horizon by their silhouettes, they're doing template matching.
+ships on the horizon by their silhouettes, they're doing template matching. Template matching is not how most modern
+OCR software works, but it may be a better approach for the kinds of niche applications for which Dorcas was developed.
 
 Broadly speaking, there are two stages to the process, a training part and then the actual processing of text that you want to OCR.
 During the training part, you build up a set of templates, one for each letter of the alphabet(s), that are based on the actual
