@@ -22,7 +22,11 @@ def json_from_file_or_die(file)
   # automatically does unicode_normalize(:nfc)
   json,err = slurp_file_with_detailed_error_reporting(file)
   if !(err.nil?) then die(err) end
-  return JSON.parse(json)
+  begin
+    return JSON.parse(json)
+  rescue
+    die("error parsing JSON in file #{file}")
+  end
 end
 
 def json_from_file_or_stdin_or_die(file)
